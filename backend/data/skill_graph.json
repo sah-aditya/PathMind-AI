@@ -1,0 +1,54 @@
+{
+  "python-intermediate":    { "prerequisites": ["python-basics"],                                   "importance": "required" },
+  "python-advanced":        { "prerequisites": ["python-intermediate"],                             "importance": "required" },
+  "sql-advanced":           { "prerequisites": ["sql-basics"],                                      "importance": "required" },
+  "javascript-advanced":    { "prerequisites": ["javascript-basics"],                               "importance": "required" },
+
+  "statistics":             { "prerequisites": ["probability"],                                     "importance": "required" },
+  "numpy":                  { "prerequisites": ["python-intermediate"],                             "importance": "required" },
+  "pandas":                 { "prerequisites": ["numpy"],                                           "importance": "required" },
+  "data-visualization":     { "prerequisites": ["pandas"],                                         "importance": "required" },
+  "eda":                    { "prerequisites": ["data-visualization"],                              "importance": "required" },
+  "feature-engineering":    { "prerequisites": ["eda", "statistics"],                              "importance": "required" },
+
+  "ml-fundamentals":        { "prerequisites": ["python-intermediate", "statistics", "numpy"],      "importance": "required" },
+  "regression":             { "prerequisites": ["ml-fundamentals", "linear-algebra"],              "importance": "required" },
+  "classification":         { "prerequisites": ["ml-fundamentals", "statistics"],                  "importance": "required" },
+  "clustering":             { "prerequisites": ["ml-fundamentals"],                                "importance": "required" },
+  "model-evaluation":       { "prerequisites": ["statistics", "classification"],                   "importance": "required" },
+  "ensemble-methods":       { "prerequisites": ["classification", "regression"],                   "importance": "required" },
+  "hyperparameter-tuning":  { "prerequisites": ["model-evaluation"],                               "importance": "recommended" },
+
+  "neural-networks":        { "prerequisites": ["ml-fundamentals", "linear-algebra", "calculus"],  "importance": "required" },
+  "deep-learning-frameworks": { "prerequisites": ["neural-networks", "python-advanced"],           "importance": "required" },
+  "cnn":                    { "prerequisites": ["deep-learning-frameworks"],                        "importance": "required" },
+  "rnn-lstm":               { "prerequisites": ["deep-learning-frameworks"],                       "importance": "required" },
+  "transformers":           { "prerequisites": ["rnn-lstm", "nlp-basics"],                        "importance": "required" },
+  "transfer-learning":      { "prerequisites": ["deep-learning-frameworks"],                       "importance": "recommended" },
+
+  "nlp-basics":             { "prerequisites": ["python-intermediate"],                            "importance": "required" },
+  "nlp-advanced":           { "prerequisites": ["nlp-basics", "classification"],                  "importance": "required" },
+  "llm-fundamentals":       { "prerequisites": ["transformers"],                                   "importance": "required" },
+  "prompt-engineering":     { "prerequisites": ["llm-fundamentals"],                              "importance": "recommended" },
+  "rag":                    { "prerequisites": ["llm-fundamentals"],                               "importance": "required" },
+  "fine-tuning":            { "prerequisites": ["llm-fundamentals", "deep-learning-frameworks"],  "importance": "required" },
+
+  "computer-vision":        { "prerequisites": ["cnn"],                                            "importance": "required" },
+  "cv-advanced":            { "prerequisites": ["computer-vision"],                                "importance": "required" },
+
+  "model-deployment":       { "prerequisites": ["docker", "fastapi-deployment"],                  "importance": "required" },
+  "mlflow":                 { "prerequisites": ["ml-fundamentals"],                               "importance": "recommended" },
+  "ci-cd-ml":               { "prerequisites": ["git-basics", "docker"],                          "importance": "recommended" },
+  "fastapi-deployment":     { "prerequisites": ["python-intermediate"],                           "importance": "required" },
+
+  "react-basics":           { "prerequisites": ["javascript-basics", "html-css"],                 "importance": "required" },
+  "react-advanced":         { "prerequisites": ["react-basics"],                                  "importance": "required" },
+  "nodejs-express":         { "prerequisites": ["javascript-advanced"],                            "importance": "required" },
+  "databases-web":          { "prerequisites": ["sql-basics"],                                    "importance": "required" },
+  "fullstack-deployment":   { "prerequisites": ["react-basics", "nodejs-express", "docker"],      "importance": "required" },
+
+  "cloud-ml":               { "prerequisites": ["aws-fundamentals", "ml-fundamentals"],           "importance": "required" },
+
+  "cybersecurity-basics":   { "prerequisites": ["networking-basics"],                             "importance": "required" },
+  "ethical-hacking":        { "prerequisites": ["cybersecurity-basics", "linux-basics"],          "importance": "required" }
+}

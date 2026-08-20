@@ -1,0 +1,68 @@
+[
+  { "id": "python-basics",         "name": "Python Basics",            "slug": "python-basics",         "category": "Programming",     "parent": null,              "description": "Variables, data types, loops, functions, conditionals." },
+  { "id": "python-intermediate",   "name": "Python Intermediate",      "slug": "python-intermediate",   "category": "Programming",     "parent": "python-basics",   "description": "OOP, file I/O, error handling, modules, list comprehensions." },
+  { "id": "python-advanced",       "name": "Python Advanced",          "slug": "python-advanced",       "category": "Programming",     "parent": "python-intermediate", "description": "Decorators, generators, async, metaclasses, type hints." },
+  { "id": "sql-basics",            "name": "SQL Basics",               "slug": "sql-basics",            "category": "Programming",     "parent": null,              "description": "SELECT, WHERE, JOIN, GROUP BY, basic queries." },
+  { "id": "sql-advanced",          "name": "SQL Advanced",             "slug": "sql-advanced",          "category": "Programming",     "parent": "sql-basics",      "description": "Window functions, CTEs, indexes, stored procedures." },
+  { "id": "javascript-basics",     "name": "JavaScript Basics",        "slug": "javascript-basics",     "category": "Programming",     "parent": null,              "description": "Variables, functions, DOM manipulation, events, fetch API." },
+  { "id": "javascript-advanced",   "name": "JavaScript Advanced",      "slug": "javascript-advanced",   "category": "Programming",     "parent": "javascript-basics", "description": "Promises, async/await, closures, prototypes, ES6+." },
+  { "id": "git-basics",            "name": "Git & Version Control",    "slug": "git-basics",            "category": "Programming",     "parent": null,              "description": "Commits, branches, merges, pull requests, GitHub." },
+
+  { "id": "linear-algebra",        "name": "Linear Algebra",           "slug": "linear-algebra",        "category": "Mathematics",     "parent": null,              "description": "Vectors, matrices, eigenvalues, dot products, transformations." },
+  { "id": "calculus",              "name": "Calculus",                 "slug": "calculus",              "category": "Mathematics",     "parent": null,              "description": "Derivatives, gradients, chain rule, optimization." },
+  { "id": "probability",           "name": "Probability Theory",       "slug": "probability",           "category": "Mathematics",     "parent": null,              "description": "Distributions, Bayes theorem, random variables, expectation." },
+  { "id": "statistics",            "name": "Statistics",               "slug": "statistics",            "category": "Mathematics",     "parent": "probability",     "description": "Hypothesis testing, confidence intervals, regression basics." },
+
+  { "id": "numpy",                 "name": "NumPy",                    "slug": "numpy",                 "category": "Data Science",    "parent": "python-intermediate", "description": "Arrays, vectorized operations, broadcasting, linear algebra ops." },
+  { "id": "pandas",                "name": "Pandas",                   "slug": "pandas",                "category": "Data Science",    "parent": "numpy",           "description": "DataFrames, data cleaning, merging, groupby, time series." },
+  { "id": "data-visualization",    "name": "Data Visualization",       "slug": "data-visualization",    "category": "Data Science",    "parent": "pandas",          "description": "Matplotlib, Seaborn, Plotly — charts, plots, dashboards." },
+  { "id": "eda",                   "name": "Exploratory Data Analysis", "slug": "eda",                  "category": "Data Science",    "parent": "data-visualization", "description": "Data profiling, outlier detection, correlation analysis." },
+  { "id": "feature-engineering",   "name": "Feature Engineering",      "slug": "feature-engineering",   "category": "Data Science",    "parent": "eda",             "description": "Encoding, scaling, imputation, feature selection, pipelines." },
+
+  { "id": "ml-fundamentals",       "name": "ML Fundamentals",          "slug": "ml-fundamentals",       "category": "Machine Learning", "parent": null,             "description": "Supervised vs unsupervised, train/test split, bias-variance." },
+  { "id": "regression",            "name": "Regression",               "slug": "regression",            "category": "Machine Learning", "parent": "ml-fundamentals", "description": "Linear regression, polynomial, Lasso, Ridge, SVR." },
+  { "id": "classification",        "name": "Classification",           "slug": "classification",        "category": "Machine Learning", "parent": "ml-fundamentals", "description": "Logistic regression, decision trees, SVM, KNN, Naive Bayes." },
+  { "id": "clustering",            "name": "Clustering",               "slug": "clustering",            "category": "Machine Learning", "parent": "ml-fundamentals", "description": "K-Means, DBSCAN, hierarchical clustering, silhouette score." },
+  { "id": "model-evaluation",      "name": "Model Evaluation",         "slug": "model-evaluation",      "category": "Machine Learning", "parent": "statistics",      "description": "Accuracy, precision, recall, F1, ROC-AUC, cross-validation." },
+  { "id": "ensemble-methods",      "name": "Ensemble Methods",         "slug": "ensemble-methods",      "category": "Machine Learning", "parent": "classification",  "description": "Random forests, gradient boosting, XGBoost, LightGBM, stacking." },
+  { "id": "hyperparameter-tuning", "name": "Hyperparameter Tuning",    "slug": "hyperparameter-tuning", "category": "Machine Learning", "parent": "model-evaluation", "description": "Grid search, random search, Bayesian optimization, Optuna." },
+
+  { "id": "neural-networks",       "name": "Neural Networks",          "slug": "neural-networks",       "category": "Deep Learning",   "parent": "ml-fundamentals", "description": "Perceptrons, backpropagation, activation functions, MLP." },
+  { "id": "deep-learning-frameworks", "name": "Deep Learning Frameworks", "slug": "deep-learning-frameworks", "category": "Deep Learning", "parent": "neural-networks", "description": "TensorFlow, Keras, PyTorch — model building and training." },
+  { "id": "cnn",                   "name": "Convolutional Neural Networks", "slug": "cnn",              "category": "Deep Learning",   "parent": "deep-learning-frameworks", "description": "Conv layers, pooling, image classification, object detection." },
+  { "id": "rnn-lstm",              "name": "RNN & LSTM",               "slug": "rnn-lstm",              "category": "Deep Learning",   "parent": "deep-learning-frameworks", "description": "Sequence modeling, time series, NLP with recurrent networks." },
+  { "id": "transformers",          "name": "Transformers",             "slug": "transformers",          "category": "Deep Learning",   "parent": "rnn-lstm",        "description": "Attention mechanism, BERT, ViT, encoder-decoder architecture." },
+  { "id": "transfer-learning",     "name": "Transfer Learning",        "slug": "transfer-learning",     "category": "Deep Learning",   "parent": "deep-learning-frameworks", "description": "Fine-tuning pretrained models, domain adaptation." },
+
+  { "id": "nlp-basics",            "name": "NLP Basics",               "slug": "nlp-basics",            "category": "NLP",             "parent": "python-intermediate", "description": "Tokenization, stemming, TF-IDF, word embeddings, text cleaning." },
+  { "id": "nlp-advanced",          "name": "NLP Advanced",             "slug": "nlp-advanced",          "category": "NLP",             "parent": "nlp-basics",      "description": "Named entity recognition, sentiment analysis, text classification." },
+  { "id": "llm-fundamentals",      "name": "LLM Fundamentals",         "slug": "llm-fundamentals",      "category": "Generative AI",   "parent": "transformers",    "description": "How large language models work, pretraining, RLHF, tokenization." },
+  { "id": "prompt-engineering",    "name": "Prompt Engineering",       "slug": "prompt-engineering",    "category": "Generative AI",   "parent": "llm-fundamentals", "description": "Few-shot, chain-of-thought, structured prompting, system prompts." },
+  { "id": "rag",                   "name": "Retrieval-Augmented Generation", "slug": "rag",             "category": "Generative AI",   "parent": "llm-fundamentals", "description": "Vector stores, embedding search, grounding LLM outputs." },
+  { "id": "fine-tuning",           "name": "LLM Fine-Tuning",          "slug": "fine-tuning",           "category": "Generative AI",   "parent": "llm-fundamentals", "description": "LoRA, QLoRA, instruction tuning, PEFT methods." },
+
+  { "id": "computer-vision",       "name": "Computer Vision",          "slug": "computer-vision",       "category": "Computer Vision", "parent": "cnn",             "description": "Image preprocessing, augmentation, object detection, segmentation." },
+  { "id": "cv-advanced",           "name": "Advanced CV",              "slug": "cv-advanced",           "category": "Computer Vision", "parent": "computer-vision", "description": "YOLO, Detectron2, diffusion models, image generation." },
+
+  { "id": "docker",                "name": "Docker",                   "slug": "docker",                "category": "MLOps",           "parent": null,              "description": "Containers, Dockerfiles, images, volumes, networking." },
+  { "id": "fastapi-deployment",    "name": "FastAPI & REST APIs",      "slug": "fastapi-deployment",    "category": "MLOps",           "parent": "python-intermediate", "description": "Building REST APIs, routing, middleware, Pydantic models." },
+  { "id": "model-deployment",      "name": "Model Deployment",         "slug": "model-deployment",      "category": "MLOps",           "parent": "docker",          "description": "Serving models with FastAPI, Flask, BentoML, TorchServe." },
+  { "id": "mlflow",                "name": "MLflow & Experiment Tracking", "slug": "mlflow",            "category": "MLOps",           "parent": "ml-fundamentals", "description": "Tracking experiments, logging metrics, model registry." },
+  { "id": "ci-cd-ml",              "name": "CI/CD for ML",             "slug": "ci-cd-ml",              "category": "MLOps",           "parent": "git-basics",      "description": "GitHub Actions, automated testing, model retraining pipelines." },
+
+  { "id": "html-css",              "name": "HTML & CSS",               "slug": "html-css",              "category": "Web Development", "parent": null,              "description": "Semantic HTML, CSS layouts, Flexbox, Grid, responsive design." },
+  { "id": "react-basics",          "name": "React Basics",             "slug": "react-basics",          "category": "Web Development", "parent": "javascript-basics", "description": "Components, props, state, hooks, JSX, React Router." },
+  { "id": "react-advanced",        "name": "React Advanced",           "slug": "react-advanced",        "category": "Web Development", "parent": "react-basics",    "description": "Context API, Redux, performance optimization, custom hooks." },
+  { "id": "nodejs-express",        "name": "Node.js & Express",        "slug": "nodejs-express",        "category": "Web Development", "parent": "javascript-advanced", "description": "Server-side JS, REST APIs, middleware, authentication." },
+  { "id": "databases-web",         "name": "Databases for Web",        "slug": "databases-web",         "category": "Web Development", "parent": "sql-basics",      "description": "PostgreSQL, MongoDB, ORMs, database design for web apps." },
+  { "id": "fullstack-deployment",  "name": "Full-Stack Deployment",    "slug": "fullstack-deployment",  "category": "Web Development", "parent": "docker",          "description": "Vercel, Netlify, Railway, environment config, domain setup." },
+
+  { "id": "aws-fundamentals",      "name": "AWS Fundamentals",         "slug": "aws-fundamentals",      "category": "Cloud",           "parent": null,              "description": "EC2, S3, IAM, Lambda, VPC — core AWS services." },
+  { "id": "gcp-fundamentals",      "name": "GCP Fundamentals",         "slug": "gcp-fundamentals",      "category": "Cloud",           "parent": null,              "description": "Compute Engine, Cloud Storage, BigQuery, Cloud Run." },
+  { "id": "cloud-ml",              "name": "Cloud ML Platforms",       "slug": "cloud-ml",              "category": "Cloud",           "parent": "aws-fundamentals", "description": "AWS SageMaker, Google Vertex AI, Azure ML for training & serving." },
+
+  { "id": "networking-basics",     "name": "Networking Basics",        "slug": "networking-basics",     "category": "Cybersecurity",   "parent": null,              "description": "TCP/IP, DNS, HTTP, OSI model, firewalls, VPNs." },
+  { "id": "linux-basics",          "name": "Linux Fundamentals",       "slug": "linux-basics",          "category": "Cybersecurity",   "parent": null,              "description": "Shell commands, file permissions, processes, bash scripting." },
+  { "id": "cybersecurity-basics",  "name": "Cybersecurity Basics",     "slug": "cybersecurity-basics",  "category": "Cybersecurity",   "parent": "networking-basics", "description": "OWASP Top 10, common attacks, encryption, secure coding." },
+  { "id": "ethical-hacking",       "name": "Ethical Hacking",          "slug": "ethical-hacking",       "category": "Cybersecurity",   "parent": "cybersecurity-basics", "description": "Pen testing, Kali Linux, reconnaissance, exploitation basics." }
+]

@@ -1,0 +1,542 @@
+[
+  {
+    "id": "asmt-python-basics",
+    "resource_id": "res-001",
+    "title": "Python Basics Assessment",
+    "skill": "python-basics",
+    "passing_score": 0.70,
+    "time_limit_minutes": 25,
+    "questions": [
+      {
+        "id": "q1",
+        "type": "scenario",
+        "scenario": "You are building a script that reads a list of student exam scores and computes statistics. A colleague writes: `scores = [88, 72, 95, 61, 84]` and asks you to compute the average.",
+        "question": "Which code snippet correctly computes and prints the average score?",
+        "options": [
+          "print(sum(scores) / len(scores))",
+          "print(scores.average())",
+          "print(average(scores))",
+          "print(sum(scores) / count(scores))"
+        ],
+        "correct_index": 0,
+        "explanation": "`sum()` and `len()` are built-in Python functions. There is no `.average()` method on lists.",
+        "difficulty": "easy",
+        "skill_tested": "python-basics"
+      },
+      {
+        "id": "q2",
+        "type": "scenario",
+        "scenario": "You're processing a list of products and need to find all products with price > 100. Your dataset is: `products = [('Laptop', 1200), ('Mouse', 25), ('Monitor', 350), ('Keyboard', 75)]`",
+        "question": "Which expression uses a list comprehension to return only products with price > 100?",
+        "options": [
+          "[p for p in products if p[1] > 100]",
+          "[p for p if p[1] > 100 in products]",
+          "filter(products, lambda p: p[1] > 100)",
+          "[p where p[1] > 100 for p in products]"
+        ],
+        "correct_index": 0,
+        "explanation": "List comprehension syntax is `[expr for item in iterable if condition]`. Option A correctly places the condition after the iterable.",
+        "difficulty": "easy",
+        "skill_tested": "python-basics"
+      },
+      {
+        "id": "q3",
+        "type": "scenario",
+        "scenario": "You write a function that should return the factorial of a number. A bug report says it returns wrong values for n=0.",
+        "question": "Which implementation correctly handles the base case for `factorial(0)`?",
+        "options": [
+          "def factorial(n):\n    if n == 0: return 1\n    return n * factorial(n-1)",
+          "def factorial(n):\n    if n == 1: return 1\n    return n * factorial(n-1)",
+          "def factorial(n):\n    return n * factorial(n-1)",
+          "def factorial(n):\n    if n == 0: return 0\n    return n * factorial(n-1)"
+        ],
+        "correct_index": 0,
+        "explanation": "By mathematical definition, 0! = 1. Option A correctly returns 1 when n == 0. Option B fails for factorial(0).",
+        "difficulty": "medium",
+        "skill_tested": "python-basics"
+      },
+      {
+        "id": "q4",
+        "type": "scenario",
+        "scenario": "Your program reads user input and stores scores in a dictionary keyed by student name. A new student 'Alice' receives score 92 but Alice might already exist in the dict.",
+        "question": "Which code safely updates Alice's score without raising a KeyError?",
+        "options": [
+          "scores['Alice'] = 92",
+          "scores.add('Alice', 92)",
+          "scores.insert('Alice', 92)",
+          "scores.update_key('Alice', 92)"
+        ],
+        "correct_index": 0,
+        "explanation": "Dictionary assignment `dict[key] = value` creates the key if it doesn't exist and updates it if it does. No KeyError is raised.",
+        "difficulty": "easy",
+        "skill_tested": "python-basics"
+      },
+      {
+        "id": "q5",
+        "type": "scenario",
+        "scenario": "You are writing a data validation function. You need to check if a variable `age` is between 18 and 65 (inclusive) and the user is active (a boolean flag `is_active`).",
+        "question": "Which condition correctly combines both checks?",
+        "options": [
+          "if 18 <= age <= 65 and is_active:",
+          "if age >= 18 and age <= 65 or is_active:",
+          "if age between 18, 65 and is_active:",
+          "if (age >= 18 or age <= 65) and is_active:"
+        ],
+        "correct_index": 0,
+        "explanation": "Python supports chained comparisons (`18 <= age <= 65`). Option A correctly uses `and` to require both conditions. Option D uses `or` which is incorrect.",
+        "difficulty": "medium",
+        "skill_tested": "python-basics"
+      }
+    ]
+  },
+  {
+    "id": "asmt-statistics",
+    "resource_id": "res-012",
+    "title": "Statistics for Data Science Assessment",
+    "skill": "statistics",
+    "passing_score": 0.70,
+    "time_limit_minutes": 30,
+    "questions": [
+      {
+        "id": "q1",
+        "type": "scenario",
+        "scenario": "Your company runs an A/B test on a new checkout button color. Group A (red, n=1000) has 8.2% conversion. Group B (green, n=1000) has 9.1% conversion. The p-value is 0.08.",
+        "question": "What is the correct statistical conclusion at α = 0.05?",
+        "options": [
+          "We fail to reject H₀; the difference is not statistically significant at 95% confidence.",
+          "We reject H₀; green is statistically significantly better than red.",
+          "The test is inconclusive because sample sizes are equal.",
+          "Since 9.1% > 8.2%, we should immediately switch to green."
+        ],
+        "correct_index": 0,
+        "explanation": "p = 0.08 > α = 0.05, so we fail to reject the null hypothesis. The observed difference could be due to chance. We cannot conclude green is better with 95% confidence.",
+        "difficulty": "medium",
+        "skill_tested": "statistics"
+      },
+      {
+        "id": "q2",
+        "type": "scenario",
+        "scenario": "A dataset of employee salaries has mean = $75,000 and median = $52,000. The distribution is heavily right-skewed because a few executives earn millions.",
+        "question": "Which measure of central tendency is most appropriate to represent a 'typical' employee's salary?",
+        "options": [
+          "Median, because it is robust to outliers and represents the middle value.",
+          "Mean, because it uses all data points in its calculation.",
+          "Mode, because it represents the most common salary.",
+          "Both mean and median are equally appropriate."
+        ],
+        "correct_index": 0,
+        "explanation": "In right-skewed distributions, high outliers inflate the mean. The median ($52,000) better represents the 'typical' salary unaffected by executive compensation.",
+        "difficulty": "medium",
+        "skill_tested": "statistics"
+      },
+      {
+        "id": "q3",
+        "type": "scenario",
+        "scenario": "A COVID-19 test has sensitivity = 95% (true positive rate) and specificity = 98% (true negative rate). In a population where 1% has COVID, a patient tests positive.",
+        "question": "Using Bayes' theorem, what is the approximate probability the patient actually has COVID (positive predictive value)?",
+        "options": [
+          "About 32% — because the disease is rare, most positives are false positives.",
+          "About 95% — because sensitivity is 95%.",
+          "About 98% — because specificity is 98%.",
+          "About 1% — because only 1% of the population has COVID."
+        ],
+        "correct_index": 0,
+        "explanation": "P(COVID|+) = P(+|COVID)×P(COVID) / P(+) = (0.95×0.01) / (0.95×0.01 + 0.02×0.99) ≈ 0.0095/0.0293 ≈ 32%. Low prevalence causes many false positives.",
+        "difficulty": "hard",
+        "skill_tested": "statistics"
+      },
+      {
+        "id": "q4",
+        "type": "scenario",
+        "scenario": "You observe a correlation of r = 0.85 between ice cream sales and drowning rates across months. A stakeholder says 'ice cream causes drowning; we should ban it.'",
+        "question": "What is the most statistically sound response?",
+        "options": [
+          "Correlation does not imply causation; both are likely driven by a confounder (hot weather increases both).",
+          "r = 0.85 is too high to be a coincidence; a causal link is likely.",
+          "We need a larger sample to confirm causation.",
+          "The correlation is spurious only if r < 0.5."
+        ],
+        "correct_index": 0,
+        "explanation": "This is a classic confounding variable example. Hot weather drives both ice cream sales and outdoor swimming (and thus drownings). Correlation is not causation.",
+        "difficulty": "medium",
+        "skill_tested": "statistics"
+      },
+      {
+        "id": "q5",
+        "type": "scenario",
+        "scenario": "You're validating a model and find that adding more features to your linear regression always improves R² on the training data, even random noise features.",
+        "question": "Which metric should you use instead to properly evaluate model fit while penalizing complexity?",
+        "options": [
+          "Adjusted R², which penalizes for adding irrelevant features.",
+          "R² on the training set — higher is always better.",
+          "Mean Absolute Error on training data.",
+          "The number of features divided by sample size."
+        ],
+        "correct_index": 0,
+        "explanation": "R² always increases when adding features. Adjusted R² penalizes for unnecessary predictors by adjusting for degrees of freedom.",
+        "difficulty": "medium",
+        "skill_tested": "statistics"
+      }
+    ]
+  },
+  {
+    "id": "asmt-ml-fundamentals",
+    "resource_id": "res-019",
+    "title": "Machine Learning Fundamentals Assessment",
+    "skill": "ml-fundamentals",
+    "passing_score": 0.70,
+    "time_limit_minutes": 30,
+    "questions": [
+      {
+        "id": "q1",
+        "type": "scenario",
+        "scenario": "Your ML model achieves 99% accuracy on the training set but only 61% on the test set. The training set has 50,000 samples and the model is a deep decision tree with no depth limit.",
+        "question": "What is the most likely problem, and what is the best first fix?",
+        "options": [
+          "Overfitting — the model memorized training data. Fix: add regularization or limit tree depth.",
+          "Underfitting — the model is too simple. Fix: increase model complexity.",
+          "Data leakage — the training data includes test labels. Fix: re-split the data.",
+          "Class imbalance — use SMOTE to balance the training set."
+        ],
+        "correct_index": 0,
+        "explanation": "Large train-test accuracy gap = overfitting. An unlimited depth tree memorizes noise. Regularization (max_depth, min_samples_leaf) or pruning is the correct fix.",
+        "difficulty": "medium",
+        "skill_tested": "ml-fundamentals"
+      },
+      {
+        "id": "q2",
+        "type": "scenario",
+        "scenario": "You are training a model to detect fraudulent transactions. The dataset has 99.9% legitimate transactions and 0.1% fraud. You train a model and get 99.9% accuracy.",
+        "question": "Why is this accuracy misleading, and what should you measure instead?",
+        "options": [
+          "Accuracy is misleading because a model that always predicts 'legitimate' achieves 99.9%. Use precision, recall, and F1-score instead.",
+          "Accuracy is perfect for imbalanced problems. No change is needed.",
+          "The model should use unsupervised learning since labels are rare.",
+          "Increase the training dataset to fix class imbalance."
+        ],
+        "correct_index": 0,
+        "explanation": "A naive classifier that never predicts fraud achieves 99.9% accuracy. Precision (of fraud predictions), recall (fraud caught), and F1 are appropriate for imbalanced datasets.",
+        "difficulty": "medium",
+        "skill_tested": "ml-fundamentals"
+      },
+      {
+        "id": "q3",
+        "type": "scenario",
+        "scenario": "You have 10,000 samples and want to estimate your model's generalization performance reliably. A colleague suggests using a single 80/20 train-test split.",
+        "question": "What is a better approach, and why?",
+        "options": [
+          "k-Fold cross-validation — it uses all data for both training and validation, giving a lower-variance estimate of performance.",
+          "Use 50/50 split for equal representation of training and testing.",
+          "Train on all 10,000 samples and report training accuracy as the performance estimate.",
+          "A single 80/20 split is always sufficient for any dataset size."
+        ],
+        "correct_index": 0,
+        "explanation": "k-Fold CV (e.g., k=5 or k=10) trains k models on different subsets. The average performance is more reliable and less sensitive to how the data was split.",
+        "difficulty": "medium",
+        "skill_tested": "ml-fundamentals"
+      },
+      {
+        "id": "q4",
+        "type": "scenario",
+        "scenario": "A decision tree achieves 95% training accuracy and 93% test accuracy. You want to reduce complexity. You consider: (A) increasing max_depth, (B) decreasing max_depth, (C) increasing min_samples_split.",
+        "question": "Which actions would act as regularization to reduce potential overfitting?",
+        "options": [
+          "B and C — decreasing max_depth and increasing min_samples_split both constrain the tree.",
+          "Only A — more depth means the model learns more complex patterns.",
+          "None — tree depth doesn't affect overfitting.",
+          "Only C — min_samples_split is the only regularization parameter."
+        ],
+        "correct_index": 0,
+        "explanation": "Both max_depth (limits tree growth) and min_samples_split (requires minimum samples to split) are regularization techniques that prevent trees from memorizing noise.",
+        "difficulty": "hard",
+        "skill_tested": "ml-fundamentals"
+      },
+      {
+        "id": "q5",
+        "type": "scenario",
+        "scenario": "You're working on a dataset of house prices. Features include: number of bedrooms (1-10), square footage (500-10000), and year built (1900-2024). You're using a KNN or SVM model.",
+        "question": "Why is feature scaling critical here, and which scaler is most appropriate?",
+        "options": [
+          "Square footage (large range) would dominate distance calculations. StandardScaler or MinMaxScaler normalizes all features to comparable scales.",
+          "Feature scaling is only needed for tree-based models like decision trees.",
+          "KNN and SVM are scale-invariant; no scaling is needed.",
+          "Scale all features to 0-10 range manually without using a scaler."
+        ],
+        "correct_index": 0,
+        "explanation": "Distance-based models (KNN, SVM with RBF kernel) are sensitive to feature scale. Square footage would dominate. StandardScaler (z-score) or MinMaxScaler is appropriate.",
+        "difficulty": "medium",
+        "skill_tested": "ml-fundamentals"
+      }
+    ]
+  },
+  {
+    "id": "asmt-classification",
+    "resource_id": "res-021",
+    "title": "Classification Algorithms Assessment",
+    "skill": "classification",
+    "passing_score": 0.70,
+    "time_limit_minutes": 30,
+    "questions": [
+      {
+        "id": "q1",
+        "type": "scenario",
+        "scenario": "You're building a spam email classifier. A false positive = marking a legitimate email as spam. A false negative = missing a spam email. Your company prioritizes 'never blocking legitimate emails' over catching all spam.",
+        "question": "Which metric should you optimize for, and what does it mean?",
+        "options": [
+          "Precision — minimize false positives. A high-precision model rarely marks legitimate emails as spam.",
+          "Recall — maximize true positives. A high-recall model catches more spam.",
+          "F1-score — balance precision and recall equally.",
+          "Accuracy — maximize correct predictions overall."
+        ],
+        "correct_index": 0,
+        "explanation": "Precision = TP / (TP + FP). Optimizing precision minimizes false positives (legitimate emails incorrectly marked as spam), matching the business requirement.",
+        "difficulty": "medium",
+        "skill_tested": "classification"
+      },
+      {
+        "id": "q2",
+        "type": "scenario",
+        "scenario": "You're choosing between Logistic Regression and Random Forest for a credit scoring model. Regulators require you to explain every prediction to the applicant.",
+        "question": "Which model should you prefer, and why?",
+        "options": [
+          "Logistic Regression — the feature coefficients and log-odds are interpretable and explainable to regulators.",
+          "Random Forest — it always achieves higher accuracy than logistic regression.",
+          "Random Forest — it uses multiple trees so it must be more reliable.",
+          "Either is fine; accuracy is the only metric that matters for compliance."
+        ],
+        "correct_index": 0,
+        "explanation": "Explainability is a legal requirement in credit scoring (GDPR, ECOA). Logistic regression's coefficients directly quantify each feature's contribution. Random forest is a black box.",
+        "difficulty": "medium",
+        "skill_tested": "classification"
+      },
+      {
+        "id": "q3",
+        "type": "scenario",
+        "scenario": "Your SVM classifier takes 4 hours to train on 500,000 samples. You need to retrain it weekly. Your manager asks for a faster alternative with comparable accuracy.",
+        "question": "Which algorithm would best address the scalability issue?",
+        "options": [
+          "Logistic Regression with stochastic gradient descent (SGD) — scales linearly with data size.",
+          "Increase SVM kernel degree to reduce training time.",
+          "Use a deeper SVM kernel for better approximations.",
+          "Use KNN — it requires no training time at all."
+        ],
+        "correct_index": 0,
+        "explanation": "Standard SVM scales O(n²) to O(n³) — unusable at 500k samples. Logistic regression with SGD is O(n) and trains in minutes. KNN has no training time but is slow at inference.",
+        "difficulty": "hard",
+        "skill_tested": "classification"
+      },
+      {
+        "id": "q4",
+        "type": "scenario",
+        "scenario": "You compare two models on a medical diagnosis task: Model A: Precision=0.90, Recall=0.60. Model B: Precision=0.70, Recall=0.92. Missing a sick patient (false negative) could be life-threatening.",
+        "question": "Which model should you deploy in a clinical setting?",
+        "options": [
+          "Model B — high recall minimizes false negatives, which is critical when missing a sick patient is dangerous.",
+          "Model A — high precision means fewer false alarms, reducing unnecessary tests.",
+          "Neither — both fail to achieve 95% in both metrics.",
+          "Model A — precision is always more important than recall in healthcare."
+        ],
+        "correct_index": 0,
+        "explanation": "In disease detection, missing a sick patient (false negative) is far more dangerous than a false alarm. High recall (0.92) is critical. Model B is the right choice.",
+        "difficulty": "medium",
+        "skill_tested": "classification"
+      },
+      {
+        "id": "q5",
+        "type": "scenario",
+        "scenario": "Your logistic regression model outputs a probability of 0.45 for a fraud transaction. The default threshold is 0.5 so it's classified as 'not fraud.' Fraud costs your company $5,000 per incident; a false alarm costs $50 in investigation.",
+        "question": "What should you do with the decision threshold?",
+        "options": [
+          "Lower the threshold (e.g., to 0.2-0.3) to flag more potential fraud — the cost asymmetry justifies more false alarms to catch more fraud.",
+          "Keep the threshold at 0.5 — changing it introduces bias.",
+          "Raise the threshold to 0.7 to reduce false alarms.",
+          "Thresholds don't affect model performance, only the output label."
+        ],
+        "correct_index": 0,
+        "explanation": "Cost-sensitive classification: fraud cost ($5,000) >> false alarm cost ($50). Lower the threshold to favor recall. At 0.3, you might catch 90% of fraud at the cost of some false alarms.",
+        "difficulty": "hard",
+        "skill_tested": "classification"
+      }
+    ]
+  },
+  {
+    "id": "asmt-neural-networks",
+    "resource_id": "res-029",
+    "title": "Neural Networks Assessment",
+    "skill": "neural-networks",
+    "passing_score": 0.70,
+    "time_limit_minutes": 35,
+    "questions": [
+      {
+        "id": "q1",
+        "type": "scenario",
+        "scenario": "You're training a deep neural network on image data. After 50 epochs, training loss is 0.02 but validation loss is 1.8 and rising. Training accuracy is 99%, validation accuracy is 62%.",
+        "question": "Identify the problem and list TWO correct remedies.",
+        "options": [
+          "Overfitting — remedies: (1) Dropout regularization, (2) Data augmentation to increase effective training diversity.",
+          "Underfitting — remedies: (1) Add more layers, (2) Train for more epochs.",
+          "Vanishing gradient — remedies: (1) Use ReLU activations, (2) Reduce learning rate.",
+          "The model is fine — 99% training accuracy shows it has learned well."
+        ],
+        "correct_index": 0,
+        "explanation": "Rising validation loss with very low training loss = classic overfitting. Dropout randomly deactivates neurons during training. Data augmentation creates variation so the model can't memorize.",
+        "difficulty": "medium",
+        "skill_tested": "neural-networks"
+      },
+      {
+        "id": "q2",
+        "type": "scenario",
+        "scenario": "You use sigmoid activations in every hidden layer of a 20-layer network. After training, the early layers have near-zero gradients while later layers update normally.",
+        "question": "What problem is this, and which activation function resolves it?",
+        "options": [
+          "Vanishing gradient problem — use ReLU (or LeakyReLU) in hidden layers, as its gradient is 1 for positive inputs.",
+          "Exploding gradient — use Sigmoid in all layers to clip gradients.",
+          "Dead neurons — switch to Softmax in all hidden layers.",
+          "Learning rate decay — reduce the learning rate gradually."
+        ],
+        "correct_index": 0,
+        "explanation": "Sigmoid squashes gradients to [0,1]. In deep networks, multiplying many small gradients causes near-zero updates in early layers. ReLU has gradient=1 for positive inputs, alleviating this.",
+        "difficulty": "hard",
+        "skill_tested": "neural-networks"
+      },
+      {
+        "id": "q3",
+        "type": "scenario",
+        "scenario": "You're training a network with batch size=1 (SGD), batch size=512 (mini-batch), and batch size=all data (batch GD). Training time and convergence matter.",
+        "question": "Which batch size setting offers the best practical trade-off for most deep learning tasks?",
+        "options": [
+          "Mini-batch (32-256) — noisy enough for generalization, stable enough to converge, fast with GPU parallelism.",
+          "Batch size=1 — most accurate gradient estimate, converges fastest.",
+          "Full batch — the exact gradient ensures fastest convergence.",
+          "Batch size=1 — GPU parallelism works best with single samples."
+        ],
+        "correct_index": 0,
+        "explanation": "Mini-batch GD: the noise acts as regularization (good generalization), and GPUs efficiently parallelize matrix ops. Batch size=1 is noisy; full batch is slow and memory-intensive.",
+        "difficulty": "medium",
+        "skill_tested": "neural-networks"
+      },
+      {
+        "id": "q4",
+        "type": "scenario",
+        "scenario": "A 5-layer network uses ReLU activations. After many epochs, you notice that 40% of neurons output 0 for every input in the dataset and never activate.",
+        "question": "What problem is this, and what caused it?",
+        "options": [
+          "Dying ReLU problem — neurons with negative pre-activation receive zero gradient and never update. Caused by a high learning rate or poor weight initialization.",
+          "Overfitting — too many neurons are ignoring the data.",
+          "Underfitting — 40% of capacity is unused, add more neurons.",
+          "Dropout — 40% deactivation rate is intentional during training."
+        ],
+        "correct_index": 0,
+        "explanation": "ReLU outputs 0 for negative inputs (gradient=0). If weights push all inputs negative permanently, neurons stop learning. Solutions: LeakyReLU, better weight init (He init), or lower learning rate.",
+        "difficulty": "hard",
+        "skill_tested": "neural-networks"
+      },
+      {
+        "id": "q5",
+        "type": "scenario",
+        "scenario": "You are designing the output layer for three different problems: (A) binary classification, (B) multi-class (10 classes), (C) regression (predict house price).",
+        "question": "Which combination of output activations is correct?",
+        "options": [
+          "A: Sigmoid (1 neuron), B: Softmax (10 neurons), C: Linear/None (1 neuron).",
+          "A: Softmax (2 neurons), B: Sigmoid (10 neurons), C: ReLU (1 neuron).",
+          "A: ReLU (1 neuron), B: Softmax (10 neurons), C: Sigmoid (1 neuron).",
+          "A: Sigmoid (1 neuron), B: ReLU (10 neurons), C: Softmax (1 neuron)."
+        ],
+        "correct_index": 0,
+        "explanation": "Sigmoid outputs probability [0,1] for binary. Softmax outputs probability distribution summing to 1 for multi-class. Linear activation for regression allows any real-valued output.",
+        "difficulty": "medium",
+        "skill_tested": "neural-networks"
+      }
+    ]
+  },
+  {
+    "id": "asmt-llm-fundamentals",
+    "resource_id": "res-041",
+    "title": "LLM Fundamentals Assessment",
+    "skill": "llm-fundamentals",
+    "passing_score": 0.70,
+    "time_limit_minutes": 30,
+    "questions": [
+      {
+        "id": "q1",
+        "type": "scenario",
+        "scenario": "You ask an LLM: 'What is the capital of France?' It confidently replies: 'The capital of France is Berlin.' This is factually wrong.",
+        "question": "What AI phenomenon does this illustrate, and what is the root cause?",
+        "options": [
+          "Hallucination — LLMs generate text that sounds plausible based on patterns, not by looking up facts. They can produce confident but incorrect outputs.",
+          "Overfitting — the model memorized wrong facts from its training data.",
+          "Out-of-distribution error — France is too rare a topic in training data.",
+          "Tokenization error — the model misread the question."
+        ],
+        "correct_index": 0,
+        "explanation": "LLMs generate token-by-token based on probability, not from a knowledge database. They can 'hallucinate' plausible-sounding but factually wrong answers. RAG or grounding can mitigate this.",
+        "difficulty": "easy",
+        "skill_tested": "llm-fundamentals"
+      },
+      {
+        "id": "q2",
+        "type": "scenario",
+        "scenario": "You have a 128K context window LLM. You stuff 120K tokens of documents into the prompt and ask a question about information buried in the middle of the context.",
+        "question": "What known limitation should you be aware of?",
+        "options": [
+          "Lost in the middle problem — LLMs tend to recall information better at the start and end of context; middle content is often ignored or misattributed.",
+          "Larger context always leads to better answers — use the full 128K.",
+          "The model will read documents sequentially and always find the answer.",
+          "Context window size only affects generation speed, not accuracy."
+        ],
+        "correct_index": 0,
+        "explanation": "Research shows LLM performance degrades on information in the middle of very long contexts. Key information should be placed near the beginning or end, or RAG should retrieve only relevant chunks.",
+        "difficulty": "hard",
+        "skill_tested": "llm-fundamentals"
+      },
+      {
+        "id": "q3",
+        "type": "scenario",
+        "scenario": "A company wants to use an LLM to generate SQL queries from natural language. They need the model to output only valid SQL, with no explanation or markdown.",
+        "question": "Which technique should they use to constrain the output format?",
+        "options": [
+          "Structured output / JSON mode + system prompt specifying format — or a grammar-constrained sampling approach.",
+          "Use a larger model — bigger models always follow instructions better.",
+          "Post-process the output with regex to extract SQL.",
+          "Train a new model from scratch specifically for SQL generation."
+        ],
+        "correct_index": 0,
+        "explanation": "Modern LLM APIs support structured output (JSON schema) or grammar-constrained generation to enforce output format. System prompts specifying format also help significantly.",
+        "difficulty": "medium",
+        "skill_tested": "llm-fundamentals"
+      },
+      {
+        "id": "q4",
+        "type": "scenario",
+        "scenario": "GPT-4 and Gemini Ultra were trained with a knowledge cutoff. A user asks the LLM about a news event that happened last week.",
+        "question": "What is the correct way to handle this in a production AI application?",
+        "options": [
+          "Implement RAG — retrieve current information from a live database or search engine and inject it into the prompt context.",
+          "Use a larger model with more parameters to cover recent events.",
+          "Increase the temperature setting to help the model be more creative about recent events.",
+          "Fine-tune the model weekly on new news articles."
+        ],
+        "correct_index": 0,
+        "explanation": "RAG (Retrieval-Augmented Generation) solves the knowledge cutoff problem by retrieving relevant, up-to-date documents at inference time and injecting them into context. Fine-tuning weekly is expensive and doesn't add factual recall.",
+        "difficulty": "medium",
+        "skill_tested": "llm-fundamentals"
+      },
+      {
+        "id": "q5",
+        "type": "scenario",
+        "scenario": "You're comparing two LLM configurations for a customer service bot: Config A: temperature=0.1, Config B: temperature=1.2. The bot must give accurate, consistent policy answers.",
+        "question": "Which configuration is appropriate, and why?",
+        "options": [
+          "Config A (low temperature) — deterministic, consistent outputs appropriate for factual, policy-driven responses.",
+          "Config B (high temperature) — more creative responses improve user satisfaction.",
+          "Config B — high temperature ensures the model never repeats itself.",
+          "Temperature doesn't affect factual accuracy, only response length."
+        ],
+        "correct_index": 0,
+        "explanation": "Temperature controls randomness. Low temperature (< 0.3) → consistent, deterministic outputs. High temperature (> 1.0) → more random/creative. For policy answers, consistency is critical.",
+        "difficulty": "easy",
+        "skill_tested": "llm-fundamentals"
+      }
+    ]
+  }
+]

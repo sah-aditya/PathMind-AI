@@ -1,0 +1,272 @@
+[
+  {
+    "id": "res-001", "title": "Python Programming Bootcamp", "description": "Start from zero and master Python fundamentals — variables, data types, conditionals, loops, and functions through hands-on projects.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 18, "url": "https://learn.pathmind.ai/python-bootcamp", "skills_taught": ["python-basics"], "prerequisite_skills": [], "tags": ["python", "programming", "beginner"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-002", "title": "Python Intermediate: OOP & Beyond", "description": "Dive into object-oriented programming, file I/O, modules, decorators, error handling, and list comprehensions.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 14, "url": "https://learn.pathmind.ai/python-intermediate", "skills_taught": ["python-intermediate"], "prerequisite_skills": ["python-basics"], "tags": ["python", "oop", "intermediate"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-003", "title": "Python Advanced: Async, Generators & Type Hints", "description": "Master generators, decorators, async/await, metaclasses and Python type system for production-grade code.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 10, "url": "https://learn.pathmind.ai/python-advanced", "skills_taught": ["python-advanced"], "prerequisite_skills": ["python-intermediate"], "tags": ["python", "async", "advanced"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-004", "title": "Build a CLI Tool with Python", "description": "Apply Python basics to build a functional command-line task manager with file persistence.", "provider": "PathMind Projects", "type": "project", "difficulty": "beginner", "duration_hours": 5, "url": "https://learn.pathmind.ai/projects/cli-tool", "skills_taught": ["python-basics", "python-intermediate"], "prerequisite_skills": ["python-basics"], "tags": ["python", "project", "cli"], "rating": 4.5, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-005", "title": "Git & GitHub: Complete Version Control", "description": "Learn commits, branching, merging, rebasing, pull requests, and collaborative workflows on GitHub.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 8, "url": "https://learn.pathmind.ai/git-github", "skills_taught": ["git-basics"], "prerequisite_skills": [], "tags": ["git", "github", "version-control"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-006", "title": "SQL Fundamentals", "description": "Master SELECT, WHERE, JOINs, GROUP BY, and subqueries. Practice on a realistic e-commerce database.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 12, "url": "https://learn.pathmind.ai/sql-fundamentals", "skills_taught": ["sql-basics"], "prerequisite_skills": [], "tags": ["sql", "database", "beginner"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-007", "title": "Advanced SQL: Window Functions & CTEs", "description": "Master window functions, recursive CTEs, indexing, query optimization, and stored procedures.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 10, "url": "https://learn.pathmind.ai/sql-advanced", "skills_taught": ["sql-advanced"], "prerequisite_skills": ["sql-basics"], "tags": ["sql", "analytics", "advanced"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-008", "title": "SQL Data Analysis Project", "description": "Analyze a real sales dataset using advanced SQL — window functions, cohort analysis, and funnel metrics.", "provider": "PathMind Projects", "type": "project", "difficulty": "intermediate", "duration_hours": 6, "url": "https://learn.pathmind.ai/projects/sql-analysis", "skills_taught": ["sql-advanced", "eda"], "prerequisite_skills": ["sql-basics"], "tags": ["sql", "analysis", "project"], "rating": 4.5, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-009", "title": "Linear Algebra for Machine Learning", "description": "Vectors, matrices, eigenvalues, SVD, and geometric intuition. Everything ML needs from linear algebra.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 16, "url": "https://learn.pathmind.ai/linear-algebra", "skills_taught": ["linear-algebra"], "prerequisite_skills": [], "tags": ["math", "linear-algebra", "ml-prep"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-010", "title": "Calculus & Optimization for ML", "description": "Derivatives, gradients, the chain rule, and gradient descent — the mathematical engine behind machine learning.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 12, "url": "https://learn.pathmind.ai/calculus-ml", "skills_taught": ["calculus"], "prerequisite_skills": [], "tags": ["math", "calculus", "optimization"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-011", "title": "Probability Theory Essentials", "description": "Random variables, distributions, Bayes theorem, conditional probability, and information theory.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 14, "url": "https://learn.pathmind.ai/probability", "skills_taught": ["probability"], "prerequisite_skills": [], "tags": ["math", "probability", "statistics"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-012", "title": "Statistics for Data Science", "description": "Hypothesis testing, confidence intervals, p-values, A/B testing, regression basics, and central limit theorem.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 16, "url": "https://learn.pathmind.ai/statistics", "skills_taught": ["statistics"], "prerequisite_skills": ["probability"], "tags": ["statistics", "data-science", "hypothesis-testing"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-013", "title": "NumPy: Numerical Computing in Python", "description": "Arrays, vectorized operations, broadcasting, linear algebra operations, and performance-oriented Python.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 8, "url": "https://learn.pathmind.ai/numpy", "skills_taught": ["numpy"], "prerequisite_skills": ["python-intermediate"], "tags": ["numpy", "python", "data-science"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-014", "title": "Pandas: Data Manipulation Masterclass", "description": "DataFrames, data cleaning, merging, pivot tables, groupby, time series, and real-world data wrangling.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 12, "url": "https://learn.pathmind.ai/pandas", "skills_taught": ["pandas"], "prerequisite_skills": ["numpy"], "tags": ["pandas", "data-wrangling", "data-science"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-015", "title": "Data Visualization with Matplotlib & Seaborn", "description": "Line charts, histograms, scatter plots, heatmaps, box plots, and storytelling through visualization.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 8, "url": "https://learn.pathmind.ai/data-viz", "skills_taught": ["data-visualization"], "prerequisite_skills": ["pandas"], "tags": ["visualization", "matplotlib", "seaborn"], "rating": 4.6, "is_project": false, "has_assessment": false
+  },
+  {
+    "id": "res-016", "title": "Exploratory Data Analysis in Practice", "description": "Real-world EDA workflow: profiling, outlier detection, correlation analysis, missing data strategies.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 10, "url": "https://learn.pathmind.ai/eda", "skills_taught": ["eda"], "prerequisite_skills": ["data-visualization"], "tags": ["eda", "data-analysis", "statistics"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-017", "title": "EDA Project: Analyzing Customer Churn Data", "description": "Perform end-to-end exploratory analysis on a telecom churn dataset and present key findings.", "provider": "PathMind Projects", "type": "project", "difficulty": "intermediate", "duration_hours": 8, "url": "https://learn.pathmind.ai/projects/eda-churn", "skills_taught": ["eda", "data-visualization"], "prerequisite_skills": ["eda"], "tags": ["eda", "project", "churn"], "rating": 4.5, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-018", "title": "Feature Engineering for ML", "description": "One-hot encoding, label encoding, feature scaling, imputation, selection, and building scikit-learn pipelines.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 10, "url": "https://learn.pathmind.ai/feature-engineering", "skills_taught": ["feature-engineering"], "prerequisite_skills": ["eda", "statistics"], "tags": ["feature-engineering", "ml", "preprocessing"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-019", "title": "Machine Learning Fundamentals", "description": "Core ML concepts: supervised vs unsupervised, train/test split, bias-variance, overfitting, regularization.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 14, "url": "https://learn.pathmind.ai/ml-fundamentals", "skills_taught": ["ml-fundamentals"], "prerequisite_skills": ["python-intermediate", "statistics", "numpy"], "tags": ["machine-learning", "fundamentals", "scikit-learn"], "rating": 4.9, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-020", "title": "Regression Models: From Linear to Polynomial", "description": "Linear regression, polynomial regression, Ridge, Lasso, ElasticNet, and support vector regression.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 10, "url": "https://learn.pathmind.ai/regression", "skills_taught": ["regression"], "prerequisite_skills": ["ml-fundamentals", "linear-algebra"], "tags": ["regression", "machine-learning", "prediction"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-021", "title": "Classification Algorithms Deep Dive", "description": "Logistic regression, decision trees, SVM, KNN, Naive Bayes, and when to use each algorithm.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 12, "url": "https://learn.pathmind.ai/classification", "skills_taught": ["classification"], "prerequisite_skills": ["ml-fundamentals", "statistics"], "tags": ["classification", "machine-learning", "algorithms"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-022", "title": "Clustering & Unsupervised Learning", "description": "K-Means, DBSCAN, hierarchical clustering, dimensionality reduction with PCA and t-SNE.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 10, "url": "https://learn.pathmind.ai/clustering", "skills_taught": ["clustering"], "prerequisite_skills": ["ml-fundamentals"], "tags": ["clustering", "unsupervised", "pca"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-023", "title": "Model Evaluation & Selection", "description": "Accuracy, precision, recall, F1, ROC-AUC, cross-validation, learning curves, and choosing models.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 8, "url": "https://learn.pathmind.ai/model-evaluation", "skills_taught": ["model-evaluation"], "prerequisite_skills": ["statistics", "classification"], "tags": ["evaluation", "metrics", "cross-validation"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-024", "title": "ML Project: House Price Prediction", "description": "End-to-end regression project — EDA, feature engineering, model training, evaluation, and interpretation.", "provider": "PathMind Projects", "type": "project", "difficulty": "intermediate", "duration_hours": 10, "url": "https://learn.pathmind.ai/projects/house-prices", "skills_taught": ["regression", "feature-engineering", "model-evaluation"], "prerequisite_skills": ["regression", "feature-engineering"], "tags": ["regression", "project", "real-estate"], "rating": 4.7, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-025", "title": "ML Project: Customer Churn Classification", "description": "Build a customer churn predictor for a telecom company — end-to-end from data to deployment.", "provider": "PathMind Projects", "type": "project", "difficulty": "intermediate", "duration_hours": 12, "url": "https://learn.pathmind.ai/projects/churn-classification", "skills_taught": ["classification", "model-evaluation", "feature-engineering"], "prerequisite_skills": ["classification", "feature-engineering"], "tags": ["classification", "project", "churn"], "rating": 4.8, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-026", "title": "Ensemble Methods: Random Forests & Boosting", "description": "Bagging, random forests, AdaBoost, XGBoost, LightGBM, CatBoost — powerful ensemble techniques.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 12, "url": "https://learn.pathmind.ai/ensemble-methods", "skills_taught": ["ensemble-methods"], "prerequisite_skills": ["classification", "regression"], "tags": ["ensemble", "xgboost", "random-forest"], "rating": 4.9, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-027", "title": "Hyperparameter Tuning with Optuna", "description": "Grid search, random search, and Bayesian optimization for finding optimal model hyperparameters.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 8, "url": "https://learn.pathmind.ai/hyperparameter-tuning", "skills_taught": ["hyperparameter-tuning"], "prerequisite_skills": ["model-evaluation"], "tags": ["tuning", "optuna", "optimization"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-028", "title": "ML Project: Fraud Detection System", "description": "Imbalanced classification, anomaly detection, and threshold optimization on financial transaction data.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 14, "url": "https://learn.pathmind.ai/projects/fraud-detection", "skills_taught": ["classification", "ensemble-methods", "feature-engineering"], "prerequisite_skills": ["ensemble-methods", "model-evaluation"], "tags": ["fraud", "classification", "imbalanced", "project"], "rating": 4.8, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-029", "title": "Neural Networks from Scratch", "description": "Build neural networks from scratch with NumPy — perceptrons, backpropagation, activations, layers.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 14, "url": "https://learn.pathmind.ai/neural-networks-scratch", "skills_taught": ["neural-networks"], "prerequisite_skills": ["ml-fundamentals", "linear-algebra", "calculus"], "tags": ["neural-networks", "deep-learning", "backpropagation"], "rating": 4.9, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-030", "title": "Deep Learning with PyTorch", "description": "Build and train deep learning models in PyTorch — tensors, autograd, custom datasets, training loops.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 20, "url": "https://learn.pathmind.ai/pytorch", "skills_taught": ["deep-learning-frameworks"], "prerequisite_skills": ["neural-networks", "python-advanced"], "tags": ["pytorch", "deep-learning", "framework"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-031", "title": "Deep Learning with TensorFlow & Keras", "description": "Build models with TensorFlow 2 and Keras — sequential API, functional API, callbacks, saving models.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 18, "url": "https://learn.pathmind.ai/tensorflow", "skills_taught": ["deep-learning-frameworks"], "prerequisite_skills": ["neural-networks", "python-advanced"], "tags": ["tensorflow", "keras", "deep-learning"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-032", "title": "Convolutional Neural Networks", "description": "Convolutions, pooling, receptive fields, popular architectures (ResNet, VGG, EfficientNet), image classification.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 16, "url": "https://learn.pathmind.ai/cnn", "skills_taught": ["cnn"], "prerequisite_skills": ["deep-learning-frameworks"], "tags": ["cnn", "image-classification", "deep-learning"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-033", "title": "CV Project: Image Classifier (CIFAR-10)", "description": "Build and train a CNN to classify 10 image categories. Achieve 90%+ accuracy with data augmentation.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 12, "url": "https://learn.pathmind.ai/projects/cifar-classifier", "skills_taught": ["cnn", "deep-learning-frameworks"], "prerequisite_skills": ["cnn"], "tags": ["cnn", "image", "project"], "rating": 4.7, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-034", "title": "RNN, LSTM & Sequence Modeling", "description": "Recurrent networks, vanishing gradients, LSTMs, GRUs, bidirectional RNNs, and sequence-to-sequence models.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 14, "url": "https://learn.pathmind.ai/rnn-lstm", "skills_taught": ["rnn-lstm"], "prerequisite_skills": ["deep-learning-frameworks"], "tags": ["rnn", "lstm", "sequence-modeling"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-035", "title": "Transformers & Attention Mechanism", "description": "Self-attention, multi-head attention, positional encoding, the original Transformer paper, BERT and GPT architectures.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 18, "url": "https://learn.pathmind.ai/transformers", "skills_taught": ["transformers"], "prerequisite_skills": ["rnn-lstm", "nlp-basics"], "tags": ["transformers", "attention", "bert", "gpt"], "rating": 4.9, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-036", "title": "Transfer Learning in Practice", "description": "Fine-tune pretrained models (ResNet, BERT, ViT) on custom datasets with minimal data and compute.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 10, "url": "https://learn.pathmind.ai/transfer-learning", "skills_taught": ["transfer-learning"], "prerequisite_skills": ["deep-learning-frameworks"], "tags": ["transfer-learning", "fine-tuning", "pretrained"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-037", "title": "DL Project: Sentiment Analysis with LSTM", "description": "Build a sentiment classifier on movie reviews using an LSTM, compare with a Transformer baseline.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 10, "url": "https://learn.pathmind.ai/projects/sentiment-lstm", "skills_taught": ["rnn-lstm", "nlp-basics", "deep-learning-frameworks"], "prerequisite_skills": ["rnn-lstm", "nlp-basics"], "tags": ["sentiment", "lstm", "nlp", "project"], "rating": 4.7, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-038", "title": "NLP Basics: Text Processing & Word Embeddings", "description": "Tokenization, stemming, TF-IDF, Word2Vec, GloVe, and text preprocessing pipelines.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 12, "url": "https://learn.pathmind.ai/nlp-basics", "skills_taught": ["nlp-basics"], "prerequisite_skills": ["python-intermediate"], "tags": ["nlp", "word-embeddings", "text-processing"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-039", "title": "Advanced NLP: NER, Classification & Summarization", "description": "Named entity recognition, text classification, extractive and abstractive summarization, coreference resolution.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 14, "url": "https://learn.pathmind.ai/nlp-advanced", "skills_taught": ["nlp-advanced"], "prerequisite_skills": ["nlp-basics", "classification"], "tags": ["ner", "summarization", "nlp-advanced"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-040", "title": "NLP Project: News Article Classifier", "description": "Build a multi-class text classifier for news topics using traditional ML and Transformer fine-tuning.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 12, "url": "https://learn.pathmind.ai/projects/news-classifier", "skills_taught": ["nlp-advanced", "classification"], "prerequisite_skills": ["nlp-advanced"], "tags": ["nlp", "text-classification", "project"], "rating": 4.6, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-041", "title": "How LLMs Work: Fundamentals", "description": "Pretraining, tokenization, scaling laws, RLHF, instruction tuning, and architecture of GPT-4/Claude/Gemini.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 12, "url": "https://learn.pathmind.ai/llm-fundamentals", "skills_taught": ["llm-fundamentals"], "prerequisite_skills": ["transformers"], "tags": ["llm", "gpt", "pretraining", "generative-ai"], "rating": 4.9, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-042", "title": "Prompt Engineering Mastery", "description": "Zero-shot, few-shot, chain-of-thought, tree-of-thought, structured output, and system prompt design.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 8, "url": "https://learn.pathmind.ai/prompt-engineering", "skills_taught": ["prompt-engineering"], "prerequisite_skills": ["llm-fundamentals"], "tags": ["prompt-engineering", "llm", "chatgpt", "gemini"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-043", "title": "Build a RAG Application", "description": "Vector stores, embeddings, semantic retrieval, chunking strategies, and grounding LLM responses in real documents.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 14, "url": "https://learn.pathmind.ai/rag", "skills_taught": ["rag"], "prerequisite_skills": ["llm-fundamentals"], "tags": ["rag", "vector-database", "llm", "retrieval"], "rating": 4.9, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-044", "title": "GenAI Project: Build an AI Study Assistant", "description": "Build a RAG-powered study assistant that answers questions from uploaded PDFs using Gemini.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 16, "url": "https://learn.pathmind.ai/projects/ai-study-assistant", "skills_taught": ["rag", "prompt-engineering", "fastapi-deployment"], "prerequisite_skills": ["rag", "prompt-engineering"], "tags": ["rag", "llm", "project", "genai"], "rating": 4.9, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-045", "title": "Fine-Tuning LLMs with LoRA & QLoRA", "description": "PEFT methods: LoRA, QLoRA, instruction tuning — fine-tune Llama 3 and Mistral on custom datasets.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 16, "url": "https://learn.pathmind.ai/llm-fine-tuning", "skills_taught": ["fine-tuning"], "prerequisite_skills": ["llm-fundamentals", "deep-learning-frameworks"], "tags": ["fine-tuning", "lora", "llm", "peft"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-046", "title": "GenAI Project: Domain-Specific Chatbot", "description": "Fine-tune an open-source LLM on custom data, serve it as an API, and wrap it in a simple chat UI.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 20, "url": "https://learn.pathmind.ai/projects/domain-chatbot", "skills_taught": ["fine-tuning", "model-deployment", "fastapi-deployment"], "prerequisite_skills": ["fine-tuning"], "tags": ["chatbot", "fine-tuning", "llm", "project"], "rating": 4.8, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-047", "title": "Computer Vision: Image Processing & Detection", "description": "Image preprocessing, augmentation, object detection with YOLO, segmentation with Mask R-CNN.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 18, "url": "https://learn.pathmind.ai/computer-vision", "skills_taught": ["computer-vision"], "prerequisite_skills": ["cnn"], "tags": ["computer-vision", "yolo", "object-detection"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-048", "title": "Advanced CV: Diffusion Models & Generation", "description": "Stable Diffusion architecture, CLIP, image generation, inpainting, ControlNet, and generative CV.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 16, "url": "https://learn.pathmind.ai/cv-advanced", "skills_taught": ["cv-advanced"], "prerequisite_skills": ["computer-vision"], "tags": ["diffusion", "stable-diffusion", "generative-ai", "cv"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-049", "title": "CV Project: Real-Time Object Detection App", "description": "Build a real-time object detection web app using YOLOv8, FastAPI, and a live webcam feed.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 14, "url": "https://learn.pathmind.ai/projects/object-detection", "skills_taught": ["computer-vision", "fastapi-deployment"], "prerequisite_skills": ["computer-vision"], "tags": ["yolo", "object-detection", "project", "real-time"], "rating": 4.8, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-050", "title": "Docker for Developers", "description": "Containers, Dockerfiles, docker-compose, volumes, networking, and deploying multi-container apps.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 10, "url": "https://learn.pathmind.ai/docker", "skills_taught": ["docker"], "prerequisite_skills": [], "tags": ["docker", "containers", "devops"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-051", "title": "FastAPI: Building Production REST APIs", "description": "Routing, Pydantic models, async endpoints, authentication, background tasks, and OpenAPI docs.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 12, "url": "https://learn.pathmind.ai/fastapi", "skills_taught": ["fastapi-deployment"], "prerequisite_skills": ["python-intermediate"], "tags": ["fastapi", "rest-api", "python", "backend"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-052", "title": "Serving ML Models with FastAPI", "description": "Package a trained ML model into a production REST API — serialization, versioning, batch inference.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 10, "url": "https://learn.pathmind.ai/ml-model-serving", "skills_taught": ["model-deployment"], "prerequisite_skills": ["docker", "fastapi-deployment"], "tags": ["model-serving", "mlops", "fastapi", "deployment"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-053", "title": "MLflow: Experiment Tracking & Model Registry", "description": "Track experiments, log parameters and metrics, manage model versions, and build a reproducible ML pipeline.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 8, "url": "https://learn.pathmind.ai/mlflow", "skills_taught": ["mlflow"], "prerequisite_skills": ["ml-fundamentals"], "tags": ["mlflow", "experiment-tracking", "mlops"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-054", "title": "CI/CD for Machine Learning with GitHub Actions", "description": "Automated model testing, retraining pipelines, and deployment workflows using GitHub Actions.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 10, "url": "https://learn.pathmind.ai/cicd-ml", "skills_taught": ["ci-cd-ml"], "prerequisite_skills": ["git-basics", "docker"], "tags": ["cicd", "github-actions", "mlops", "automation"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-055", "title": "MLOps Project: End-to-End ML Pipeline", "description": "Build a complete MLOps pipeline: data ingestion → training → evaluation → registry → CI/CD → serving.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 20, "url": "https://learn.pathmind.ai/projects/mlops-pipeline", "skills_taught": ["model-deployment", "mlflow", "ci-cd-ml", "docker"], "prerequisite_skills": ["model-deployment", "mlflow"], "tags": ["mlops", "pipeline", "project", "end-to-end"], "rating": 4.9, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-056", "title": "HTML & CSS Fundamentals", "description": "Semantic HTML5, CSS layouts, Flexbox, CSS Grid, responsive design, and modern CSS properties.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 14, "url": "https://learn.pathmind.ai/html-css", "skills_taught": ["html-css"], "prerequisite_skills": [], "tags": ["html", "css", "web", "beginner"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-057", "title": "JavaScript Fundamentals", "description": "Variables, functions, DOM manipulation, events, fetch API, and asynchronous JavaScript basics.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 16, "url": "https://learn.pathmind.ai/javascript-basics", "skills_taught": ["javascript-basics"], "prerequisite_skills": ["html-css"], "tags": ["javascript", "web", "frontend", "beginner"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-058", "title": "JavaScript Advanced: ES6+, Async & Modules", "description": "Promises, async/await, closures, prototypes, ES6+ features, modules, and modern JavaScript patterns.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 12, "url": "https://learn.pathmind.ai/javascript-advanced", "skills_taught": ["javascript-advanced"], "prerequisite_skills": ["javascript-basics"], "tags": ["javascript", "es6", "async", "advanced"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-059", "title": "React.js Complete Course", "description": "Components, props, state, React hooks, React Router, forms, and building a complete SPA.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 20, "url": "https://learn.pathmind.ai/react", "skills_taught": ["react-basics"], "prerequisite_skills": ["javascript-basics", "html-css"], "tags": ["react", "frontend", "spa", "hooks"], "rating": 4.9, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-060", "title": "React Advanced: Redux, Performance & Patterns", "description": "Context API, Redux Toolkit, React Query, memoization, lazy loading, and advanced component patterns.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 14, "url": "https://learn.pathmind.ai/react-advanced", "skills_taught": ["react-advanced"], "prerequisite_skills": ["react-basics"], "tags": ["react", "redux", "performance", "advanced"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-061", "title": "Node.js & Express: Backend Development", "description": "Server-side JavaScript, REST APIs, middleware, authentication, and connecting to databases with Express.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 16, "url": "https://learn.pathmind.ai/nodejs", "skills_taught": ["nodejs-express"], "prerequisite_skills": ["javascript-advanced"], "tags": ["nodejs", "express", "backend", "api"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-062", "title": "Databases for Web Developers", "description": "PostgreSQL, data modeling, relationships, ORMs (Sequelize/Prisma), migrations, and indexing.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 12, "url": "https://learn.pathmind.ai/web-databases", "skills_taught": ["databases-web"], "prerequisite_skills": ["sql-basics"], "tags": ["postgresql", "database", "orm", "web"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-063", "title": "Full-Stack Project: E-Commerce App", "description": "Build a complete e-commerce app with React frontend, Node.js backend, PostgreSQL database, and Stripe payments.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 25, "url": "https://learn.pathmind.ai/projects/ecommerce", "skills_taught": ["react-advanced", "nodejs-express", "databases-web"], "prerequisite_skills": ["react-basics", "nodejs-express", "databases-web"], "tags": ["fullstack", "react", "nodejs", "project"], "rating": 4.8, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-064", "title": "Deploying Full-Stack Apps", "description": "Deploy React+Node.js apps on Vercel, Railway, and Render. Environment variables, CI/CD, domains.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 8, "url": "https://learn.pathmind.ai/fullstack-deployment", "skills_taught": ["fullstack-deployment"], "prerequisite_skills": ["react-basics", "nodejs-express", "docker"], "tags": ["deployment", "vercel", "railway", "devops"], "rating": 4.6, "is_project": false, "has_assessment": false
+  },
+  {
+    "id": "res-065", "title": "AWS Fundamentals: Cloud Practitioner", "description": "EC2, S3, IAM, Lambda, VPC, RDS, CloudWatch — hands-on with the 20 most important AWS services.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 20, "url": "https://learn.pathmind.ai/aws", "skills_taught": ["aws-fundamentals"], "prerequisite_skills": [], "tags": ["aws", "cloud", "fundamentals", "certification"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-066", "title": "GCP Fundamentals: Cloud Practitioner", "description": "Compute Engine, Cloud Storage, BigQuery, Cloud Run, Cloud Functions — core Google Cloud services.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 18, "url": "https://learn.pathmind.ai/gcp", "skills_taught": ["gcp-fundamentals"], "prerequisite_skills": [], "tags": ["gcp", "google-cloud", "cloud", "bigquery"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-067", "title": "Cloud ML Platforms: SageMaker & Vertex AI", "description": "Train and serve ML models on AWS SageMaker and Google Vertex AI — managed endpoints, pipelines, monitoring.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 14, "url": "https://learn.pathmind.ai/cloud-ml", "skills_taught": ["cloud-ml"], "prerequisite_skills": ["aws-fundamentals", "ml-fundamentals"], "tags": ["sagemaker", "vertex-ai", "cloud-ml", "mlops"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-068", "title": "Cloud Project: Deploy ML Model on AWS", "description": "Package a trained model, deploy it on SageMaker, set up an API Gateway, and monitor predictions.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 12, "url": "https://learn.pathmind.ai/projects/aws-ml-deploy", "skills_taught": ["cloud-ml", "model-deployment"], "prerequisite_skills": ["cloud-ml"], "tags": ["aws", "sagemaker", "deployment", "project"], "rating": 4.7, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-069", "title": "Networking Basics for Security", "description": "TCP/IP stack, DNS, HTTP/HTTPS, OSI model, firewalls, VPNs, proxies, and common network protocols.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 14, "url": "https://learn.pathmind.ai/networking", "skills_taught": ["networking-basics"], "prerequisite_skills": [], "tags": ["networking", "tcp-ip", "security", "fundamentals"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-070", "title": "Linux Fundamentals", "description": "Shell navigation, file permissions, process management, bash scripting, cron jobs, and Linux administration.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 12, "url": "https://learn.pathmind.ai/linux", "skills_taught": ["linux-basics"], "prerequisite_skills": [], "tags": ["linux", "bash", "shell", "administration"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-071", "title": "Cybersecurity Fundamentals", "description": "OWASP Top 10, common attack vectors, encryption, hashing, secure coding, and defense strategies.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 16, "url": "https://learn.pathmind.ai/cybersecurity", "skills_taught": ["cybersecurity-basics"], "prerequisite_skills": ["networking-basics"], "tags": ["cybersecurity", "owasp", "security", "encryption"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-072", "title": "Ethical Hacking & Penetration Testing", "description": "Kali Linux, reconnaissance, scanning, exploitation, privilege escalation, and responsible disclosure.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 20, "url": "https://learn.pathmind.ai/ethical-hacking", "skills_taught": ["ethical-hacking"], "prerequisite_skills": ["cybersecurity-basics", "linux-basics"], "tags": ["ethical-hacking", "pen-testing", "kali", "security"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-073", "title": "Security Project: Vulnerability Assessment Lab", "description": "Set up a virtual lab, scan targets with Nmap, exploit a vulnerable machine (HackTheBox style).", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 16, "url": "https://learn.pathmind.ai/projects/vuln-lab", "skills_taught": ["ethical-hacking", "networking-basics"], "prerequisite_skills": ["ethical-hacking"], "tags": ["security", "pen-testing", "project", "lab"], "rating": 4.7, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-074", "title": "Statistics Revision: Foundations Reinforcement", "description": "Targeted review of descriptive statistics, distributions, hypothesis testing, and common statistical errors.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 6, "url": "https://learn.pathmind.ai/stats-revision", "skills_taught": ["statistics"], "prerequisite_skills": ["probability"], "tags": ["statistics", "revision", "reinforcement"], "rating": 4.5, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-075", "title": "ML Revision: Algorithm Review & Practice", "description": "Quick-review modules for regression, classification, clustering, and evaluation — ideal for reinforcement.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 6, "url": "https://learn.pathmind.ai/ml-revision", "skills_taught": ["regression", "classification", "clustering", "model-evaluation"], "prerequisite_skills": ["ml-fundamentals"], "tags": ["ml", "revision", "reinforcement", "algorithms"], "rating": 4.5, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-076", "title": "Python Revision: Core Concepts Practice", "description": "Targeted Python exercises covering OOP, data structures, algorithms, and common interview patterns.", "provider": "PathMind Academy", "type": "course", "difficulty": "beginner", "duration_hours": 5, "url": "https://learn.pathmind.ai/python-revision", "skills_taught": ["python-basics", "python-intermediate"], "prerequisite_skills": ["python-basics"], "tags": ["python", "revision", "practice"], "rating": 4.5, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-077", "title": "Math Revision: Linear Algebra & Calculus", "description": "Rapid review of vectors, matrices, derivatives, and gradients — key formulas and intuition refresher.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 5, "url": "https://learn.pathmind.ai/math-revision", "skills_taught": ["linear-algebra", "calculus"], "prerequisite_skills": [], "tags": ["math", "revision", "linear-algebra", "calculus"], "rating": 4.4, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-078", "title": "Deep Learning Revision: Neural Network Fundamentals", "description": "Rapid reinforcement of backpropagation, activation functions, regularization, and optimizer intuition.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 5, "url": "https://learn.pathmind.ai/dl-revision", "skills_taught": ["neural-networks", "deep-learning-frameworks"], "prerequisite_skills": ["neural-networks"], "tags": ["deep-learning", "revision", "reinforcement", "neural-networks"], "rating": 4.5, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-079", "title": "Web Scraping & Data Collection with Python", "description": "BeautifulSoup, Scrapy, Selenium, handling JavaScript-heavy pages, rate limiting, and data storage.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 10, "url": "https://learn.pathmind.ai/web-scraping", "skills_taught": ["python-intermediate"], "prerequisite_skills": ["python-intermediate"], "tags": ["scraping", "data-collection", "beautifulsoup", "python"], "rating": 4.5, "is_project": false, "has_assessment": false
+  },
+  {
+    "id": "res-080", "title": "Time Series Analysis & Forecasting", "description": "ARIMA, SARIMA, Prophet, LSTM-based forecasting, and evaluating time series models.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 14, "url": "https://learn.pathmind.ai/time-series", "skills_taught": ["statistics", "rnn-lstm"], "prerequisite_skills": ["statistics", "ml-fundamentals"], "tags": ["time-series", "forecasting", "arima", "lstm"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-081", "title": "Recommender Systems in Practice", "description": "Collaborative filtering, content-based filtering, matrix factorization, and building a movie recommender.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 12, "url": "https://learn.pathmind.ai/recommender-systems", "skills_taught": ["ml-fundamentals", "linear-algebra"], "prerequisite_skills": ["ml-fundamentals", "linear-algebra"], "tags": ["recommender", "collaborative-filtering", "ml"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-082", "title": "ML Capstone: Personal Portfolio Project", "description": "Build and present a complete ML project of your choice as a portfolio piece for job applications.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 20, "url": "https://learn.pathmind.ai/projects/ml-capstone", "skills_taught": ["model-evaluation", "feature-engineering", "ensemble-methods"], "prerequisite_skills": ["ensemble-methods", "model-evaluation"], "tags": ["capstone", "portfolio", "ml", "project"], "rating": 5.0, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-083", "title": "Data Science Capstone: End-to-End Analysis", "description": "Choose a dataset, perform full EDA, model selection, and present findings in a professional report.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 18, "url": "https://learn.pathmind.ai/projects/ds-capstone", "skills_taught": ["eda", "statistics", "ml-fundamentals"], "prerequisite_skills": ["eda", "ml-fundamentals"], "tags": ["capstone", "data-science", "portfolio", "project"], "rating": 4.9, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-084", "title": "Full-Stack Capstone: SaaS Application", "description": "Build a full SaaS application with authentication, payments, subscriptions, and a production deployment.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 30, "url": "https://learn.pathmind.ai/projects/saas-capstone", "skills_taught": ["react-advanced", "nodejs-express", "databases-web", "fullstack-deployment"], "prerequisite_skills": ["react-advanced", "nodejs-express", "databases-web"], "tags": ["fullstack", "saas", "capstone", "project"], "rating": 4.9, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-085", "title": "Generative AI Capstone: AI Product", "description": "Build a production-ready AI product using LLMs, RAG, and a modern frontend — ready to ship.", "provider": "PathMind Projects", "type": "project", "difficulty": "advanced", "duration_hours": 25, "url": "https://learn.pathmind.ai/projects/genai-capstone", "skills_taught": ["rag", "fine-tuning", "fastapi-deployment", "prompt-engineering"], "prerequisite_skills": ["rag", "prompt-engineering", "fastapi-deployment"], "tags": ["genai", "llm", "product", "capstone"], "rating": 5.0, "is_project": true, "has_assessment": false
+  },
+  {
+    "id": "res-086", "title": "Data Structures & Algorithms in Python", "description": "Arrays, linked lists, stacks, queues, trees, graphs, sorting, searching, and dynamic programming.", "provider": "PathMind Academy", "type": "course", "difficulty": "intermediate", "duration_hours": 20, "url": "https://learn.pathmind.ai/dsa-python", "skills_taught": ["python-intermediate"], "prerequisite_skills": ["python-intermediate"], "tags": ["algorithms", "data-structures", "python", "interview"], "rating": 4.8, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-087", "title": "System Design for Engineers", "description": "Design scalable systems — load balancers, caches, databases, message queues, and real-world architectures.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 16, "url": "https://learn.pathmind.ai/system-design", "skills_taught": ["databases-web", "docker"], "prerequisite_skills": ["databases-web", "nodejs-express"], "tags": ["system-design", "scalability", "architecture"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-088", "title": "Introduction to Graph Neural Networks", "description": "Graph theory for ML, GCN, GAT, GraphSAGE, and applications in social networks and molecules.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 14, "url": "https://learn.pathmind.ai/gnn", "skills_taught": ["deep-learning-frameworks", "ml-fundamentals"], "prerequisite_skills": ["deep-learning-frameworks"], "tags": ["gnn", "graph", "deep-learning", "research"], "rating": 4.6, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-089", "title": "Reinforcement Learning Fundamentals", "description": "MDPs, Q-learning, policy gradients, Deep Q-Networks, and training a game-playing agent.", "provider": "PathMind Academy", "type": "course", "difficulty": "advanced", "duration_hours": 18, "url": "https://learn.pathmind.ai/reinforcement-learning", "skills_taught": ["deep-learning-frameworks", "ml-fundamentals"], "prerequisite_skills": ["deep-learning-frameworks", "probability"], "tags": ["reinforcement-learning", "rl", "q-learning", "deep-learning"], "rating": 4.7, "is_project": false, "has_assessment": true
+  },
+  {
+    "id": "res-090", "title": "Build a Personal Portfolio Website", "description": "Design and ship a professional portfolio with React, animations, dark mode, and Vercel deployment.", "provider": "PathMind Projects", "type": "project", "difficulty": "beginner", "duration_hours": 8, "url": "https://learn.pathmind.ai/projects/portfolio", "skills_taught": ["react-basics", "html-css"], "prerequisite_skills": ["react-basics"], "tags": ["portfolio", "react", "frontend", "project"], "rating": 4.6, "is_project": true, "has_assessment": false
+  }
+]

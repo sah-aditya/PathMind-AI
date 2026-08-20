@@ -1,0 +1,144 @@
+{
+  "machine-learning-engineer": {
+    "title": "Machine Learning Engineer",
+    "description": "Build, train, evaluate, and deploy ML models in production systems.",
+    "required_skills": [
+      "python-intermediate", "python-advanced",
+      "linear-algebra", "calculus", "probability", "statistics",
+      "numpy", "pandas", "eda", "feature-engineering",
+      "ml-fundamentals", "regression", "classification", "clustering",
+      "model-evaluation", "ensemble-methods", "hyperparameter-tuning",
+      "neural-networks", "deep-learning-frameworks",
+      "mlflow", "docker", "model-deployment", "fastapi-deployment"
+    ],
+    "optional_skills": ["ci-cd-ml", "cloud-ml"],
+    "typical_path_weeks": 16,
+    "phases": ["Foundations", "Core ML", "Advanced ML", "Deep Learning", "MLOps", "Capstone Project"]
+  },
+  "data-scientist": {
+    "title": "Data Scientist",
+    "description": "Extract insights from data using statistical methods and ML models.",
+    "required_skills": [
+      "python-intermediate",
+      "sql-basics", "sql-advanced",
+      "probability", "statistics",
+      "numpy", "pandas", "data-visualization", "eda", "feature-engineering",
+      "ml-fundamentals", "regression", "classification", "clustering",
+      "model-evaluation", "ensemble-methods"
+    ],
+    "optional_skills": ["hyperparameter-tuning", "neural-networks"],
+    "typical_path_weeks": 14,
+    "phases": ["Python & SQL", "Statistics", "Data Analysis", "Machine Learning", "Capstone Project"]
+  },
+  "deep-learning-engineer": {
+    "title": "Deep Learning Engineer",
+    "description": "Design and train deep neural networks for perception and generation tasks.",
+    "required_skills": [
+      "python-advanced",
+      "linear-algebra", "calculus", "probability", "statistics",
+      "numpy", "ml-fundamentals",
+      "neural-networks", "deep-learning-frameworks",
+      "cnn", "rnn-lstm", "transformers", "transfer-learning"
+    ],
+    "optional_skills": ["llm-fundamentals", "computer-vision"],
+    "typical_path_weeks": 20,
+    "phases": ["Python & Math", "ML Foundations", "Neural Networks", "CNN & Vision", "Transformers", "Capstone Project"]
+  },
+  "nlp-engineer": {
+    "title": "NLP Engineer",
+    "description": "Build systems that understand and generate natural language using ML.",
+    "required_skills": [
+      "python-intermediate",
+      "probability", "statistics",
+      "numpy", "pandas",
+      "ml-fundamentals", "classification",
+      "nlp-basics", "nlp-advanced",
+      "deep-learning-frameworks", "rnn-lstm", "transformers",
+      "llm-fundamentals", "prompt-engineering"
+    ],
+    "optional_skills": ["rag", "fine-tuning"],
+    "typical_path_weeks": 18,
+    "phases": ["Python & ML", "Classical NLP", "Deep NLP", "Transformers & LLMs", "Capstone Project"]
+  },
+  "generative-ai-engineer": {
+    "title": "Generative AI Engineer",
+    "description": "Build applications leveraging LLMs, RAG, fine-tuning, and multimodal AI.",
+    "required_skills": [
+      "python-intermediate",
+      "ml-fundamentals",
+      "transformers", "llm-fundamentals",
+      "prompt-engineering", "rag", "fine-tuning",
+      "fastapi-deployment"
+    ],
+    "optional_skills": ["deep-learning-frameworks", "model-deployment"],
+    "typical_path_weeks": 12,
+    "phases": ["Python & ML Basics", "LLM Fundamentals", "Prompt Engineering & RAG", "Fine-tuning", "Capstone Project"]
+  },
+  "computer-vision-engineer": {
+    "title": "Computer Vision Engineer",
+    "description": "Build systems that understand images and video using deep learning.",
+    "required_skills": [
+      "python-intermediate", "python-advanced",
+      "linear-algebra", "probability",
+      "numpy", "ml-fundamentals",
+      "deep-learning-frameworks", "cnn",
+      "computer-vision", "cv-advanced",
+      "transfer-learning"
+    ],
+    "optional_skills": ["model-deployment", "docker"],
+    "typical_path_weeks": 18,
+    "phases": ["Python & Math", "ML Basics", "Deep Learning", "Computer Vision", "Advanced CV", "Capstone Project"]
+  },
+  "full-stack-developer": {
+    "title": "Full-Stack Developer",
+    "description": "Build end-to-end web applications: frontend UIs and backend APIs.",
+    "required_skills": [
+      "html-css", "javascript-basics", "javascript-advanced",
+      "react-basics", "react-advanced",
+      "nodejs-express", "sql-basics", "databases-web",
+      "git-basics", "docker", "fullstack-deployment"
+    ],
+    "optional_skills": ["sql-advanced"],
+    "typical_path_weeks": 16,
+    "phases": ["Web Basics", "Frontend (React)", "Backend (Node.js)", "Databases", "Deployment", "Capstone Project"]
+  },
+  "data-analyst": {
+    "title": "Data Analyst",
+    "description": "Analyze datasets, build dashboards, and communicate insights from data.",
+    "required_skills": [
+      "python-basics", "python-intermediate",
+      "sql-basics", "sql-advanced",
+      "probability", "statistics",
+      "numpy", "pandas", "data-visualization", "eda"
+    ],
+    "optional_skills": ["power-bi", "tableau"],
+    "typical_path_weeks": 10,
+    "phases": ["Python Basics", "SQL Mastery", "Statistics", "Data Analysis & Visualization", "Capstone Project"]
+  },
+  "mlops-engineer": {
+    "title": "MLOps Engineer",
+    "description": "Deploy, monitor, and maintain ML systems in production at scale.",
+    "required_skills": [
+      "python-intermediate",
+      "ml-fundamentals",
+      "git-basics", "linux-basics",
+      "docker", "fastapi-deployment", "model-deployment",
+      "mlflow", "ci-cd-ml", "cloud-ml"
+    ],
+    "optional_skills": ["aws-fundamentals"],
+    "typical_path_weeks": 14,
+    "phases": ["Python & ML Basics", "Linux & Git", "Docker & APIs", "ML Deployment", "MLflow & CI/CD", "Cloud ML"]
+  },
+  "cybersecurity-analyst": {
+    "title": "Cybersecurity Analyst",
+    "description": "Monitor, detect, and respond to security threats in digital systems.",
+    "required_skills": [
+      "networking-basics", "linux-basics",
+      "python-basics", "python-intermediate",
+      "cybersecurity-basics", "ethical-hacking"
+    ],
+    "optional_skills": ["sql-basics"],
+    "typical_path_weeks": 12,
+    "phases": ["Networking & Linux", "Python for Security", "Cybersecurity Fundamentals", "Ethical Hacking", "Capstone Project"]
+  }
+}
