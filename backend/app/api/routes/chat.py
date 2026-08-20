@@ -39,7 +39,7 @@ async def send_message(
         user_id=current_user.id,
         role="user",
         content=payload.message,
-        metadata={"phase": payload.phase},
+        msg_metadata={"phase": payload.phase},
     )
     db.add(user_msg)
     db.flush()
@@ -89,7 +89,7 @@ async def send_message(
         user_id=current_user.id,
         role="assistant",
         content=reply,
-        metadata={"phase": payload.phase, "profile_ready": profile_ready},
+        msg_metadata={"phase": payload.phase, "profile_ready": profile_ready},
     )
     db.add(assistant_msg)
     db.commit()
@@ -110,7 +110,7 @@ def get_chat_history(
 ):
     query = db.query(ChatMessage).filter(ChatMessage.user_id == current_user.id)
     if phase:
-        query = query.filter(ChatMessage.metadata["phase"].astext == phase)
+        query = query.filter(ChatMessage.msg_metadata["phase"].astext == phase)
     messages = query.order_by(ChatMessage.created_at.asc()).limit(limit).all()
     return [
         {

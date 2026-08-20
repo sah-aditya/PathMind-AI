@@ -17,7 +17,7 @@ from app.models.profile import LearnerProfile, LearnerSkill
 def create_tables():
     print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
-    print("✅ Tables created.")
+    print("[OK] Tables created.")
 
 
 def seed_demo_user(db):
@@ -63,7 +63,7 @@ def seed_demo_user(db):
         ))
 
     db.commit()
-    print(f"✅ Demo user created: demo@pathmind.ai / Demo@1234")
+    print("[OK] Demo user created: demo@pathmind.ai / Demo@1234")
 
 
 if __name__ == "__main__":
@@ -73,4 +73,4 @@ if __name__ == "__main__":
         seed_demo_user(db)
     finally:
         db.close()
-    print("✅ Seed complete.")
+    print("[OK] Seed complete.")

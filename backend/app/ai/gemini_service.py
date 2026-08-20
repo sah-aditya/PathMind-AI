@@ -17,7 +17,7 @@ import google.generativeai as genai
 from app.core.config import settings
 
 genai.configure(api_key=settings.GEMINI_API_KEY)
-_model = genai.GenerativeModel("gemini-1.5-flash")
+_model = genai.GenerativeModel("gemini-flash-latest")
 
 # ─────────────────────────────────────────────
 # System Prompts

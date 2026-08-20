@@ -118,7 +118,7 @@ class ChatMessage(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     role = Column(String(20), nullable=False)  # user | assistant
     content = Column(Text, nullable=False)
-    metadata = Column(JSON, default=dict)      # {"phase": "onboarding", "extracted_profile": {...}}
+    msg_metadata = Column(JSON, default=dict)  # {"phase": "onboarding", "extracted_profile": {...}}
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="chat_messages")
