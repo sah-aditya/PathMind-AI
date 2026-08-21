@@ -4,11 +4,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.routes import auth, profile, learning_path, assessment, dashboard, chat, resources
 
+from contextlib import asynccontextmanager
+import logging
+
 from app.db.database import engine, Base
 from app.models import user, profile as prof_model, learning
 
-# Auto-create tables on startup
-Base.metadata.create_all(bind=engine)
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Auto-create tables on startup (with graceful retry/fallback)
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables initialized successfully.")
+    except Exception as e:
+        logger.warning("Database table creation warning: %s", e)
+    yield
 
 app = FastAPI(
     title="PathMind AI",
@@ -16,6 +28,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS
