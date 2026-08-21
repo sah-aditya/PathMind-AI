@@ -2,50 +2,75 @@
 Gemini AI Service
 =================
 Handles all LLM interactions:
-1. Conversational profile building (multi-turn chat → structured profile)
+1. Conversational profile building (multi-turn chat -> structured profile)
 2. Recommendation explanation generation
 3. Adaptive change notifications
 4. General Q&A assistant (with learner context)
 
-Model: gemini-1.5-flash (free tier)
+Uses a resilient multi-model cascade (gemini-flash-lite-latest, gemini-3.1-flash-lite, etc.)
+with smart fallbacks to handle free-tier rate limits gracefully.
 """
 import json
 import re
+import logging
 from typing import Dict, List, Optional
 
 import google.generativeai as genai
 from app.core.config import settings
 
+logger = logging.getLogger(__name__)
+
 genai.configure(api_key=settings.GEMINI_API_KEY)
-_model = genai.GenerativeModel("gemini-flash-latest")
+
+# Cascade of available Gemini models (verified from API list)
+CANDIDATE_MODELS = [
+    "gemini-3.5-flash-lite",  # Fastest, lowest latency
+    "gemini-3.6-flash",       # Stronger reasoning
+    "gemini-flash-lite-latest",  # Latest lite alias
+    "gemini-2.5-flash-lite",  # Fallback
+    "gemini-2.5-flash",       # Heavy fallback
+]
 
 # ─────────────────────────────────────────────
 # System Prompts
 # ─────────────────────────────────────────────
 
-_ONBOARDING_SYSTEM = """You are PathMind AI, a friendly and intelligent learning path advisor.
-Your job is to help a learner discover their learning goal and build a profile through natural conversation.
+_ONBOARDING_SYSTEM = """You are PathMind AI, a friendly AI learning path advisor running a structured ONBOARDING flow.
 
-You need to discover (in a conversational, not interrogative way):
-1. Their primary learning goal (career aspiration)
-2. Current experience level (beginner/intermediate/advanced)
-3. Existing skills they already have (e.g., Python, SQL, JavaScript)
-4. Any courses or resources they've completed
-5. Hours available per week for learning
-6. Specific interests or sub-domains they're excited about
-7. Preferred learning style (videos, reading, hands-on projects, mixed)
+Your ONLY job right now is to collect information to build the learner's profile. 
+DO NOT give learning advice, roadmaps, tutorials, or course recommendations during this phase.
+DO NOT say "Welcome back". DO NOT jump to teaching content.
 
-RULES:
-- Ask ONE question at a time, naturally woven into conversation
-- Be encouraging and warm
-- When you have collected enough info (at least goal + experience + 2 skills), 
-  ALWAYS end your response with the JSON block: ```profile_ready\n{...}\n```
-- The JSON must have keys: goal_text, experience_level (beginner/intermediate/advanced), 
-  known_skills (list), hours_per_week (int), interests (list), learning_style (mixed/video/reading/project)
-- goal_text should be the user's goal in their words
-- If unsure about a field, use a sensible default
+You need to discover (through natural friendly conversation, NOT an interrogation):
+1. Their primary learning goal (career aspiration or skill they want)
+2. Current experience level (beginner / intermediate / advanced)
+3. Existing skills they already have (e.g., Python, SQL, HTML)
+4. Hours available per week for studying
+5. Specific interests or sub-domains they're excited about
+6. Preferred learning style (videos, reading, hands-on projects, or mixed)
 
-Current conversation context: ONBOARDING"""
+CRITICAL RULES — follow these exactly:
+- Ask EXACTLY ONE question per response. Never ask two questions at once.
+- Keep responses SHORT — 2-4 sentences max until profile_ready.
+- Be warm, encouraging, and conversational.
+- After receiving the user's FIRST message, acknowledge their goal warmly and ask about their experience level.
+- After ~4 exchanges (once you have goal + experience + skills + hours), emit the profile_ready JSON block.
+- When you have enough info, end your FINAL response with this EXACT block:
+
+```profile_ready
+{
+  "goal_text": "<user's goal in their words>",
+  "experience_level": "<beginner|intermediate|advanced>",
+  "known_skills": ["<skill-id-1>", "<skill-id-2>"],
+  "hours_per_week": <int>,
+  "interests": ["<interest-1>", "<interest-2>"],
+  "learning_style": "<mixed|video|reading|project>"
+}
+```
+
+If unsure about a field, use a sensible default. Use snake_case hyphenated skill IDs like: python-basics, sql, javascript, machine-learning, deep-learning, data-science, web-development, etc.
+
+Current phase: ONBOARDING — profile collection only."""
 
 _EXPLANATION_SYSTEM = """You are PathMind AI, an expert learning advisor.
 Explain in 2-3 sentences (friendly, not technical jargon) WHY a specific learning resource 
@@ -67,6 +92,27 @@ Be specific about what changed and why. Keep it under 100 words. Be encouraging.
 
 
 # ─────────────────────────────────────────────
+# Helper: Resilient Multi-Model Generation
+# ─────────────────────────────────────────────
+
+def _generate_with_fallback(prompt: str) -> str:
+    """Try candidate models in sequence until one succeeds."""
+    last_error = None
+    for model_name in CANDIDATE_MODELS:
+        try:
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(prompt)
+            if response and response.text:
+                return response.text.strip()
+        except Exception as e:
+            logger.warning("Model %s failed: %s", model_name, e)
+            last_error = e
+
+    logger.error("All Gemini models failed: %s", last_error)
+    raise last_error or RuntimeError("Failed to generate content from any model")
+
+
+# ─────────────────────────────────────────────
 # Onboarding Chat
 # ─────────────────────────────────────────────
 
@@ -75,48 +121,124 @@ async def chat_onboarding(
     user_message: str,
 ) -> Dict:
     """
-    Multi-turn onboarding conversation.
+    Multi-turn onboarding conversation with multi-model cascade & resilient fallbacks.
     Returns: {reply: str, profile_ready: bool, profile: dict|None}
+
+    FIX: system_instruction is now passed as a proper GenerativeModel parameter
+    instead of being injected inline into the user message (which Gemini ignores).
     """
     # Build conversation history for Gemini
+    # Include a priming model turn so the assistant "remembers" its role in follow-ups
     history = []
-    for msg in messages:
-        role = "user" if msg["role"] == "user" else "model"
-        history.append({"role": role, "parts": [msg["content"]]})
 
-    chat = _model.start_chat(history=history)
+    if messages:
+        # Inject a priming first-turn pair so the model stays in character
+        history.append({
+            "role": "user",
+            "parts": ["Begin the learner onboarding session now."],
+        })
+        history.append({
+            "role": "model",
+            "parts": [
+                "👋 Hi! I'm PathMind AI. I'm here to build your personalized learning roadmap.\n\n"
+                "Let's start simple — **what do you want to achieve?** For example:\n"
+                "- \"I want to become a Machine Learning Engineer\"\n"
+                "- \"I want to learn full-stack web development\"\n\nTell me in your own words!"
+            ],
+        })
+        for msg in messages:
+            role = "user" if msg["role"] == "user" else "model"
+            history.append({"role": role, "parts": [msg["content"]]})
 
-    # Prepend system context to first message if no history
-    if not history:
-        prompt = f"{_ONBOARDING_SYSTEM}\n\nUser: {user_message}"
-    else:
-        prompt = user_message
+    reply = None
+    for model_name in CANDIDATE_MODELS:
+        try:
+            # ✅ FIXED: system_instruction is the proper way to set persistent context
+            model = genai.GenerativeModel(
+                model_name=model_name,
+                system_instruction=_ONBOARDING_SYSTEM,
+            )
+            chat = model.start_chat(history=history)
+            response = chat.send_message(user_message)
+            if response and response.text:
+                reply = response.text
+                break
+        except Exception as e:
+            logger.warning("Onboarding chat with %s failed: %s", model_name, e)
 
-    response = chat.send_message(prompt)
-    reply = response.text
+    # Smart fallback if all API calls hit temporary quotas
+    if not reply:
+        reply = _heuristic_onboarding_reply(messages, user_message)
 
-    # Check if profile is ready
+    # ── Profile ready detection ──────────────────────────────────────────
+    # Require at least 3 prior user turns before accepting profile_ready.
+    # This prevents the model from short-circuiting the onboarding flow on
+    # the very first message even when the user mentions their skills upfront.
+    MIN_USER_TURNS_BEFORE_READY = 3
+    prior_user_turns = len([m for m in messages if m.get("role") == "user"])
+
     profile = None
     profile_ready = False
 
-    if "```profile_ready" in reply:
+    if "```profile_ready" in reply and prior_user_turns >= MIN_USER_TURNS_BEFORE_READY:
         try:
             match = re.search(r"```profile_ready\s*\n(.*?)\n```", reply, re.DOTALL)
             if match:
                 profile_json = match.group(1).strip()
                 profile = json.loads(profile_json)
                 profile_ready = True
-                # Clean reply to not show raw JSON to user
+                # Strip raw JSON block from the visible reply
                 reply = reply[:reply.index("```profile_ready")].strip()
                 reply += "\n\n✅ **I have everything I need to generate your personalized learning path!**"
         except (json.JSONDecodeError, Exception):
             pass
+    elif "```profile_ready" in reply and prior_user_turns < MIN_USER_TURNS_BEFORE_READY:
+        # Too early — strip the profile block and ask the next missing question instead
+        reply = reply[:reply.index("```profile_ready")].strip()
+        reply += "\n\n" + _heuristic_onboarding_reply(messages, user_message)
 
     return {
         "reply": reply,
         "profile_ready": profile_ready,
         "profile": profile,
     }
+
+
+def _heuristic_onboarding_reply(messages: List[Dict[str, str]], user_msg: str) -> str:
+    """Fallback conversation logic if rate-limited."""
+    user_turn_count = len([m for m in messages if m.get("role") == "user"]) + 1
+    lower_msg = user_msg.lower()
+
+    if user_turn_count == 1:
+        return (
+            f"That's a fantastic career goal! 🚀\n\n"
+            f"To help me tailor the right path for you, how would you describe your current experience level? "
+            f"(Complete beginner, some programming basics, or intermediate developer?)"
+        )
+    elif user_turn_count == 2:
+        return (
+            "Got it! What programming languages or tools do you currently have some familiarity with? "
+            "(For example: Python, SQL, JavaScript, Git, or none at all?)"
+        )
+    elif user_turn_count == 3:
+        return (
+            "Awesome! How many hours per week can you realistically dedicate to learning?"
+        )
+    else:
+        # Ready to generate
+        return (
+            f"Perfect! I have enough information to build your personalized roadmap.\n\n"
+            f"```profile_ready\n"
+            f'{{\n'
+            f'  "goal_text": "{user_msg.replace(chr(34), "")}",\n'
+            f'  "experience_level": "beginner",\n'
+            f'  "known_skills": ["python-basics"],\n'
+            f'  "hours_per_week": 8,\n'
+            f'  "interests": ["machine-learning", "web-development"],\n'
+            f'  "learning_style": "mixed"\n'
+            f'}}\n'
+            f"```"
+        )
 
 
 # ─────────────────────────────────────────────
@@ -142,7 +264,7 @@ def generate_explanation(
             f"Be supportive, not discouraging."
         )
     else:
-        top_factor = max(score_breakdown, key=score_breakdown.get)
+        top_factor = max(score_breakdown, key=score_breakdown.get) if score_breakdown else "goal_relevance"
         factor_names = {
             "goal_relevance": "directly contributes to their goal",
             "gap_coverage": "covers a key skill gap",
@@ -163,8 +285,14 @@ def generate_explanation(
             f"Write a 2-3 sentence explanation for the learner."
         )
 
-    response = _model.generate_content(prompt)
-    return response.text.strip()
+    try:
+        return _generate_with_fallback(prompt)
+    except Exception:
+        skills_str = ", ".join(skills_taught[:3]) if skills_taught else "core concepts"
+        return (
+            f"This resource is recommended because it focuses on {skills_str}, "
+            f"which directly bridges one of your primary skill gaps for {goal_title}."
+        )
 
 
 # ─────────────────────────────────────────────
@@ -191,8 +319,13 @@ def generate_adaptation_message(
         f"Details: {changes_description}\n\n"
         f"Write a brief, encouraging message (under 100 words) explaining the change."
     )
-    response = _model.generate_content(prompt)
-    return response.text.strip()
+    try:
+        return _generate_with_fallback(prompt)
+    except Exception:
+        return (
+            f"Based on your score of {score_pct}% in {skill_id.replace('-', ' ').title()}, "
+            f"we've adjusted your roadmap to help reinforce key concepts and ensure continuous progress."
+        )
 
 
 # ─────────────────────────────────────────────
@@ -214,16 +347,26 @@ async def answer_question(
         role = "user" if msg["role"] == "user" else "model"
         history.append({"role": role, "parts": [msg["content"]]})
 
-    chat = _model.start_chat(history=history)
-
     prompt = (
         f"{_QA_SYSTEM}\n\n"
         f"Learner Context:\n{context_str}\n\n"
         f"Question: {user_question}"
     )
 
-    response = chat.send_message(prompt)
-    return response.text.strip()
+    for model_name in CANDIDATE_MODELS:
+        try:
+            model = genai.GenerativeModel(model_name)
+            chat = model.start_chat(history=history)
+            response = chat.send_message(prompt)
+            if response and response.text:
+                return response.text.strip()
+        except Exception as e:
+            logger.warning("Q&A with %s failed: %s", model_name, e)
+
+    return (
+        "I'm here to support your learning journey! Based on your goal, remember to focus on the next "
+        "step in your roadmap and take the knowledge checks to reinforce your understanding."
+    )
 
 
 # ─────────────────────────────────────────────
@@ -233,7 +376,6 @@ async def answer_question(
 def extract_profile_from_text(user_description: str) -> Dict:
     """
     Fallback: extract structured profile from a free-text description.
-    Used if the user pastes a long bio instead of chatting.
     """
     prompt = f"""Extract a learner profile from this text and return ONLY valid JSON.
 
@@ -251,13 +393,11 @@ Return JSON with these exact keys:
 
 If a field is unknown, use a sensible default. Return ONLY the JSON, no other text."""
 
-    response = _model.generate_content(prompt)
     try:
-        text = response.text.strip()
-        # Remove markdown code blocks if present
+        text = _generate_with_fallback(prompt)
         text = re.sub(r"```json\s*|\s*```", "", text).strip()
         return json.loads(text)
-    except json.JSONDecodeError:
+    except Exception:
         return {
             "goal_text": user_description[:200],
             "experience_level": "beginner",
@@ -283,9 +423,18 @@ Available goals:
 
 Return only the key of the best match."""
 
-    response = _model.generate_content(prompt)
-    matched = response.text.strip().strip('"').strip("'")
-    if matched in available_goals:
-        return matched
-    # Fallback: return first goal
+    try:
+        text = _generate_with_fallback(prompt)
+        matched = text.strip().strip('"').strip("'")
+        if matched in available_goals:
+            return matched
+    except Exception:
+        pass
+
+    # Keyword match fallback
+    goal_lower = goal_text.lower()
+    for gid in available_goals:
+        if any(w in goal_lower for w in gid.split("-")):
+            return gid
+
     return list(available_goals.keys())[0]

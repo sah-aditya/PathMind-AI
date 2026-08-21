@@ -149,15 +149,34 @@ async def _save_extracted_profile(user_id: int, extracted: dict, db):
 
     # Save known skills
     known_skills = extracted.get("known_skills", [])
+    
+    # Common shorthand mappings
+    alias_map = {
+        "python": "python-basics",
+        "python basics": "python-basics",
+        "sql": "sql-basics",
+        "sql basics": "sql-basics",
+        "js": "javascript-basics",
+        "javascript": "javascript-basics",
+        "git": "git-basics",
+        "math": "linear-algebra",
+        "calculus": "calculus",
+        "statistics": "statistics",
+        "html": "html-css",
+        "css": "html-css",
+    }
+
     for skill_name in known_skills:
-        # Normalize skill name to skill_id
-        skill_id = skill_name.lower().replace(" ", "-")
-        # Check if it exists in our taxonomy (fuzzy match)
-        matched_id = None
-        for sid, sdata in SKILL_BY_ID.items():
-            if skill_id in sid or skill_id in sdata.get("name", "").lower():
-                matched_id = sid
-                break
+        clean_name = str(skill_name).strip().lower()
+        matched_id = alias_map.get(clean_name)
+        
+        if not matched_id:
+            normalized = clean_name.replace(" ", "-")
+            for sid, sdata in SKILL_BY_ID.items():
+                if sid == normalized or normalized in sid or clean_name in sdata.get("name", "").lower():
+                    matched_id = sid
+                    break
+                    
         if matched_id:
             existing = db.query(LearnerSkill).filter(
                 LearnerSkill.user_id == user_id,
@@ -167,8 +186,11 @@ async def _save_extracted_profile(user_id: int, extracted: dict, db):
                 db.add(LearnerSkill(
                     user_id=user_id,
                     skill_id=matched_id,
-                    level=0.70,  # Known skill = 70% mastery assumed
+                    level=0.75,  # Known skill = 75% mastery assumed
                     source="self_assessed",
                 ))
+            else:
+                existing.level = max(existing.level, 0.75)
+                existing.source = "self_assessed"
 
     db.commit()

@@ -3,11 +3,20 @@ Skill Gap Engine
 ================
 Computes the gap between a learner's current skills and those required for their goal.
 Returns a prioritized list of skills to learn, with gap percentages.
+
+ML Upgrade:
+- Prerequisite ordering now uses proper topological sort (Kahn's algorithm BFS)
+  on the skill dependency DAG instead of a simple heuristic sort.
+- This guarantees the mathematically optimal learning sequence:
+  foundations before advanced topics, prerequisites before dependants.
 """
 import json
 import os
+import logging
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 # Load data files once at module level
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
@@ -95,6 +104,12 @@ def compute_skill_gap(
                 )
             )
 
+    # Include all mastered skills (both required by goal and user's existing foundation)
+    all_mastered = [sid for sid, lvl in learner_skills.items() if lvl >= min_mastery]
+    for s in skills_met:
+        if s not in all_mastered:
+            all_mastered.append(s)
+
     # Prioritize by: (1) prerequisite depth, (2) gap size
     _prioritize_gaps(skills_to_learn, required_skills)
 
@@ -106,13 +121,15 @@ def compute_skill_gap(
     )
     estimated_weeks = max(4, min(24, int(total_hours_needed / hours_per_week) + 2))
 
-    overall_readiness = len(skills_met) / len(required_skills) if required_skills else 1.0
+    # Readiness reflects fraction of required competencies or foundation met
+    readiness_sum = sum(min(1.0, learner_skills.get(s, 0.0) / min_mastery) for s in required_skills)
+    overall_readiness = (readiness_sum / len(required_skills)) if required_skills else 1.0
 
     return SkillGapReport(
         goal_id=goal_id,
         goal_title=goal["title"],
         total_required_skills=len(required_skills),
-        skills_already_met=skills_met,
+        skills_already_met=all_mastered,
         skills_to_learn=skills_to_learn,
         overall_readiness=round(overall_readiness, 3),
         estimated_weeks=estimated_weeks,
@@ -121,31 +138,70 @@ def compute_skill_gap(
 
 def _prioritize_gaps(gaps: List[SkillGap], required_skills: List[str]) -> None:
     """
-    Set priority on each gap based on:
-    1. Whether it's a prerequisite for other gap skills (high priority)
-    2. Gap size (larger gap = higher priority = learn first)
+    Set priority on each gap using Kahn's Algorithm (BFS topological sort) on
+    the skill dependency DAG.
+
+    This guarantees that:
+    1. Prerequisites always appear before their dependants
+    2. Within the same "level" of the DAG, larger gaps come first
+    3. Skills with no prerequisites get the lowest priority numbers
+
+    Falls back to the heuristic sort if the graph contains cycles.
     """
-    gap_skill_ids = {g.skill_id for g in gaps}
+    gap_ids = {g.skill_id for g in gaps}
+    gap_by_id = {g.skill_id: g for g in gaps}
 
-    # Mark prerequisites
-    for gap in gaps:
-        deps = SKILL_GRAPH.get(gap.skill_id, {}).get("prerequisites", [])
-        # If any of this skill's prerequisites are also in the gap, it's downstream
-        # The prerequisites themselves should be higher priority
-        for dep in deps:
-            if dep in gap_skill_ids:
-                # Find the dep gap and mark it as a prerequisite (higher priority)
-                for other in gaps:
-                    if other.skill_id == dep:
-                        other.is_prerequisite = True
+    # ── Build the sub-graph restricted to gap skills only ──
+    in_degree: Dict[str, int] = {gid: 0 for gid in gap_ids}
+    adjacency: Dict[str, List[str]] = {gid: [] for gid in gap_ids}
 
-    # Assign priority: prerequisites first, then by gap size
-    sorted_gaps = sorted(gaps, key=lambda g: (-int(g.is_prerequisite), -g.gap))
-    for i, gap in enumerate(sorted_gaps):
-        gap.priority = i + 1
+    for gid in gap_ids:
+        prereqs = SKILL_GRAPH.get(gid, {}).get("prerequisites", [])
+        for p in prereqs:
+            if p in gap_ids:
+                # p must come before gid
+                adjacency[p].append(gid)
+                in_degree[gid] += 1
+                gap_by_id[p].is_prerequisite = True
+
+    # ── Kahn's BFS ──
+    from collections import deque
+    # Start with nodes that have no prerequisites within the gap set
+    queue = deque(
+        sorted(
+            [gid for gid, deg in in_degree.items() if deg == 0],
+            key=lambda gid: -gap_by_id[gid].gap,  # break ties by gap size
+        )
+    )
+
+    topo_order: List[str] = []
+    while queue:
+        node = queue.popleft()
+        topo_order.append(node)
+        for neighbour in sorted(adjacency[node], key=lambda n: -gap_by_id[n].gap):
+            in_degree[neighbour] -= 1
+            if in_degree[neighbour] == 0:
+                queue.append(neighbour)
+
+    if len(topo_order) == len(gap_ids):
+        # Successful topological sort — assign priorities in order
+        priority_map = {sid: i + 1 for i, sid in enumerate(topo_order)}
+        for gap in gaps:
+            gap.priority = priority_map.get(gap.skill_id, len(gaps))
+    else:
+        # Cycle detected (shouldn't happen with a well-formed graph) — fall back
+        logger.warning("Skill graph has a cycle — falling back to heuristic priority")
+        _heuristic_prioritize(gaps)
 
     # Re-sort the original list in place
     gaps.sort(key=lambda g: g.priority)
+
+
+def _heuristic_prioritize(gaps: List[SkillGap]) -> None:
+    """Simple heuristic fallback: prerequisites first, then by gap size."""
+    sorted_gaps = sorted(gaps, key=lambda g: (-int(g.is_prerequisite), -g.gap))
+    for i, gap in enumerate(sorted_gaps):
+        gap.priority = i + 1
 
 
 def get_skill_prerequisites_chain(skill_id: str, depth: int = 0, max_depth: int = 5) -> List[str]:

@@ -4,71 +4,100 @@ import { useNavigate } from 'react-router-dom'
 import { pathApi } from '../services/api'
 import {
   ChevronDown, ChevronRight, Clock, Star, CheckCircle, PlayCircle,
-  BookOpen, Wrench, ClipboardList, Lock, Loader2, Map, AlertCircle, RefreshCw
+  BookOpen, Wrench, ClipboardList, Lock, Loader2, Map,
+  AlertTriangle, RefreshCw, Flag, Zap, ArrowRight,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-const TYPE_ICON = { course: BookOpen, project: Wrench, assessment: ClipboardList }
-const TYPE_CLASS = { course: 'type-course', project: 'type-project', assessment: 'type-assessment' }
-const DIFF_CLASS = { beginner: 'pill-beginner', intermediate: 'pill-intermediate', advanced: 'pill-advanced' }
+/* ── Constants ────────────────────────────────────────── */
+const TYPE_ICON   = { course: BookOpen, project: Wrench, assessment: ClipboardList }
+const TYPE_CLASS  = { course: 'badge-blue', project: 'badge-purple', assessment: 'badge-yellow' }
+const DIFF_CLASS  = { beginner: 'badge-green', intermediate: 'badge-yellow', advanced: 'badge-red' }
+
 const STATUS_CONFIG = {
-  pending:     { label: 'Not started', color: 'text-gray-500',   bg: 'bg-gray-700/30' },
-  in_progress: { label: 'In progress', color: 'text-amber-400',  bg: 'bg-amber-900/20' },
-  completed:   { label: 'Completed',   color: 'text-emerald-400', bg: 'bg-emerald-900/20' },
-  skipped:     { label: 'Skipped',     color: 'text-gray-600',   bg: 'bg-gray-800/20' },
+  pending:     { label: 'Not started', dot: 'bg-slate-300',   text: 'text-text-muted' },
+  in_progress: { label: 'In progress', dot: 'bg-amber-400',   text: 'text-amber-600' },
+  completed:   { label: 'Completed',   dot: 'bg-emerald-500', text: 'text-emerald-600' },
+  skipped:     { label: 'Skipped',     dot: 'bg-slate-300',   text: 'text-text-muted' },
 }
 
+/* ── Resource card ────────────────────────────────────── */
 function ResourceCard({ item, onStatusChange, onOpen }) {
   const Icon = TYPE_ICON[item.type] || BookOpen
-  const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.pending
-  const isCompleted = item.status === 'completed'
-  const isRevision = item.is_revision
+  const cfg  = STATUS_CONFIG[item.status] || STATUS_CONFIG.pending
+  const isCompleted  = item.status === 'completed'
+  const isInProgress = item.status === 'in_progress'
+  const isRevision   = item.is_revision
 
   return (
     <div
-      className={`glass-hover rounded-xl p-4 cursor-pointer border transition-all duration-200 ${
-        isCompleted ? 'border-emerald-700/30' : isRevision ? 'border-amber-700/30' : 'border-white/5'
-      }`}
       onClick={() => onOpen(item)}
+      className={`
+        group relative bg-white border rounded-xl p-4 cursor-pointer
+        transition-all duration-200 hover:shadow-card-md hover:-translate-y-0.5
+        ${isCompleted  ? 'border-emerald-200 bg-emerald-50/40' : ''}
+        ${isInProgress ? 'border-amber-200 bg-amber-50/30' : ''}
+        ${isRevision && !isCompleted ? 'border-amber-200' : ''}
+        ${!isCompleted && !isInProgress ? 'border-surface-200' : ''}
+      `}
     >
-      <div className="flex items-start gap-3">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          isCompleted ? 'bg-emerald-900/40' : 'bg-brand-900/40'
-        }`}>
+      {/* Left accent bar */}
+      <div className={`
+        absolute left-0 inset-y-0 w-1 rounded-l-xl
+        ${isCompleted ? 'bg-emerald-400' : isInProgress ? 'bg-amber-400' : 'bg-transparent group-hover:bg-brand-400'}
+        transition-colors
+      `} />
+
+      <div className="flex items-start gap-3 pl-2">
+        {/* Icon */}
+        <div className={`
+          w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5
+          ${isCompleted ? 'bg-emerald-100 text-emerald-600' : 'bg-brand-50 text-brand-600'}
+        `}>
           {isCompleted
-            ? <CheckCircle className="w-4.5 h-4.5 text-emerald-400" />
-            : <Icon className="w-4 h-4 text-brand-400" />
+            ? <CheckCircle className="w-4 h-4" />
+            : <Icon className="w-4 h-4" />
           }
         </div>
+
+        {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <p className={`text-sm font-medium leading-tight ${isCompleted ? 'text-gray-400 line-through' : 'text-white'}`}>
+          <div className="flex items-start justify-between gap-2 mb-1.5">
+            <p className={`text-sm font-semibold leading-tight ${isCompleted ? 'text-text-muted line-through' : 'text-text-primary'}`}>
               {item.title}
             </p>
-            {isRevision && <span className="badge badge-yellow flex-shrink-0">Revision</span>}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {isRevision && <span className="badge badge-yellow">Revision</span>}
+              <span className={`flex items-center gap-1 text-xs font-medium ${cfg.text}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                {cfg.label}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 mt-1.5">
+
+          <div className="flex flex-wrap items-center gap-2">
             <span className={`badge ${TYPE_CLASS[item.type] || 'badge-gray'}`}>{item.type}</span>
             <span className={`badge ${DIFF_CLASS[item.difficulty] || 'badge-gray'}`}>{item.difficulty}</span>
-            {item.has_assessment && <span className="badge badge-purple">Assessment</span>}
-            <span className="flex items-center gap-1 text-xs text-gray-500">
+            {item.has_assessment && <span className="badge badge-indigo">Assessment</span>}
+            <span className="flex items-center gap-1 text-xs text-text-muted">
               <Clock className="w-3 h-3" /> {item.duration_hours}h
             </span>
             {item.rating && (
-              <span className="flex items-center gap-1 text-xs text-amber-400">
+              <span className="flex items-center gap-1 text-xs text-amber-500">
                 <Star className="w-3 h-3 fill-amber-400" /> {item.rating}
               </span>
             )}
           </div>
         </div>
       </div>
-      {/* Quick action */}
+
+      {/* Action row */}
       {!isCompleted && (
-        <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-2 mt-3 pl-11" onClick={e => e.stopPropagation()}>
           {item.status === 'pending' && (
             <button
               onClick={() => onStatusChange(item.id, 'in_progress')}
-              className="btn-ghost text-xs py-1 px-3 text-brand-400 hover:bg-brand-900/30"
+              className="btn-secondary text-xs py-1.5 px-3"
             >
               <PlayCircle className="w-3 h-3" /> Start
             </button>
@@ -76,7 +105,8 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
           {item.status === 'in_progress' && (
             <button
               onClick={() => onStatusChange(item.id, 'completed')}
-              className="btn-ghost text-xs py-1 px-3 text-emerald-400 hover:bg-emerald-900/30"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg
+                         bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
             >
               <CheckCircle className="w-3 h-3" /> Mark complete
             </button>
@@ -87,103 +117,148 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
   )
 }
 
-function PhaseAccordion({ phase, onStatusChange, onOpen, defaultOpen }) {
+/* ── Phase accordion ──────────────────────────────────── */
+function PhaseAccordion({ phase, onStatusChange, onOpen, defaultOpen, isLast }) {
   const [open, setOpen] = useState(defaultOpen)
-  const progress = phase.items_total > 0 ? (phase.items_completed / phase.items_total) * 100 : 0
-  const isLocked = phase.status === 'locked'
+  const progress  = phase.items_total > 0 ? (phase.items_completed / phase.items_total) * 100 : 0
+  const isLocked  = phase.status === 'locked'
+  const isDone    = phase.items_completed === phase.items_total && phase.items_total > 0
 
   return (
-    <div className={`card mb-4 ${isLocked ? 'opacity-60' : ''}`}>
-      <button
-        className="w-full flex items-center gap-4 text-left"
-        onClick={() => !isLocked && setOpen(!open)}
-      >
-        {isLocked ? (
-          <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center flex-shrink-0">
-            <Lock className="w-4 h-4 text-gray-600" />
-          </div>
-        ) : (
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600/30 to-purple-600/30 border border-brand-600/20 flex items-center justify-center flex-shrink-0 text-sm font-bold text-brand-300">
-            {phase.phase_number}
-          </div>
+    <div className="relative flex gap-4">
+      {/* Timeline column */}
+      <div className="flex flex-col items-center flex-shrink-0 w-10">
+        {/* Phase circle */}
+        <div className={`
+          w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black z-10
+          ${isLocked ? 'bg-surface-200 text-text-muted' : isDone ? 'bg-emerald-500 text-white' : 'bg-brand-600 text-white shadow-brand-sm'}
+        `}>
+          {isLocked ? <Lock className="w-4 h-4" /> : isDone ? <CheckCircle className="w-4 h-4" /> : phase.phase_number}
+        </div>
+        {/* Connector */}
+        {!isLast && (
+          <div className="flex-1 w-0.5 bg-surface-200 mt-2 mb-0 min-h-[24px]" />
         )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-white text-sm">{phase.title}</h3>
-            <div className="flex items-center gap-2 ml-2">
-              <span className="text-xs text-gray-500">Week {phase.week_start}–{phase.week_end}</span>
-              {!isLocked && (open ? <ChevronDown className="w-4 h-4 text-gray-500" /> : <ChevronRight className="w-4 h-4 text-gray-500" />)}
-            </div>
-          </div>
-          {!isLocked && (
-            <div className="flex items-center gap-3 mt-1.5">
-              <div className="progress-bar flex-1">
-                <div className="progress-fill" style={{ width: `${progress}%` }} />
+      </div>
+
+      {/* Card */}
+      <div className={`flex-1 mb-6 ${isLocked ? 'opacity-60' : ''}`}>
+        <div className="card shadow-card">
+          {/* Phase header */}
+          <button
+            className="w-full flex items-start gap-3 text-left"
+            onClick={() => !isLocked && setOpen(!open)}
+            disabled={isLocked}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-bold text-text-primary text-sm leading-tight">{phase.title}</h3>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs text-text-muted">
+                    Week {phase.week_start}–{phase.week_end}
+                  </span>
+                  {!isLocked && (
+                    open
+                      ? <ChevronDown className="w-4 h-4 text-text-muted" />
+                      : <ChevronRight className="w-4 h-4 text-text-muted" />
+                  )}
+                </div>
               </div>
-              <span className="text-xs text-gray-500 flex-shrink-0">
-                {phase.items_completed}/{phase.items_total}
-              </span>
+
+              {!isLocked && (
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="progress-bar flex-1 h-1.5">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${isDone ? 'bg-emerald-500' : 'bg-brand-500'}`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-text-muted flex-shrink-0 font-medium">
+                    {phase.items_completed}/{phase.items_total}
+                  </span>
+                  {isDone && <span className="badge badge-green">Done</span>}
+                </div>
+              )}
+            </div>
+          </button>
+
+          {/* Expanded content */}
+          {open && !isLocked && (
+            <div className="mt-4 pt-4 border-t border-surface-200 space-y-2">
+              {phase.description && (
+                <p className="text-xs text-text-muted mb-3 pb-2">{phase.description}</p>
+              )}
+              {phase.items.map(item => (
+                <ResourceCard
+                  key={item.id}
+                  item={item}
+                  onStatusChange={onStatusChange}
+                  onOpen={onOpen}
+                />
+              ))}
             </div>
           )}
         </div>
-      </button>
-
-      {open && !isLocked && (
-        <div className="mt-4 space-y-2 border-t border-white/5 pt-4">
-          {phase.description && <p className="text-xs text-gray-500 mb-3">{phase.description}</p>}
-          {phase.items.map((item) => (
-            <ResourceCard key={item.id} item={item} onStatusChange={onStatusChange} onOpen={onOpen} />
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   )
 }
 
+/* ── Main Roadmap page ────────────────────────────────── */
 export default function Roadmap() {
-  const navigate = useNavigate()
-  const qc = useQueryClient()
+  const navigate  = useNavigate()
+  const qc        = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['active-path'],
-    queryFn: () => pathApi.getActive().then(r => r.data.path),
+    queryFn:  () => pathApi.getActive().then(r => r.data.path),
   })
 
   const statusMutation = useMutation({
     mutationFn: ({ itemId, status }) => pathApi.updateItemStatus(itemId, status),
-    onSuccess: () => {
-      qc.invalidateQueries(['active-path'])
-      qc.invalidateQueries(['dashboard'])
-    },
-    onError: () => toast.error('Failed to update status'),
+    onSuccess:  () => { qc.invalidateQueries(['active-path']); qc.invalidateQueries(['dashboard']) },
+    onError:    () => toast.error('Failed to update status'),
   })
 
   const generateMutation = useMutation({
     mutationFn: () => pathApi.generate(),
-    onSuccess: () => {
-      qc.invalidateQueries(['active-path'])
-      toast.success('Learning path generated!')
-    },
-    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to generate path'),
+    onSuccess:  () => { qc.invalidateQueries(['active-path']); toast.success('Learning path generated!') },
+    onError:    err => toast.error(err.response?.data?.detail || 'Failed to generate path'),
   })
 
+  /* ── Loading ── */
   if (isLoading) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Loader2 className="w-8 h-8 animate-spin text-brand-400" />
+    <div className="flex items-center justify-center min-h-[calc(100vh-65px)]">
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-500 mx-auto mb-3" />
+        <p className="text-text-secondary text-sm">Loading your roadmap…</p>
+      </div>
     </div>
   )
 
+  /* ── Empty state ── */
   if (!data) return (
-    <div className="flex items-center justify-center min-h-screen px-4">
-      <div className="card text-center max-w-sm">
-        <Map className="w-10 h-10 text-brand-400 mx-auto mb-3" />
-        <h2 className="font-bold text-white mb-2">No active path found</h2>
-        <p className="text-gray-400 text-sm mb-4">Complete onboarding first, then generate your roadmap.</p>
-        <div className="flex flex-col gap-2">
-          <button onClick={() => navigate('/onboarding')} className="btn-primary justify-center">Start Onboarding</button>
-          <button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending} className="btn-secondary justify-center">
-            {generateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            Generate Path
+    <div className="flex items-center justify-center min-h-[calc(100vh-65px)] px-4">
+      <div className="card text-center max-w-sm w-full shadow-card-lg">
+        <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-4">
+          <Map className="w-7 h-7 text-brand-600" />
+        </div>
+        <h2 className="font-bold text-text-primary text-lg mb-2">No active path yet</h2>
+        <p className="text-text-secondary text-sm mb-6">
+          Complete onboarding first, then generate your ML-powered roadmap.
+        </p>
+        <div className="space-y-2">
+          <button onClick={() => navigate('/onboarding')} className="btn-primary w-full justify-center">
+            Start Onboarding <ArrowRight className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => generateMutation.mutate()}
+            disabled={generateMutation.isPending}
+            className="btn-secondary w-full justify-center"
+          >
+            {generateMutation.isPending
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+              : <><RefreshCw className="w-4 h-4" /> Generate Path</>}
           </button>
         </div>
       </div>
@@ -194,66 +269,117 @@ export default function Roadmap() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-      {/* Header */}
+
+      {/* ── Header ────────────────────────────────── */}
       <div className="mb-6 animate-fade-in">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-brand-400 text-sm mb-1">
-              <Map className="w-4 h-4" /> Learning Roadmap
+            <div className="flex items-center gap-2 text-xs font-semibold text-brand-600 mb-2 uppercase tracking-wide">
+              <Map className="w-3.5 h-3.5" /> Learning Roadmap
             </div>
-            <h1 className="text-2xl font-bold text-white">{data.title}</h1>
-            <p className="text-gray-400 text-sm mt-1">Week {data.current_week} of {data.total_weeks}</p>
+            <h1 className="text-2xl font-black text-text-primary">{data.title}</h1>
+            <p className="text-text-secondary text-sm mt-1">
+              Week {data.current_week} of {data.total_weeks} · {overallPct}% complete
+            </p>
           </div>
-          <button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}
-            className="btn-ghost text-xs flex-shrink-0">
+          <button
+            onClick={() => generateMutation.mutate()}
+            disabled={generateMutation.isPending}
+            className="btn-ghost text-xs flex-shrink-0"
+          >
             <RefreshCw className={`w-3.5 h-3.5 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
             Regenerate
           </button>
         </div>
 
-        {/* Overall progress */}
-        <div className="card mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400">Overall Progress</span>
-            <span className="text-2xl font-black gradient-text">{overallPct}%</span>
+        {/* Overall progress card */}
+        <div className="card mt-4 shadow-card">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm font-semibold text-text-primary">Overall Progress</p>
+              <p className="text-xs text-text-muted">
+                {data.phases?.filter(p => p.items_completed === p.items_total && p.items_total > 0).length || 0} of {data.phases?.length || 0} phases complete
+              </p>
+            </div>
+            <span className="text-3xl font-black gradient-text">{overallPct}%</span>
           </div>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${overallPct}%` }} />
+          <div className="h-3 bg-surface-200 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all duration-1000"
+              style={{ width: `${overallPct}%` }}
+            />
           </div>
+
           {data.adaptations?.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-white/5">
-              <p className="text-xs text-amber-400 flex items-center gap-1.5">
-                <AlertCircle className="w-3 h-3" />
-                Path adapted {data.adaptations.length} time(s) based on your progress
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-surface-200">
+              <Zap className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+              <p className="text-xs text-amber-600 font-medium">
+                Path adapted {data.adaptations.length} time(s) by AI based on your progress
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Recent adaptations */}
+      {/* ── Recent adaptations ────────────────────── */}
       {data.adaptations?.length > 0 && (
-        <div className="mb-6 space-y-2">
-          {data.adaptations.slice(-2).map((a) => (
-            <div key={a.id} className="card border border-amber-700/30 bg-amber-900/10">
-              <p className="text-xs text-amber-400 font-medium mb-1">🔄 Path Adaptation</p>
-              <p className="text-sm text-gray-300">{a.description}</p>
+        <div className="mb-6 space-y-2 animate-fade-in">
+          {data.adaptations.slice(-2).map(a => (
+            <div key={a.id} className="card border-amber-200 bg-amber-50 flex items-start gap-3 !p-4">
+              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-700 mb-0.5">🔄 Path Adaptation</p>
+                <p className="text-sm text-text-secondary">{a.description}</p>
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Phases */}
+      {/* ── Timeline phases ───────────────────────── */}
       <div className="animate-slide-up">
+        {/* Legend */}
+        <div className="flex items-center gap-4 mb-6 text-xs text-text-muted">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-md bg-brand-600 inline-block" /> Active
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-md bg-emerald-500 inline-block" /> Completed
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-md bg-surface-300 inline-block" /> Locked
+          </span>
+        </div>
+
         {data.phases.map((phase, i) => (
           <PhaseAccordion
             key={phase.id}
             phase={phase}
             defaultOpen={i === 0}
+            isLast={i === data.phases.length - 1}
             onStatusChange={(itemId, status) => statusMutation.mutate({ itemId, status })}
-            onOpen={(item) => navigate(`/resource/${item.resource_id}`, { state: { item, pathItemId: item.id } })}
+            onOpen={item => navigate(`/resource/${item.resource_id}`, { state: { item, pathItemId: item.id } })}
           />
         ))}
+
+        {/* Finish milestone */}
+        <div className="flex gap-4 items-center pl-0">
+          <div className="w-10 flex justify-center">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${overallPct === 100 ? 'bg-emerald-500' : 'bg-surface-200'}`}>
+              <Flag className={`w-4 h-4 ${overallPct === 100 ? 'text-white' : 'text-text-muted'}`} />
+            </div>
+          </div>
+          <div className="card flex-1 border-dashed border-surface-300 bg-surface-50 !py-3 !px-4">
+            <p className="text-sm font-bold text-text-primary">
+              {overallPct === 100 ? '🎉 Goal achieved!' : 'Goal: ' + data.title}
+            </p>
+            <p className="text-xs text-text-muted">
+              {overallPct === 100
+                ? 'Congratulations! You\'ve completed your entire learning roadmap.'
+                : `${100 - overallPct}% remaining — keep going!`}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

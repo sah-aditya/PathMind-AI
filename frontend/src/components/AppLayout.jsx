@@ -1,96 +1,174 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import {
-  LayoutDashboard, Map, GitBranch, LogOut, Brain, MessageCircle, Menu, X
+  LayoutDashboard, Map, GitBranch, LogOut, Brain,
+  MessageCircle, Menu, X, Bell, Settings, ChevronDown
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import ChatOverlay from './ChatOverlay'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/skill-gap',  icon: GitBranch,      label: 'Skill Gap' },
-  { to: '/roadmap',    icon: Map,             label: 'My Roadmap' },
+  { to: '/skill-gap',  icon: GitBranch,       label: 'Skill Gap'  },
+  { to: '/roadmap',    icon: Map,              label: 'My Roadmap' },
 ]
+
+function Avatar({ name, size = 'md' }) {
+  const initials = (name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const sz = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-9 h-9 text-sm'
+  return (
+    <div className={`${sz} rounded-full bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center font-bold text-white flex-shrink-0`}>
+      {initials}
+    </div>
+  )
+}
 
 export default function AppLayout() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const [chatOpen, setChatOpen] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const handleLogout = () => { logout(); navigate('/') }
 
+  const greeting = () => {
+    const h = new Date().getHours()
+    if (h < 12) return 'Good morning'
+    if (h < 18) return 'Good afternoon'
+    return 'Good evening'
+  }
+
   return (
-    <div className="flex min-h-screen bg-[#0a0a14]">
-      {/* Background blobs */}
-      <div className="bg-blob bg-blob-1" />
-      <div className="bg-blob bg-blob-2" />
+    <div className="flex min-h-screen bg-surface">
 
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/60 z-20 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
+      {/* ── Sidebar ── */}
+      <>
+        {/* Mobile backdrop */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/30 z-20 lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
 
-      {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-30 w-64 flex flex-col glass border-r border-white/5 transform transition-transform duration-300
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
-        
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-white/5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center">
-            <Brain className="w-5 h-5 text-white" />
+        <aside className={`
+          fixed lg:static inset-y-0 left-0 z-30
+          w-60 flex flex-col bg-white border-r border-surface-200
+          shadow-card lg:shadow-none
+          transform transition-transform duration-300
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0
+        `}>
+          {/* Logo */}
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-surface-200">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center shadow-brand-sm">
+              <Brain className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="font-bold text-text-primary text-sm leading-tight">PathMind AI</h1>
+              <p className="text-xs text-text-muted">Your learning guide</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold text-white text-sm">PathMind AI</h1>
-            <p className="text-xs text-gray-500">Your learning guide</p>
-          </div>
-        </div>
 
-        {/* Nav */}
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to} to={to}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
+          {/* Nav */}
+          <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider px-3 py-2 mb-1">Menu</p>
+            {navItems.map(({ to, icon: Icon, label }) => (
+              <NavLink
+                key={to} to={to}
+                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {label}
+              </NavLink>
+            ))}
+
+            <div className="pt-4">
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wider px-3 py-2 mb-1">Tools</p>
+              <button
+                onClick={() => { setChatOpen(true); setMobileMenuOpen(false) }}
+                className="nav-item w-full text-left"
+              >
+                <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                AI Assistant
+              </button>
+              <NavLink
+                to="/onboarding"
+                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Brain className="w-4 h-4 flex-shrink-0" />
+                Re-onboard
+              </NavLink>
+            </div>
+          </nav>
+
+          {/* User section */}
+          <div className="p-3 border-t border-surface-200">
+            <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-100 cursor-pointer transition-colors"
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
             >
-              <Icon className="w-4 h-4" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* User + Logout */}
-        <div className="p-4 border-t border-white/5">
-          <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
-              {user?.name?.[0]?.toUpperCase() || 'U'}
+              <Avatar name={user?.name} size="sm" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-text-primary truncate">{user?.name}</p>
+                <p className="text-xs text-text-muted truncate">{user?.email}</p>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+            {userMenuOpen && (
+              <div className="mt-1 py-1 rounded-xl bg-white border border-surface-200 shadow-card-md">
+                <button
+                  onClick={handleLogout}
+                  className="btn-danger w-full justify-start rounded-none px-4 py-2"
+                >
+                  <LogOut className="w-4 h-4" /> Sign out
+                </button>
+              </div>
+            )}
+          </div>
+        </aside>
+      </>
+
+      {/* ── Main Content ── */}
+      <div className="flex-1 flex flex-col min-w-0">
+
+        {/* Top Header */}
+        <header className="bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-card">
+          {/* Left: hamburger (mobile) + greeting */}
+          <div className="flex items-center gap-4">
+            <button
+              className="lg:hidden btn-ghost p-2 -ml-2"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="hidden sm:block">
+              <p className="text-xs text-text-muted">{greeting()},</p>
+              <h2 className="font-bold text-text-primary text-sm leading-tight">
+                {user?.name?.split(' ')[0]} 👋
+              </h2>
             </div>
           </div>
-          <button onClick={handleLogout} className="btn-ghost w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10">
-            <LogOut className="w-4 h-4" /> Sign out
-          </button>
-        </div>
-      </aside>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 relative z-10">
-        {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-white/5 glass">
-          <button onClick={() => setSidebarOpen(true)} className="btn-ghost p-2">
-            <Menu className="w-5 h-5" />
-          </button>
+          {/* Right: actions */}
           <div className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-brand-400" />
-            <span className="font-bold text-sm">PathMind AI</span>
+            <button
+              onClick={() => setChatOpen(true)}
+              className="btn-primary hidden sm:inline-flex"
+            >
+              <MessageCircle className="w-4 h-4" />
+              AI Assistant
+            </button>
+            <button className="btn-ghost p-2 relative">
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-brand-500 rounded-full" />
+            </button>
+            <div className="hidden sm:block">
+              <Avatar name={user?.name} size="sm" />
+            </div>
           </div>
-          <button onClick={() => setChatOpen(true)} className="btn-ghost p-2">
-            <MessageCircle className="w-5 h-5 text-brand-400" />
-          </button>
         </header>
 
         {/* Page content */}
@@ -98,17 +176,6 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
-
-      {/* Floating chat button (desktop) */}
-      <button
-        onClick={() => setChatOpen(true)}
-        className="fixed bottom-6 right-6 z-40 hidden lg:flex items-center gap-2 px-4 py-3 rounded-2xl
-          bg-gradient-to-r from-brand-600 to-purple-600 text-white font-medium shadow-xl
-          hover:shadow-brand-500/40 hover:scale-105 transition-all duration-200"
-      >
-        <MessageCircle className="w-5 h-5" />
-        <span>AI Assistant</span>
-      </button>
 
       {/* Chat overlay */}
       {chatOpen && <ChatOverlay onClose={() => setChatOpen(false)} />}

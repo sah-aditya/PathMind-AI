@@ -1,18 +1,29 @@
 """
 Recommendation Engine
 =====================
-Scores and ranks learning resources for a learner using a 6-factor hybrid approach:
-  1. Goal Relevance (30%)   — skills taught ∩ required skills (Jaccard)
-  2. Skill Gap Coverage (25%) — fraction of gap skills this resource teaches
-  3. Prerequisite Readiness (20%) — learner already has the prerequisites
+Scores and ranks learning resources for a learner using a hybrid ML approach:
+
+  Heuristic Factors (original):
+  1. Goal Relevance (25%)   — skills taught ∩ required skills (Jaccard)
+  2. Skill Gap Coverage (20%) — fraction of gap skills this resource teaches
+  3. Prerequisite Readiness (15%) — learner already has the prerequisites
   4. Difficulty Fit (10%)   — difficulty matches learner experience level
-  5. Interest Alignment (10%) — resource tags match learner interests
+  5. Interest Alignment (5%) — resource tags match learner interests
   6. Type Preference (5%)   — matches learning style preference
+
+  ML Factors (new):
+  7. TF-IDF Cosine Similarity (15%) — semantic match between resource text and goal
+  8. SVD Collaborative Score (5%)   — "learners like you completed this" signal
+
+  + ε-greedy Exploration (20% of final list randomly sampled for diversity)
 """
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 import json
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 
@@ -58,11 +69,25 @@ def score_resources(
     interests: List[str] = None,
     learning_style: str = "mixed",
     exclude_resource_ids: List[str] = None,
+    goal_text: str = "",                  # learner's free-text goal description
+    user_id: Optional[int] = None,       # for collaborative filtering
     limit: int = 60,
+    enable_exploration: bool = True,     # ε-greedy diversity
 ) -> List[ScoredResource]:
     """
-    Score and rank all resources for a learner. Returns top `limit` resources.
+    Score and rank all resources for a learner using hybrid ML + heuristic approach.
+    Returns top `limit` resources.
     """
+    # Import ML engine lazily to avoid circular imports at module load time
+    try:
+        from app.services.ml_engine import TFIDF_ENGINE, SVD_FILTER, apply_epsilon_greedy
+        tfidf_scores = TFIDF_ENGINE.score_all(goal_text or goal_id, interests) if TFIDF_ENGINE else {}
+    except Exception as exc:
+        logger.warning("ML engine import failed: %s", exc)
+        tfidf_scores = {}
+        apply_epsilon_greedy = None
+        SVD_FILTER = None
+
     if interests is None:
         interests = []
     if exclude_resource_ids is None:
@@ -73,6 +98,15 @@ def score_resources(
     gap_skills = set(gap_skill_ids)
     learner_exp = EXPERIENCE_MAP.get(experience_level, 0)
     interest_set = {i.lower().replace(" ", "-") for i in interests}
+
+    # Batch SVD predictions for all resources
+    all_resource_ids = [r["id"] for r in RESOURCES if r["id"] not in exclude_resource_ids]
+    svd_scores: Dict[str, float] = {}
+    if SVD_FILTER is not None and user_id is not None:
+        try:
+            svd_scores = SVD_FILTER.predict(user_id, all_resource_ids)
+        except Exception as exc:
+            logger.warning("SVD prediction failed: %s", exc)
 
     scored = []
     for resource in RESOURCES:
@@ -85,7 +119,7 @@ def score_resources(
         r_difficulty = resource.get("difficulty", "beginner")
         r_exp = DIFFICULTY_MAP.get(r_difficulty, 0)
 
-        # --- Factor 1: Goal Relevance (Jaccard similarity) ---
+        # ── Factor 1: Goal Relevance (Jaccard) — 25% ──
         if required_skills:
             intersection = skills_taught & required_skills
             union = skills_taught | required_skills
@@ -93,21 +127,21 @@ def score_resources(
         else:
             goal_relevance = 0.0
 
-        # --- Factor 2: Skill Gap Coverage ---
+        # ── Factor 2: Skill Gap Coverage — 20% ──
         if gap_skills:
             gap_covered = skills_taught & gap_skills
             gap_coverage = len(gap_covered) / len(gap_skills)
         else:
             gap_coverage = 0.0
 
-        # --- Factor 3: Prerequisite Readiness ---
+        # ── Factor 3: Prerequisite Readiness — 15% ──
         if prereqs:
             mastery_sum = sum(learner_skills.get(p, 0.0) for p in prereqs)
             prereq_readiness = mastery_sum / len(prereqs)
         else:
             prereq_readiness = 1.0  # No prerequisites = fully ready
 
-        # --- Factor 4: Difficulty Fit ---
+        # ── Factor 4: Difficulty Fit — 10% ──
         level_diff = abs(r_exp - learner_exp)
         if level_diff == 0:
             difficulty_fit = 1.0
@@ -116,16 +150,15 @@ def score_resources(
         else:
             difficulty_fit = 0.2
 
-        # --- Factor 5: Interest Alignment ---
+        # ── Factor 5: Interest Alignment — 5% ──
         if interest_set:
             tag_overlap = tags & interest_set
-            # Also check skill names
             skill_overlap = {s for s in skills_taught if any(i in s for i in interest_set)}
             interest_alignment = min(1.0, (len(tag_overlap) + len(skill_overlap)) / max(1, len(interest_set)))
         else:
-            interest_alignment = 0.5  # Neutral when no interests specified
+            interest_alignment = 0.5  # Neutral
 
-        # --- Factor 6: Type/Style Preference ---
+        # ── Factor 6: Type/Style Preference — 5% ──
         r_type = resource.get("type", "course")
         if learning_style == "video" and r_type == "course":
             type_pref = 1.0
@@ -138,14 +171,22 @@ def score_resources(
         else:
             type_pref = 0.6
 
-        # --- Weighted Final Score ---
+        # ── Factor 7: TF-IDF Cosine Similarity — 15% ──
+        tfidf_score = tfidf_scores.get(resource["id"], 0.0)
+
+        # ── Factor 8: SVD Collaborative — 5% ──
+        svd_score = svd_scores.get(resource["id"], 0.0)
+
+        # ── Weighted Final Score ──
         final_score = (
-            0.30 * goal_relevance
-            + 0.25 * gap_coverage
-            + 0.20 * prereq_readiness
+            0.25 * goal_relevance
+            + 0.20 * gap_coverage
+            + 0.15 * prereq_readiness
             + 0.10 * difficulty_fit
-            + 0.10 * interest_alignment
+            + 0.05 * interest_alignment
             + 0.05 * type_pref
+            + 0.15 * tfidf_score
+            + 0.05 * svd_score
         )
 
         scored.append(
@@ -159,12 +200,14 @@ def score_resources(
                 prerequisite_skills=list(prereqs),
                 score=round(final_score, 4),
                 score_breakdown={
-                    "goal_relevance": round(goal_relevance, 3),
-                    "gap_coverage": round(gap_coverage, 3),
-                    "prereq_readiness": round(prereq_readiness, 3),
-                    "difficulty_fit": round(difficulty_fit, 3),
-                    "interest_alignment": round(interest_alignment, 3),
-                    "type_preference": round(type_pref, 3),
+                    "goal_relevance":    round(goal_relevance, 3),
+                    "gap_coverage":      round(gap_coverage, 3),
+                    "prereq_readiness":  round(prereq_readiness, 3),
+                    "difficulty_fit":    round(difficulty_fit, 3),
+                    "interest_alignment":round(interest_alignment, 3),
+                    "type_preference":   round(type_pref, 3),
+                    "tfidf_similarity":  round(tfidf_score, 3),
+                    "collab_filter":     round(svd_score, 3),
                 },
                 is_project=resource.get("is_project", False),
                 has_assessment=resource.get("has_assessment", False),
@@ -177,6 +220,14 @@ def score_resources(
 
     # Sort by score descending
     scored.sort(key=lambda r: -r.score)
+
+    # Apply ε-greedy exploration for diversity (20% random high-potential picks)
+    if enable_exploration and apply_epsilon_greedy is not None and len(scored) > 10:
+        try:
+            scored = apply_epsilon_greedy(scored, epsilon=0.20)
+        except Exception as exc:
+            logger.warning("Epsilon-greedy exploration failed: %s", exc)
+
     return scored[:limit]
 
 
@@ -192,7 +243,7 @@ def get_revision_resource_for_skill(skill_id: str) -> Optional[dict]:
     for resource in RESOURCES:
         tags = resource.get("tags", [])
         skills_taught = resource.get("skills_taught", [])
-        if ("revision" in tags or "reinforcement" in tags) and skill_id in skills_taught:
+        if (("revision" in tags or "reinforcement" in tags) and skill_id in skills_taught):
             return resource
     # Fallback: any course teaching this skill with beginner difficulty
     for resource in RESOURCES:

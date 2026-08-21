@@ -11,6 +11,11 @@ Triggers:
 - 3+ "too easy" flags → Elevate difficulty in subsequent resources
 - 3+ "too hard" flags → Insert bridge resources
 - Behind schedule (>20% over time estimate) → Reduce weekly load
+
+ML Upgrade:
+- Skill levels are modeled as Beta distributions (Bayesian update)
+  instead of simple weighted averages. This captures uncertainty.
+  Stored as (alpha, beta) parameters in learner_skill.bayesian_params JSON.
 """
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
@@ -178,10 +183,21 @@ def update_skill_level_from_score(
     db,
 ) -> float:
     """
-    Update learner skill level based on assessment score.
-    New level = weighted average of old level and score.
+    Update learner skill level using a Bayesian Beta distribution model.
+
+    Instead of a simple weighted average, we model each skill as Beta(α, β):
+    - α accumulates evidence of mastery (successes)
+    - β accumulates evidence of struggle (failures)
+    - Skill level = α / (α + β)  (posterior mean)
+    - High precision (α + β) = model is confident in the estimate
+
+    This allows the model to represent:
+    - How good the learner is (mean)
+    - How certain we are (precision)
     """
+    import json
     from app.models.profile import LearnerSkill
+    from app.services.ml_engine import BayesianSkillEstimator
 
     existing = (
         db.query(LearnerSkill)
@@ -190,22 +206,38 @@ def update_skill_level_from_score(
     )
 
     if existing:
-        # Weighted average: 60% old level, 40% new score
-        new_level = round(0.6 * existing.level + 0.4 * assessment_score, 3)
-        existing.level = new_level
+        # Load existing Bayesian state, or initialise from scalar level
+        try:
+            params = json.loads(existing.bayesian_params) if getattr(existing, 'bayesian_params', None) else None
+            estimator = BayesianSkillEstimator.from_dict(params) if params else BayesianSkillEstimator.from_level(existing.level)
+        except Exception:
+            estimator = BayesianSkillEstimator.from_level(existing.level)
+
+        estimator.update(assessment_score)
+        existing.level = round(estimator.mean, 3)
         existing.source = "assessment"
+        try:
+            existing.bayesian_params = json.dumps(estimator.to_dict())
+        except Exception:
+            pass  # bayesian_params column might not exist yet
     else:
-        new_level = round(assessment_score * 0.8, 3)  # Conservative first estimate
+        estimator = BayesianSkillEstimator(alpha=1.0, beta=1.0)
+        estimator.update(assessment_score)
+        new_level = round(estimator.mean, 3)
         skill = LearnerSkill(
             user_id=user_id,
             skill_id=skill_id,
             level=new_level,
             source="assessment",
         )
+        try:
+            skill.bayesian_params = json.dumps(estimator.to_dict())
+        except Exception:
+            pass
         db.add(skill)
 
     db.commit()
-    return new_level
+    return round(existing.level if existing else estimator.mean, 3)
 
 
 def calculate_path_progress(db_path, db) -> Tuple[float, int]:
