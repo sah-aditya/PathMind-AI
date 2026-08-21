@@ -9,12 +9,17 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days
     GEMINI_API_KEY: str
-    ENVIRONMENT: str = "development"
-    BACKEND_CORS_ORIGINS: str = '["http://localhost:5173","http://localhost:3000"]'
+    BACKEND_CORS_ORIGINS: str = '["*"]'
 
     @property
     def cors_origins(self) -> List[str]:
-        return json.loads(self.BACKEND_CORS_ORIGINS)
+        if not self.BACKEND_CORS_ORIGINS:
+            return ["*"]
+        try:
+            val = json.loads(self.BACKEND_CORS_ORIGINS)
+            return val if isinstance(val, list) else [val]
+        except Exception:
+            return [orig.strip() for orig in self.BACKEND_CORS_ORIGINS.split(",") if orig.strip()]
 
     class Config:
         env_file = ".env"

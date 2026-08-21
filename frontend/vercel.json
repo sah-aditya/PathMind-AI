@@ -1,10 +1,8 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "src/main.jsx", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "https://your-backend.onrender.com/api/$1" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

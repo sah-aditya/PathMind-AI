@@ -4,6 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.routes import auth, profile, learning_path, assessment, dashboard, chat, resources
 
+from app.db.database import engine, Base
+from app.models import user, profile as prof_model, learning
+
+# Auto-create tables on startup
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(
     title="PathMind AI",
     description="AI-Powered Personalized Learning Path Recommender",
