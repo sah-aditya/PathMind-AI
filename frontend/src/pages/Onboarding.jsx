@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Brain, Send, Loader2, CheckCircle, ArrowRight,
-  Sparkles, Clock, Target, BookOpen, Zap
+  Sparkles, Clock, Target, BookOpen, Zap, RotateCcw
 } from 'lucide-react'
 import { chatApi, pathApi } from '../services/api'
 import useAuthStore from '../store/authStore'
@@ -11,7 +11,7 @@ import MarkdownMessage from '../components/MarkdownMessage'
 
 const WELCOME_MSG = {
   role: 'assistant',
-  content: "👋 Hi! I'm PathMind AI. I'm here to build your personalized learning roadmap.\n\nLet's start simple — **what do you want to achieve?** For example:\n- \"I want to become a Machine Learning Engineer\"\n- \"I want to learn full-stack web development\"\n- \"I want to transition into data science\"\n\nTell me in your own words!",
+  content: "👋 Hi! I'm PathMind AI. I'm here to build your personalized learning roadmap.\n\nLet's start simple — **what do you want to achieve?** For example:\n- \"I want to become a Commercial Pilot\"\n- \"I want to become a High School Teacher\"\n- \"I want to become a Machine Learning Engineer\"\n- \"I want to learn Full-Stack Web Development\"\n\nTell me your goal in your own words!",
 }
 
 const STEPS = [
@@ -57,6 +57,24 @@ export default function Onboarding() {
 
   const userTurns = messages.filter(m => m.role === 'user').length
 
+  const handleReset = async () => {
+    setMessages([WELCOME_MSG])
+    setProfileReady(false)
+    setExtractedProfile(null)
+    setInput('')
+    try {
+      await chatApi.reset()
+      toast.success('Started a fresh onboarding session!')
+    } catch {
+      // ignore
+    }
+  }
+
+  // Clear previous session when starting fresh onboarding
+  useEffect(() => {
+    chatApi.reset().catch(() => {})
+  }, [])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
@@ -69,14 +87,17 @@ export default function Onboarding() {
     const text = input.trim()
     if (!text || loading) return
     setInput('')
-    setMessages(m => [...m, { role: 'user', content: text }])
+    
+    const updatedMessages = [...messages, { role: 'user', content: text }]
+    setMessages(updatedMessages)
     setLoading(true)
+    
     try {
-      const { data } = await chatApi.send(text, 'onboarding')
+      // Pass the current conversation messages explicitly to eliminate DB context leakage
+      const { data } = await chatApi.send(text, 'onboarding', updatedMessages)
       setMessages(m => [...m, { role: 'assistant', content: data.reply }])
 
-      // Only accept profile_ready after at least 3 user turns
-      if (data.profile_ready && userTurns + 1 >= 3) {
+      if (data.profile_ready) {
         setProfileReady(true)
         setExtractedProfile(data.profile)
       }
@@ -116,8 +137,18 @@ export default function Onboarding() {
               {profileReady ? 'Profile complete!' : 'Building your profile…'}
             </p>
           </div>
+          
+          <button
+            onClick={handleReset}
+            title="Start over"
+            className="btn-ghost p-1.5 text-text-muted hover:text-text-primary text-xs flex items-center gap-1"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Start Over</span>
+          </button>
+
           {/* Turn progress dots */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 ml-2">
             {STEPS.map((_, i) => (
               <div
                 key={i}

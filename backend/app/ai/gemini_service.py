@@ -133,28 +133,37 @@ async def chat_onboarding(
     FIX: system_instruction is now passed as a proper GenerativeModel parameter
     instead of being injected inline into the user message (which Gemini ignores).
     """
-    # Build conversation history for Gemini
-    # Include a priming model turn so the assistant "remembers" its role in follow-ups
+    # Build strictly alternating conversation history for Gemini start_chat:
+    # Gemini requires: user -> model -> user -> model ...
+    # And the current user_message must NOT be in history (it will be passed to send_message).
     history = []
-
-    if messages:
-        # Inject a priming first-turn pair so the model stays in character
+    
+    # Exclude the current message if it's already in messages list
+    prior_messages = [m for m in messages if m.get("content") != user_message]
+    
+    if prior_messages:
+        # Prime the conversation start
         history.append({
             "role": "user",
-            "parts": ["Begin the learner onboarding session now."],
+            "parts": ["Hi, I want to start my personalized learning onboarding."],
         })
-        history.append({
-            "role": "model",
-            "parts": [
-                "👋 Hi! I'm PathMind AI. I'm here to build your personalized learning roadmap.\n\n"
-                "Let's start simple — **what do you want to achieve?** For example:\n"
-                "- \"I want to become a Machine Learning Engineer\"\n"
-                "- \"I want to learn full-stack web development\"\n\nTell me in your own words!"
-            ],
-        })
-        for msg in messages:
-            role = "user" if msg["role"] == "user" else "model"
-            history.append({"role": role, "parts": [msg["content"]]})
+        for msg in prior_messages:
+            role = "user" if msg.get("role") == "user" else "model"
+            content = msg.get("content", "").strip()
+            if not content:
+                continue
+            # Avoid consecutive duplicate roles
+            if history and history[-1]["role"] == role:
+                history[-1]["parts"][0] += f"\n\n{content}"
+            else:
+                history.append({"role": role, "parts": [content]})
+        
+        # Ensure the last item in history is a 'model' turn so the next message from user is expected
+        if history and history[-1]["role"] == "user":
+            history.append({
+                "role": "model",
+                "parts": ["Understood. Tell me more so I can tailor your roadmap."]
+            })
 
     reply = None
     for model_name in CANDIDATE_MODELS:
@@ -212,19 +221,19 @@ async def chat_onboarding(
 
 def _heuristic_onboarding_reply(messages: List[Dict[str, str]], user_msg: str) -> str:
     """Fallback conversation logic if rate-limited."""
-    user_turn_count = len([m for m in messages if m.get("role") == "user"]) + 1
-    lower_msg = user_msg.lower()
+    user_turns = [m.get("content", "") for m in messages if m.get("role") == "user"]
+    first_goal = user_turns[0] if user_turns else user_msg
+    user_turn_count = len(user_turns) + 1
 
     if user_turn_count == 1:
         return (
-            f"That's a fantastic career goal! 🚀\n\n"
+            f"That's a fantastic goal! 🚀\n\n"
             f"To help me tailor the right path for you, how would you describe your current experience level? "
-            f"(Complete beginner, some programming basics, or intermediate developer?)"
+            f"(Complete beginner, some basics, or intermediate?)"
         )
     elif user_turn_count == 2:
         return (
-            "Got it! What programming languages or tools do you currently have some familiarity with? "
-            "(For example: Python, SQL, JavaScript, Git, or none at all?)"
+            "Got it! What skills, background, or tools do you currently have some familiarity with, if any?"
         )
     elif user_turn_count == 3:
         return (
@@ -232,15 +241,16 @@ def _heuristic_onboarding_reply(messages: List[Dict[str, str]], user_msg: str) -
         )
     else:
         # Ready to generate
+        clean_goal = first_goal.replace('"', '').strip()
         return (
-            f"Perfect! I have enough information to build your personalized roadmap.\n\n"
+            f"Perfect! I have enough information to build your personalized roadmap for **{clean_goal}**.\n\n"
             f"```profile_ready\n"
             f'{{\n'
-            f'  "goal_text": "{user_msg.replace(chr(34), "")}",\n'
+            f'  "goal_text": "{clean_goal}",\n'
             f'  "experience_level": "beginner",\n'
-            f'  "known_skills": ["python-basics"],\n'
+            f'  "known_skills": [],\n'
             f'  "hours_per_week": 8,\n'
-            f'  "interests": ["machine-learning", "web-development"],\n'
+            f'  "interests": [],\n'
             f'  "learning_style": "mixed"\n'
             f'}}\n'
             f"```"

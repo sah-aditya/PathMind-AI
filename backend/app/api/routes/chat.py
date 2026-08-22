@@ -45,6 +45,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 class ChatMessageIn(BaseModel):
     message: str
     phase: str = "assistant"  # "onboarding" | "assistant"
+    history: Optional[List[dict]] = None
 
 
 @router.post("/message")
@@ -53,62 +54,57 @@ async def send_message(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # ── Load phase-specific history safely ──────────────────────────────────
-    # Fetch recent messages for the user ordered by creation time
-    all_user_messages = (
-        db.query(ChatMessage)
-        .filter(ChatMessage.user_id == current_user.id)
-        .order_by(ChatMessage.created_at.asc())
-        .all()
-    )
-
-    # Filter in Python by phase to avoid database dialect / JSON column issues
     target_phase = payload.phase or "assistant"
-    filtered_rows = [
-        m for m in all_user_messages
-        if isinstance(m.msg_metadata, dict) and m.msg_metadata.get("phase") == target_phase
-    ]
 
-    # Limit to reasonable recent context
-    limit_count = 30 if target_phase == "onboarding" else 12
-    history_rows = filtered_rows[-limit_count:]
+    # If client passed history explicitly, prioritize it for conversational accuracy
+    if payload.history is not None:
+        history = [
+            {"role": m.get("role"), "content": m.get("content")}
+            for m in payload.history
+            if m.get("role") in ("user", "assistant", "model")
+        ]
+    else:
+        # Load from DB filtered by user and phase
+        all_user_messages = (
+            db.query(ChatMessage)
+            .filter(ChatMessage.user_id == current_user.id)
+            .order_by(ChatMessage.created_at.asc())
+            .all()
+        )
+        filtered_rows = [
+            m for m in all_user_messages
+            if isinstance(m.msg_metadata, dict) and m.msg_metadata.get("phase") == target_phase
+        ]
+        limit_count = 30 if target_phase == "onboarding" else 12
+        history_rows = filtered_rows[-limit_count:]
+        history = [{"role": m.role, "content": m.content} for m in history_rows]
 
-    history = [{"role": m.role, "content": m.content, "phase": target_phase} for m in history_rows]
-
-    # Save user message
+    # Save user message to database
     user_msg = ChatMessage(
         user_id=current_user.id,
         role="user",
         content=payload.message,
-        msg_metadata={"phase": payload.phase},
+        msg_metadata={"phase": target_phase},
     )
     db.add(user_msg)
     db.flush()
 
-    if payload.phase == "onboarding":
-        # ── Non-tech goal detection ────────────────────────────────────────
-        # Check the first user message for clearly non-tech goals
-        first_user_turns = [m for m in history if m["role"] == "user"]
-        if len(first_user_turns) == 0 and _is_non_tech_goal(payload.message):
-            reply = _NON_TECH_REPLY
-            profile_ready = False
-            extracted_profile = None
-        else:
-            result = await chat_onboarding(
-                messages=history,
-                user_message=payload.message,
-            )
-            reply = result["reply"]
-            profile_ready = result["profile_ready"]
-            extracted_profile = result.get("profile")
+    if target_phase == "onboarding":
+        result = await chat_onboarding(
+            messages=history,
+            user_message=payload.message,
+        )
+        reply = result["reply"]
+        profile_ready = result["profile_ready"]
+        extracted_profile = result.get("profile")
 
-            # If profile is ready, save it
-            if profile_ready and extracted_profile:
-                await _save_extracted_profile(
-                    user_id=current_user.id,
-                    extracted=extracted_profile,
-                    db=db,
-                )
+        # If profile is ready, save it
+        if profile_ready and extracted_profile:
+            await _save_extracted_profile(
+                user_id=current_user.id,
+                extracted=extracted_profile,
+                db=db,
+            )
 
     else:
         # Build learner context for Q&A
@@ -138,7 +134,7 @@ async def send_message(
         user_id=current_user.id,
         role="assistant",
         content=reply,
-        msg_metadata={"phase": payload.phase, "profile_ready": profile_ready},
+        msg_metadata={"phase": target_phase, "profile_ready": profile_ready},
     )
     db.add(assistant_msg)
     db.commit()
@@ -157,7 +153,7 @@ def reset_chat_history(
 ):
     """
     Delete ALL chat history for the current user.
-    Called when the user navigates to Re-onboard to start fresh.
+    Called when the user enters or restarts onboarding.
     """
     deleted = (
         db.query(ChatMessage)
@@ -199,8 +195,8 @@ def get_chat_history(
 
 
 async def _save_extracted_profile(user_id: int, extracted: dict, db):
-    """Save the AI-extracted profile to the database."""
-    from app.services.skill_gap_engine import GOALS_DATA
+    """Save the AI-extracted profile to the database using dynamic goal creation."""
+    from app.services.dynamic_goal_engine import get_or_create_goal
     from app.services.skill_gap_engine import SKILL_BY_ID
 
     profile = db.query(LearnerProfile).filter(LearnerProfile.user_id == user_id).first()
@@ -208,13 +204,13 @@ async def _save_extracted_profile(user_id: int, extracted: dict, db):
         profile = LearnerProfile(user_id=user_id)
         db.add(profile)
 
-    # Match goal text to our taxonomy
+    # Match or dynamically synthesize goal curriculum
     goal_text = extracted.get("goal_text", "")
     if goal_text:
-        goal_id = match_goal_to_id(goal_text, GOALS_DATA)
+        goal_id, goal_data = get_or_create_goal(goal_text)
         profile.goal_id = goal_id
-        profile.goal_title = GOALS_DATA.get(goal_id, {}).get("title", goal_text)
-        profile.goal_description = goal_text
+        profile.goal_title = goal_data.get("title", goal_text.title())
+        profile.goal_description = goal_data.get("description", goal_text)
 
     profile.experience_level = extracted.get("experience_level", "beginner")
     profile.hours_per_week = int(extracted.get("hours_per_week", 8))

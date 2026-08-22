@@ -44,8 +44,8 @@ export const profileApi = {
 
 // ── Chat ──────────────────────────────────────────────────────────────────────
 export const chatApi = {
-  send: (message, phase = 'assistant') =>
-    api.post('/chat/message', { message, phase }),
+  send: (message, phase = 'assistant', history = null) =>
+    api.post('/chat/message', { message, phase, history }),
   getHistory: (phase, limit = 50) =>
     api.get('/chat/history', { params: { phase, limit } }),
   reset: () =>
