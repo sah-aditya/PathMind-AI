@@ -84,6 +84,8 @@ export const resourcesApi = {
 export const adminApi = {
   getStats: () => api.get('/admin/stats'),
   getUsers: () => api.get('/admin/users'),
+  updateName: (userId, name) =>
+    api.put(`/admin/users/${userId}/name`, { name }),
   updatePassword: (userId, newPassword) =>
     api.put(`/admin/users/${userId}/password`, { new_password: newPassword }),
   updateRole: (userId, role) =>

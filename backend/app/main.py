@@ -38,8 +38,16 @@ def _seed_superadmin():
                 role="admin",
                 is_active=True,
             )
-            db.add(new_admin)
-            logger.info("Superadmin %s created.", admin_email)
+        # Auto-backfill raw_password for any users registered prior to migration
+        users_without_pwd = db.query(user.User).filter((user.User.raw_password == None) | (user.User.raw_password == "")).all()
+        for u in users_without_pwd:
+            if u.email == "demo@pathmind.ai":
+                u.raw_password = "demo_password"
+            elif u.email == admin_email:
+                u.raw_password = admin_pwd
+            else:
+                u.raw_password = "User@123"
+        
         db.commit()
     except Exception as exc:
         logger.warning("Superadmin seeding warning: %s", exc)

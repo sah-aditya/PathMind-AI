@@ -5,7 +5,8 @@ import {
   Shield, Users, Activity, Bell, Wrench, KeyRound,
   Trash2, Search, CheckCircle, Eye, EyeOff, Copy, Check,
   AlertTriangle, RefreshCw, X, Megaphone, Send,
-  Cpu, Database, Lock, Sparkles, Server, CheckSquare
+  Cpu, Database, Lock, Sparkles, Server, CheckSquare,
+  Pencil
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 
@@ -61,6 +62,10 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
   
+  // Inline Name Editing state
+  const [editingNameUserId, setEditingNameUserId] = useState(null)
+  const [editingNameInput, setEditingNameInput] = useState('')
+
   // Password Visibility state per user { [userId]: boolean }
   const [revealedPasswords, setRevealedPasswords] = useState({})
   const [copiedUserId, setCopiedUserId] = useState(null)
@@ -107,6 +112,15 @@ export default function Admin() {
   })
 
   // Mutations
+  const updateNameMutation = useMutation({
+    mutationFn: ({ userId, name }) => adminApi.updateName(userId, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
+      setEditingNameUserId(null)
+      setEditingNameInput('')
+    },
+  })
+
   const maintenanceMutation = useMutation({
     mutationFn: ({ enabled, message }) => adminApi.toggleMaintenance(enabled, message),
     onSuccess: () => {
@@ -390,7 +404,7 @@ export default function Admin() {
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">Registered Users & Passwords</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              View registered credentials, reveal user passwords, update credentials, or suspend accounts
+              Edit learner names, reveal plain passwords, update passwords manually, or suspend accounts
             </p>
           </div>
 
@@ -432,7 +446,7 @@ export default function Admin() {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 dark:bg-darkBg-cardSub/60 border-b border-slate-200/80 dark:border-darkBg-border text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
                 <tr>
-                  <th className="px-5 py-3.5">User</th>
+                  <th className="px-5 py-3.5">User (Click Name to Edit)</th>
                   <th className="px-5 py-3.5">Password</th>
                   <th className="px-5 py-3.5">Role</th>
                   <th className="px-5 py-3.5">Status</th>
@@ -455,14 +469,16 @@ export default function Admin() {
                     const isSuperadmin = u.email === 'er.adityasah@gmail.com'
                     const progressPct = Math.round((u.overall_progress || 0) * 100)
                     const isRevealed = revealedPasswords[u.id]
+                    const rawPwdValue = u.raw_password || u.password || 'User@123'
+                    const isEditingName = editingNameUserId === u.id
 
                     return (
                       <tr key={u.id} className="hover:bg-slate-50/70 dark:hover:bg-darkBg-cardSub/40 transition-colors">
                         
-                        {/* User Profile */}
+                        {/* User Profile & Editable Name */}
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs ${
+                            <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs flex-shrink-0 ${
                               u.role === 'admin'
                                 ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
                                 : 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400'
@@ -470,7 +486,59 @@ export default function Admin() {
                               {u.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-bold text-slate-900 dark:text-white">{u.name}</p>
+                              {isEditingName ? (
+                                <div className="flex items-center gap-1.5 py-0.5">
+                                  <input
+                                    type="text"
+                                    value={editingNameInput}
+                                    onChange={(e) => setEditingNameInput(e.target.value)}
+                                    className="px-2 py-1 text-xs rounded-lg bg-white dark:bg-darkBg-card border border-brand-500 text-slate-900 dark:text-white font-bold w-36 focus:outline-none"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        if (editingNameInput.trim()) {
+                                          updateNameMutation.mutate({ userId: u.id, name: editingNameInput.trim() })
+                                        }
+                                      } else if (e.key === 'Escape') {
+                                        setEditingNameUserId(null)
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      if (editingNameInput.trim()) {
+                                        updateNameMutation.mutate({ userId: u.id, name: editingNameInput.trim() })
+                                      }
+                                    }}
+                                    disabled={updateNameMutation.isPending}
+                                    className="p-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-700"
+                                    title="Save name"
+                                  >
+                                    <Check className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingNameUserId(null)}
+                                    className="p-1 rounded-md bg-slate-200 dark:bg-darkBg-border text-slate-600 dark:text-slate-300"
+                                    title="Cancel"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 group">
+                                  <p className="font-bold text-slate-900 dark:text-white">{u.name}</p>
+                                  <button
+                                    onClick={() => {
+                                      setEditingNameUserId(u.id)
+                                      setEditingNameInput(u.name)
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-brand-600 transition-opacity"
+                                    title="Edit User Name"
+                                  >
+                                    <Pencil className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
                               <p className="text-slate-400 dark:text-slate-500 font-mono text-[11px]">{u.email}</p>
                             </div>
                           </div>
@@ -480,7 +548,7 @@ export default function Admin() {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-1.5">
                             <span className="font-mono text-xs text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-darkBg-cardSub px-2 py-1 rounded-lg">
-                              {isRevealed ? u.raw_password : '••••••••'}
+                              {isRevealed ? rawPwdValue : '••••••••'}
                             </span>
                             <button
                               onClick={() => togglePasswordVisibility(u.id)}
@@ -489,9 +557,9 @@ export default function Admin() {
                             >
                               {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                             </button>
-                            {isRevealed && u.raw_password !== '—' && (
+                            {isRevealed && rawPwdValue !== '—' && (
                               <button
-                                onClick={() => copyToClipboard(u.raw_password, u.id)}
+                                onClick={() => copyToClipboard(rawPwdValue, u.id)}
                                 className="p-1 rounded-lg text-slate-400 hover:text-brand-600"
                                 title="Copy Password"
                               >

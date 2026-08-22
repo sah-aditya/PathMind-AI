@@ -16,6 +16,9 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
+class UpdateNameIn(BaseModel):
+    name: str
+
 class UpdatePasswordIn(BaseModel):
     new_password: str
 
@@ -84,6 +87,26 @@ def update_user_password(
     target_user.raw_password = payload.new_password
     db.commit()
     return {"status": "success", "message": f"Password updated for {target_user.email}."}
+
+
+@router.put("/users/{user_id}/name")
+def update_user_name(
+    user_id: int,
+    payload: UpdateNameIn,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    clean_name = payload.name.strip()
+    if not clean_name:
+        raise HTTPException(status_code=400, detail="Name cannot be blank.")
+    
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    target_user.name = clean_name
+    db.commit()
+    return {"status": "success", "name": target_user.name, "message": f"Name updated to {clean_name}."}
 
 
 @router.put("/users/{user_id}/status")
