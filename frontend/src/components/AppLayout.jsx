@@ -33,6 +33,13 @@ export default function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
+  // Listen for quick-action tile trigger
+  useState(() => {
+    const handler = () => setChatOpen(true)
+    window.addEventListener('open-advisor-chat', handler)
+    return () => window.removeEventListener('open-advisor-chat', handler)
+  })
+
   const handleLogout = () => { logout(); navigate('/') }
 
   const handleReOnboard = async () => {
