@@ -55,9 +55,20 @@ export default function MarkdownMessage({ content, className = '' }) {
         h3: ({ children }) => (
           <h3 className="text-sm font-semibold text-text-primary mb-0.5 mt-1.5 first:mt-0">{children}</h3>
         ),
+        // Tables
+        table: ({ children }) => (
+          <div className="overflow-x-auto my-2 rounded border border-surface-200">
+            <table className="min-w-full text-xs text-left divide-y divide-surface-200">{children}</table>
+          </div>
+        ),
+        thead: ({ children }) => <thead className="bg-surface-100 font-bold text-slate-800">{children}</thead>,
+        tbody: ({ children }) => <tbody className="divide-y divide-surface-200 bg-white">{children}</tbody>,
+        tr: ({ children }) => <tr>{children}</tr>,
+        th: ({ children }) => <th className="px-2.5 py-1.5 font-bold text-slate-900">{children}</th>,
+        td: ({ children }) => <td className="px-2.5 py-1.5 text-slate-700">{children}</td>,
         // Blockquote
         blockquote: ({ children }) => (
-          <blockquote className="border-l-2 border-brand-300 pl-3 my-2 text-text-secondary italic">
+          <blockquote className="border-l-2 border-brand-500 pl-3 my-2 text-text-secondary italic">
             {children}
           </blockquote>
         ),

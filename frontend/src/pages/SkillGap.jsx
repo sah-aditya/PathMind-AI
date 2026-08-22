@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { pathApi } from '../services/api'
@@ -7,7 +8,7 @@ import {
 } from 'recharts'
 import {
   ArrowRight, Target, CheckCircle, AlertTriangle,
-  TrendingUp, Clock, Compass
+  TrendingUp, Clock, GitBranch, Layers, Sparkles, ShieldCheck
 } from 'lucide-react'
 
 /* ── Skill Gap Skeleton Loading State ────────────────── */
@@ -38,6 +39,8 @@ function SkillGapSkeleton() {
 
 export default function SkillGap() {
   const navigate = useNavigate()
+  const [selectedCategory, setSelectedCategory] = useState('ALL')
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['skill-gap'],
     queryFn: () => pathApi.getSkillGap().then(r => r.data),
@@ -65,7 +68,7 @@ export default function SkillGap() {
   const { goal_title, overall_readiness, estimated_weeks, skills_already_met, skills_to_learn } = data
   const readinessPct = Math.round(overall_readiness * 100)
 
-  /* Radar: top 8 gaps */
+  /* Radar data: top 8 gaps */
   const topGaps = (skills_to_learn || []).slice(0, 8)
   const radarData = topGaps.map(sg => ({
     subject: sg.skill_name.length > 12 ? sg.skill_name.slice(0, 12) + '…' : sg.skill_name,
@@ -80,10 +83,15 @@ export default function SkillGap() {
     byCategory[sg.category].push(sg)
   }
 
+  const categories = ['ALL', ...Object.keys(byCategory)]
+  const filteredGaps = selectedCategory === 'ALL'
+    ? skills_to_learn
+    : (byCategory[selectedCategory] || [])
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-      {/* ── Page header ──────────────────────────────── */}
+      {/* ── Page Header ──────────────────────────────── */}
       <div className="space-y-1">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-brand-700 uppercase tracking-wider">
           <Target className="w-3.5 h-3.5" /> Competency Gap Assessment
@@ -94,79 +102,76 @@ export default function SkillGap() {
         </p>
       </div>
 
-      {/* ── Metric Stat cards ─────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            label: 'Goal Readiness',
-            value: `${readinessPct}%`,
-            sub: 'of curriculum baseline',
-            accent: 'bg-emerald-50 text-emerald-700',
-            icon: TrendingUp,
-          },
-          {
-            label: 'Identified Gaps',
-            value: skills_to_learn.length,
-            sub: 'target competencies',
-            accent: 'bg-amber-50 text-amber-700',
-            icon: Target,
-          },
-          {
-            label: 'Verified Skills',
-            value: skills_already_met.length,
-            sub: 'meeting proficiency (≥70%)',
-            accent: 'bg-brand-50 text-brand-700',
-            icon: CheckCircle,
-          },
-          {
-            label: 'Target Timeline',
-            value: `${estimated_weeks}w`,
-            sub: 'at your planned hours/week',
-            accent: 'bg-slate-100 text-slate-700',
-            icon: Clock,
-          },
-        ].map((s, i) => (
-          <div key={i} className="stat-card">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${s.accent}`}>
-              <s.icon className="w-4 h-4" />
-            </div>
-            <p className="stat-value">{s.value}</p>
-            <p className="stat-label">{s.label}</p>
-            <p className="stat-sub">{s.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Readiness Progress Bar ───────────────────── */}
-      <div className="card p-5 space-y-2.5">
-        <div className="flex items-center justify-between">
+      {/* ── Visual Competency Bridge Infographic ─────── */}
+      <div className="card p-6 bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-card space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700 pb-4">
           <div>
-            <h2 className="text-sm font-bold text-slate-900">Curriculum Readiness Benchmark</h2>
-            <p className="text-xs text-text-secondary">
-              {skills_already_met.length} of {skills_already_met.length + skills_to_learn.length} prerequisite milestones met
-            </p>
+            <span className="text-[10px] font-mono font-semibold text-brand-400 uppercase">Architecture Visualization</span>
+            <h2 className="text-lg sm:text-xl font-bold text-white">The Competency Bridge</h2>
           </div>
-          <span className="text-2xl font-bold font-mono text-brand-700">{readinessPct}%</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-mono text-slate-300">Goal Readiness:</span>
+            <span className="text-2xl font-bold font-mono text-brand-400">{readinessPct}%</span>
+          </div>
         </div>
-        <div className="progress-bar h-2.5">
-          <div
-            className="progress-fill"
-            style={{ width: `${readinessPct}%` }}
-          />
+
+        {/* 3-Stage Visual Pipeline */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          
+          {/* Stage 1: Verified Base */}
+          <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-emerald-400 uppercase tracking-wider text-[10px]">1. Verified Baseline</span>
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            </div>
+            <p className="text-2xl font-bold font-mono text-white">{skills_already_met.length}</p>
+            <p className="text-slate-400 leading-relaxed">Competencies already verified above target threshold (≥70%).</p>
+          </div>
+
+          {/* Stage 2: Active Gaps */}
+          <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-amber-400 uppercase tracking-wider text-[10px]">2. Prerequisite Gaps</span>
+              <GitBranch className="w-4 h-4 text-amber-400" />
+            </div>
+            <p className="text-2xl font-bold font-mono text-white">{skills_to_learn.length}</p>
+            <p className="text-slate-400 leading-relaxed">Missing modules prioritized via topological graph sort.</p>
+          </div>
+
+          {/* Stage 3: Projected Horizon */}
+          <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-brand-400 uppercase tracking-wider text-[10px]">3. Target Timeline</span>
+              <Clock className="w-4 h-4 text-brand-400" />
+            </div>
+            <p className="text-2xl font-bold font-mono text-white">{estimated_weeks} Weeks</p>
+            <p className="text-slate-400 leading-relaxed">Calibrated pacing to achieve verified mastery milestone.</p>
+          </div>
+
         </div>
-        <div className="flex items-center justify-between text-[11px] text-text-muted">
-          <span>Foundational Baseline</span>
-          <span>Target Mastery</span>
+
+        {/* Global Progress Line */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>Foundational Baseline</span>
+            <span>Target Mastery (100%)</span>
+          </div>
+          <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-brand-500 rounded-full transition-all duration-700"
+              style={{ width: `${readinessPct}%` }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* ── Charts row ───────────────────────────────── */}
+      {/* ── Charts Row ───────────────────────────────── */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Radar Chart */}
         <div className="card p-5 space-y-4">
           <div>
             <h2 className="section-title">Competency Radar</h2>
-            <p className="section-sub">Current level vs required proficiency</p>
+            <p className="section-sub">Current level vs required proficiency across top gaps</p>
           </div>
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
@@ -192,8 +197,8 @@ export default function SkillGap() {
         {/* Existing Verified Skills */}
         <div className="card p-5 space-y-3">
           <div>
-            <h2 className="section-title">Existing Competencies</h2>
-            <p className="section-sub">{skills_already_met.length} skills exceeding threshold (≥70%)</p>
+            <h2 className="section-title">Verified Competencies</h2>
+            <p className="section-sub">{skills_already_met.length} skills meeting proficiency benchmark</p>
           </div>
           {skills_already_met.length === 0 ? (
             <div className="flex-1 flex items-center justify-center py-10 text-center text-xs text-text-muted">
@@ -212,68 +217,84 @@ export default function SkillGap() {
         </div>
       </div>
 
-      {/* ── Category Breakdown ───────────────────────── */}
+      {/* ── Interactive Skills to Master Table / Cards ── */}
       <div className="space-y-4">
-        <div>
-          <h2 className="section-title">Skills to Master</h2>
-          <p className="section-sub">Organized by domain area and sequenced prerequisite priority</p>
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="section-title">Prioritized Skill Gap Queue</h2>
+            <p className="section-sub">Sequenced according to prerequisite dependency depth</p>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors border ${
+                  selectedCategory === cat
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-surface-50 text-slate-700 border-surface-200 hover:bg-surface-100'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="space-y-4">
-          {Object.entries(byCategory).map(([cat, gaps]) => (
-            <div key={cat} className="card p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-surface-200 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-brand-600" />
-                  <h3 className="font-bold text-slate-900 text-sm">{cat}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredGaps.map(sg => {
+            const currentPct = Math.round(sg.current_level * 100)
+            const requiredPct = Math.round(sg.required_level * 100)
+            const gapPct = requiredPct - currentPct
+
+            return (
+              <div key={sg.skill_id} className="card p-4 space-y-3 border border-surface-200 shadow-subtle hover:border-slate-300 transition-colors">
+                
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-mono font-semibold text-brand-700 uppercase">{sg.category}</span>
+                    <h3 className="font-bold text-slate-900 text-sm leading-snug">{sg.skill_name}</h3>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {sg.is_prerequisite && (
+                      <span className="badge badge-indigo text-[10px]">Prereq Root</span>
+                    )}
+                    <span className="badge badge-gray text-[10px] font-mono">#{sg.priority}</span>
+                  </div>
                 </div>
-                <span className="text-xs text-text-muted">{gaps.length} target skill{gaps.length > 1 ? 's' : ''}</span>
-              </div>
 
-              <div className="space-y-3 pt-1">
-                {gaps.map(sg => {
-                  const currentPct = Math.round(sg.current_level * 100)
-                  const requiredPct = Math.round(sg.required_level * 100)
-                  const gapPct = requiredPct - currentPct
-                  return (
-                    <div key={sg.skill_id} className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-900">{sg.skill_name}</span>
-                          {sg.is_prerequisite && (
-                            <span className="badge badge-indigo text-[10px]">Prerequisite Root</span>
-                          )}
-                          <span className="badge badge-gray text-[10px] font-mono">Priority #{sg.priority}</span>
-                        </div>
-                        <div className="font-mono text-[11px] text-text-secondary">
-                          <span>{currentPct}%</span>
-                          <span className="mx-1 text-text-muted">→</span>
-                          <span className="font-bold text-slate-900">{requiredPct}%</span>
-                          <span className="text-amber-700 ml-1.5 font-sans font-medium">(+{gapPct}% gap)</span>
-                        </div>
-                      </div>
+                {/* Delta Visual Gauge */}
+                <div className="space-y-1.5 bg-surface-50 p-2.5 rounded-lg border border-surface-200">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-text-secondary">Current: <strong className="text-slate-900">{currentPct}%</strong></span>
+                    <span className="text-brand-700 font-semibold">Gap: +{gapPct}%</span>
+                    <span className="text-emerald-700 font-bold">Target: {requiredPct}%</span>
+                  </div>
+                  
+                  <div className="relative h-2 bg-surface-200 rounded-full overflow-hidden">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-brand-600 rounded-full transition-all duration-500"
+                      style={{ width: `${currentPct}%` }}
+                    />
+                    <div
+                      className="absolute inset-y-0 w-1 bg-emerald-600 rounded"
+                      style={{ left: `${requiredPct}%` }}
+                    />
+                  </div>
+                </div>
 
-                      <div className="relative h-2 bg-surface-200 rounded-full overflow-hidden">
-                        <div
-                          className="absolute inset-y-0 left-0 bg-brand-600 rounded-full transition-all duration-500"
-                          style={{ width: `${currentPct}%` }}
-                        />
-                        <div
-                          className="absolute inset-y-0 w-0.5 bg-slate-600"
-                          style={{ left: `${requiredPct}%` }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
+
       </div>
 
       {/* ── Bottom Roadmap Banner ─────────────────────── */}
-      <div className="card p-6 bg-white border border-surface-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="card p-6 bg-white border border-surface-200 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-card">
         <div className="space-y-1 text-center sm:text-left">
           <h2 className="text-base font-bold text-slate-900">Interactive Roadmap Generated</h2>
           <p className="text-xs text-text-secondary max-w-md">

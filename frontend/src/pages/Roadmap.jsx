@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronRight, Clock, Star, CheckCircle, PlayCircle,
   BookOpen, Wrench, ClipboardList, Lock, Loader2, Map,
   AlertTriangle, RefreshCw, Flag, Zap, ArrowRight,
+  GitBranch, Compass, Award, ShieldCheck
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -24,12 +25,12 @@ const STATUS_CONFIG = {
 /* ── Skeleton Loading State ───────────────────────────── */
 function RoadmapSkeleton() {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-pulse">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-pulse">
       <div className="space-y-2">
         <div className="h-4 w-28 bg-slate-200 rounded" />
         <div className="h-7 w-72 bg-slate-200 rounded" />
       </div>
-      <div className="card h-28 bg-white" />
+      <div className="card h-32 bg-white" />
       <div className="space-y-4 pt-4">
         {[1, 2, 3].map(i => (
           <div key={i} className="flex gap-4">
@@ -62,7 +63,7 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
       `}
     >
       <div className="flex items-start gap-3">
-        {/* Icon / Status Icon */}
+        {/* Icon */}
         <div className={`
           w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5
           ${isCompleted ? 'bg-emerald-100 text-emerald-700' : isInProgress ? 'bg-amber-100 text-amber-700' : 'bg-surface-100 text-slate-700'}
@@ -270,7 +271,7 @@ export default function Roadmap() {
   const overallPct = Math.round((data.overall_progress || 0) * 100)
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
       {/* ── Page Header ───────────────────────────── */}
       <div className="flex items-start justify-between gap-4">
@@ -293,30 +294,71 @@ export default function Roadmap() {
         </button>
       </div>
 
-      {/* ── Overall Progress Card ─────────────────── */}
-      <div className="card p-5 space-y-2.5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-bold text-slate-900">Curriculum Completion</p>
-            <p className="text-xs text-text-secondary">
-              {data.phases?.filter(p => p.items_completed === p.items_total && p.items_total > 0).length || 0} of {data.phases?.length || 0} phases completed
-            </p>
+      {/* ── Visual Subway Pipeline Infographic ──────── */}
+      <div className="card p-6 bg-white border border-surface-200 shadow-card space-y-6">
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-200 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-brand-600" />
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Curriculum Milestone Pipeline</h2>
           </div>
-          <span className="text-2xl font-bold font-mono text-brand-700">{overallPct}%</span>
+          <span className="text-xs font-mono text-brand-700 font-semibold">{overallPct}% Total Completion</span>
         </div>
-        <div className="progress-bar h-2.5">
+
+        {/* Visual Subway Nodes */}
+        <div className="relative">
+          {/* Connecting Track Line */}
+          <div className="hidden md:block absolute top-6 left-6 right-6 h-1 bg-surface-200 rounded z-0" />
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative z-10">
+            {data.phases.map((phase) => {
+              const isDone = phase.items_completed === phase.items_total && phase.items_total > 0
+              const isCurrent = phase.week_start <= data.current_week && data.current_week <= phase.week_end
+
+              return (
+                <div
+                  key={phase.id}
+                  className={`p-3.5 rounded-xl border text-xs space-y-2 transition-colors ${
+                    isDone
+                      ? 'bg-emerald-50/50 border-emerald-200'
+                      : isCurrent
+                      ? 'bg-brand-50/60 border-brand-300 shadow-subtle'
+                      : 'bg-surface-50 border-surface-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-mono font-bold text-xs ${
+                      isDone
+                        ? 'bg-emerald-600 text-white'
+                        : isCurrent
+                        ? 'bg-brand-600 text-white'
+                        : 'bg-surface-200 text-slate-700'
+                    }`}>
+                      {isDone ? <CheckCircle className="w-3.5 h-3.5" /> : `0${phase.phase_number}`}
+                    </div>
+                    <span className="text-[10px] font-mono text-text-muted">
+                      W{phase.week_start}–W{phase.week_end}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 truncate">{phase.title}</h4>
+                    <p className="text-[11px] text-text-secondary mt-0.5">
+                      {phase.items_completed} / {phase.items_total} Units Completed
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="progress-bar h-2">
           <div
             className="progress-fill"
             style={{ width: `${overallPct}%` }}
           />
         </div>
-
-        {data.adaptations?.length > 0 && (
-          <div className="flex items-center gap-2 pt-2 text-xs text-amber-800 border-t border-surface-200">
-            <Zap className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-            <span>Path dynamically adjusted {data.adaptations.length} time(s) based on assessment feedback.</span>
-          </div>
-        )}
       </div>
 
       {/* ── Adaptations Callout ────────────────────── */}

@@ -9,7 +9,8 @@ import {
 import {
   ArrowRight, PlayCircle, Zap, Target, CheckCircle,
   AlertTriangle, Brain, BookOpen, Clock,
-  TrendingUp, Award, Calendar, ChevronRight,
+  TrendingUp, Award, Calendar, ChevronRight, Sparkles,
+  Flame, Gauge, ShieldCheck
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 
@@ -115,7 +116,7 @@ export default function Dashboard() {
       level: Math.round(level * 100),
     }))
 
-  /* Simulated weekly progress data */
+  /* Weekly progress data */
   const weeklyData = [
     { week: 'W1', hours: 4 }, { week: 'W2', hours: 6 }, { week: 'W3', hours: 5 },
     { week: 'W4', hours: 8 }, { week: 'W5', hours: 7 }, { week: 'W6', hours: 9 },
@@ -129,7 +130,7 @@ export default function Dashboard() {
 
       {/* ── No Active Path State ─────────────────────────── */}
       {!active_path && (
-        <div className="card overflow-hidden bg-white border border-surface-200 shadow-subtle p-6 sm:p-8">
+        <div className="card overflow-hidden bg-white border border-surface-200 shadow-card p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row items-center gap-8">
             <div className="w-16 h-16 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 flex-shrink-0">
               <Brain className="w-8 h-8" />
@@ -189,55 +190,73 @@ export default function Dashboard() {
       {/* ── Active Module & Progress ────────────────────── */}
       {active_path && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Progress Ring Card */}
-          <div className="card flex flex-col items-center justify-center text-center p-6">
-            <span className="input-label mb-3">Roadmap Completion</span>
-            <div className="relative my-2">
-              <ProgressRing pct={overallPct} size={116} stroke={8} />
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-slate-900 tracking-tight">{overallPct}%</span>
-                <span className="text-[11px] text-text-muted">overall</span>
+          
+          {/* Progress Ring & Velocity Card */}
+          <div className="card flex flex-col justify-between p-6 bg-white border border-surface-200 shadow-subtle">
+            <div>
+              <div className="flex items-center justify-between border-b border-surface-200 pb-2 mb-3">
+                <span className="text-[10px] font-mono font-bold text-slate-700 uppercase">Roadmap Velocity</span>
+                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-semibold">
+                  On Pace
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center justify-center my-3">
+                <div className="relative my-1">
+                  <ProgressRing pct={overallPct} size={116} stroke={8} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-slate-900 tracking-tight font-mono">{overallPct}%</span>
+                    <span className="text-[10px] text-text-muted uppercase">completed</span>
+                  </div>
+                </div>
+                <h3 className="text-xs font-bold text-slate-900 mt-2 text-center">{active_path.goal_title}</h3>
               </div>
             </div>
-            <h3 className="text-xs font-semibold text-slate-900 mt-2">{active_path.goal_title}</h3>
-            <div className="grid grid-cols-2 gap-2 w-full mt-4 pt-4 border-t border-surface-200 text-xs">
-              <div className="p-2 bg-surface-50 rounded border border-surface-200">
-                <p className="font-bold text-slate-900">{active_path.resources_completed}</p>
-                <p className="text-[11px] text-text-muted">Completed</p>
+
+            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-surface-200 text-xs font-mono">
+              <div className="p-2 bg-surface-50 rounded border border-surface-200 text-center">
+                <p className="font-bold text-slate-900 text-sm">{active_path.resources_completed}</p>
+                <p className="text-[10px] text-text-muted font-sans">Done Units</p>
               </div>
-              <div className="p-2 bg-surface-50 rounded border border-surface-200">
-                <p className="font-bold text-slate-900">Week {active_path.current_week}</p>
-                <p className="text-[11px] text-text-muted">of {active_path.total_weeks}</p>
+              <div className="p-2 bg-surface-50 rounded border border-surface-200 text-center">
+                <p className="font-bold text-slate-900 text-sm">W{active_path.current_week}</p>
+                <p className="text-[10px] text-text-muted font-sans">of {active_path.total_weeks} Total</p>
               </div>
             </div>
           </div>
 
           {/* Up Next Action Card */}
-          <div className="lg:col-span-2 card flex flex-col justify-between p-6">
+          <div className="lg:col-span-2 card flex flex-col justify-between p-6 bg-white border border-surface-200 shadow-subtle">
             <div>
               <div className="flex items-center justify-between border-b border-surface-200 pb-3 mb-4">
-                <span className="input-label !mb-0">Current Learning Objective</span>
-                <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
-                  {next_action?.phase_title || 'Active Milestone'}
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse" />
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Current Milestone Objective</span>
+                </div>
+                <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-0.5 rounded border border-brand-200 font-mono">
+                  {next_action?.phase_title || 'Active Phase'}
                 </span>
               </div>
 
               {next_action ? (
                 <div className="space-y-3">
                   <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">{next_action.title}</h2>
+                  
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="flex items-center gap-1 text-xs text-text-secondary">
-                      <Clock className="w-3.5 h-3.5" /> {next_action.duration_hours}h estimated
+                      <Clock className="w-3.5 h-3.5 text-text-muted" /> {next_action.duration_hours}h estimated effort
                     </span>
-                    <span className="badge badge-gray uppercase">{next_action.type}</span>
-                    {next_action.has_assessment && <span className="badge badge-yellow">Knowledge Check Included</span>}
+                    <span className="badge badge-gray uppercase text-[10px] font-mono">{next_action.type}</span>
+                    {next_action.has_assessment && (
+                      <span className="badge badge-yellow text-[10px]">Knowledge Check Included</span>
+                    )}
                   </div>
 
                   <div className="p-3 bg-surface-50 rounded-lg border border-surface-200 space-y-1.5 mt-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-text-secondary">Milestone Timeline</span>
-                      <span className="font-semibold text-slate-900">
-                        Week {active_path.current_week} / {active_path.total_weeks}
+                      <span className="text-text-secondary">Milestone Timeline Pacing</span>
+                      <span className="font-semibold text-slate-900 font-mono">
+                        Week {active_path.current_week} of {active_path.total_weeks}
                       </span>
                     </div>
                     <div className="progress-bar">
@@ -272,7 +291,7 @@ export default function Dashboard() {
       {/* ── Activity & Competency Charts ────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Weekly Activity */}
-        <div className="lg:col-span-2 card p-5 space-y-4">
+        <div className="lg:col-span-2 card p-5 space-y-4 bg-white border border-surface-200">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="section-title">Weekly Study Engagement</h2>
@@ -292,9 +311,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                 <XAxis dataKey="week" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  formatter={v => [`${v} hours`]}
-                />
+                <Tooltip formatter={v => [`${v} hours`]} />
                 <Area type="monotone" dataKey="hours" stroke="#4f46e5" strokeWidth={2} fill="url(#hoursGrad)" dot={{ fill: '#4f46e5', r: 3 }} />
               </AreaChart>
             </ResponsiveContainer>
@@ -302,7 +319,7 @@ export default function Dashboard() {
         </div>
 
         {/* Skills Radar */}
-        <div className="card p-5 space-y-4">
+        <div className="card p-5 space-y-4 bg-white border border-surface-200">
           <div>
             <h2 className="section-title">Domain Mastery</h2>
             <p className="section-sub">Competency distribution</p>
@@ -314,9 +331,7 @@ export default function Dashboard() {
                   <PolarGrid stroke="#e2e8f0" />
                   <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 10 }} />
                   <Radar name="Mastery" dataKey="Level" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.15} strokeWidth={1.5} />
-                  <Tooltip
-                    formatter={v => [`${v}%`]}
-                  />
+                  <Tooltip formatter={v => [`${v}%`]} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -331,7 +346,7 @@ export default function Dashboard() {
       {/* ── Bottom Section: Skills & Quick Actions ──────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Skills List */}
-        <div className="card p-5 space-y-4">
+        <div className="card p-5 space-y-4 bg-white border border-surface-200">
           <div>
             <h2 className="section-title">Verified Competencies</h2>
             <p className="section-sub">Highest scoring skill areas</p>
@@ -360,7 +375,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions / Navigation */}
-        <div className="card p-5 space-y-3">
+        <div className="card p-5 space-y-3 bg-white border border-surface-200">
           <div>
             <h2 className="section-title">Navigation Shortcuts</h2>
             <p className="section-sub">Explore full learning curriculum</p>
