@@ -80,4 +80,29 @@ export const resourcesApi = {
   explain: (id) => api.get(`/resources/${id}/explain`),
 }
 
+// ── Admin ─────────────────────────────────────────────────────────────────────
+export const adminApi = {
+  getStats: () => api.get('/admin/stats'),
+  getUsers: () => api.get('/admin/users'),
+  updatePassword: (userId, newPassword) =>
+    api.put(`/admin/users/${userId}/password`, { new_password: newPassword }),
+  updateRole: (userId, role) =>
+    api.put(`/admin/users/${userId}/role`, { role }),
+  deleteUser: (userId) =>
+    api.delete(`/admin/users/${userId}`),
+  getSettings: () => api.get('/admin/system/settings'),
+  toggleMaintenance: (enabled, message) =>
+    api.put('/admin/system/maintenance', { enabled, message }),
+  getNotifications: () => api.get('/admin/notifications'),
+  createNotification: (data) => api.post('/admin/notifications', data),
+  deleteNotification: (id) => api.delete(`/admin/notifications/${id}`),
+}
+
+// ── Notifications & System Status ─────────────────────────────────────────────
+export const notificationApi = {
+  getSystemStatus: () => api.get('/system/status'),
+  list: () => api.get('/notifications'),
+  markRead: (id) => api.post(`/notifications/${id}/read`),
+}
+
 export default api

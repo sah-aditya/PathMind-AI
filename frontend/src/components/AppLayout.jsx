@@ -7,6 +7,7 @@ import {
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
 import ChatOverlay from './ChatOverlay'
+import NotificationBell from './NotificationBell'
 import { chatApi } from '../services/api'
 
 const navItems = [
@@ -131,6 +132,21 @@ export default function AppLayout() {
             </button>
           </div>
 
+          {/* Admin Portal Link */}
+          {(user?.role === 'admin' || user?.email === 'er.adityasah@gmail.com') && (
+            <div className="pt-3">
+              <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider px-3 py-1 mb-1">Administration</p>
+              <NavLink
+                to="/admin"
+                className={({ isActive }) => `nav-item ${isActive ? 'active bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Shield className="w-4 h-4 flex-shrink-0 text-purple-600 dark:text-purple-400" />
+                <span>Admin Portal</span>
+              </NavLink>
+            </div>
+          )}
+
           <div className="pt-4 mt-4 border-t border-slate-200/80 dark:border-darkBg-border">
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 py-1 mb-1">Legal</p>
             <Link
@@ -212,8 +228,11 @@ export default function AppLayout() {
             </div>
           </div>
 
-          {/* Right: Theme Toggle & Assistant */}
+          {/* Right: Notification Bell, Theme Toggle & Assistant */}
           <div className="flex items-center gap-2.5">
+            {/* System Broadcast Notification Bell */}
+            <NotificationBell />
+
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}

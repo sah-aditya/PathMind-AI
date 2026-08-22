@@ -39,7 +39,11 @@ export default function Login() {
       const { data } = await authApi.login(form)
       login(data.user, data.access_token)
       toast.success(`Welcome back, ${data.user.name}!`)
-      navigate('/dashboard')
+      if (data.user?.role === 'admin' || data.user?.email === 'er.adityasah@gmail.com') {
+        navigate('/admin')
+      } else {
+        navigate('/dashboard')
+      }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Login failed')
     } finally {
