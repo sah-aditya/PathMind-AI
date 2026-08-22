@@ -10,6 +10,7 @@ from app.models.user import User
 from app.models.profile import LearnerProfile, LearnerSkill
 from app.models.learning import LearningPath
 from app.models.admin import SystemSetting, SystemNotification, UserNotificationRead
+from app.models.support import SupportTicket, TicketMessage
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -280,6 +281,175 @@ def delete_system_notification(
     return {"status": "success", "message": "Notification deleted."}
 
 
+# ── Support Helpdesk Management ────────────────────────────────────────────────
+
+class AdminTicketReplyIn(BaseModel):
+    message: str
+    status: Optional[str] = "in_progress"  # "in_progress", "resolved", "closed"
+
+class AdminTicketStatusIn(BaseModel):
+    status: str  # "open", "in_progress", "resolved", "closed"
+
+
+@router.get("/support/tickets")
+def get_all_support_tickets(
+    status_filter: Optional[str] = None,
+    category_filter: Optional[str] = None,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    query = db.query(SupportTicket)
+    if status_filter and status_filter != "ALL":
+        query = query.filter(SupportTicket.status == status_filter)
+    if category_filter and category_filter != "ALL":
+        query = query.filter(SupportTicket.category == category_filter)
+    
+    tickets = query.order_by(SupportTicket.updated_at.desc()).all()
+    result = []
+    for t in tickets:
+        u = t.user
+        profile = db.query(LearnerProfile).filter(LearnerProfile.user_id == t.user_id).first()
+        msgs = t.messages
+        latest_msg = msgs[-1].message if msgs else ""
+        last_role = msgs[-1].sender_role if msgs else "user"
+
+        result.append({
+            "id": t.id,
+            "user_id": t.user_id,
+            "user_name": u.name if u else "Deleted User",
+            "user_email": u.email if u else "—",
+            "user_goal": profile.goal_title if profile else "No Goal Set",
+            "subject": t.subject,
+            "category": t.category,
+            "priority": t.priority,
+            "status": t.status,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+            "updated_at": t.updated_at.isoformat() if t.updated_at else None,
+            "resolved_at": t.resolved_at.isoformat() if t.resolved_at else None,
+            "resolved_by": t.resolved_by,
+            "messages_count": len(msgs),
+            "latest_message": latest_msg,
+            "last_sender_role": last_role,
+        })
+    return result
+
+
+@router.get("/support/tickets/{ticket_id}")
+def get_admin_ticket_detail(
+    ticket_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found.")
+    
+    u = ticket.user
+    profile = db.query(LearnerProfile).filter(LearnerProfile.user_id == ticket.user_id).first()
+
+    return {
+        "id": ticket.id,
+        "user_id": ticket.user_id,
+        "user_name": u.name if u else "Deleted User",
+        "user_email": u.email if u else "—",
+        "user_goal": profile.goal_title if profile else "No Goal Set",
+        "subject": ticket.subject,
+        "category": ticket.category,
+        "priority": ticket.priority,
+        "status": ticket.status,
+        "created_at": ticket.created_at.isoformat() if ticket.created_at else None,
+        "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
+        "resolved_at": ticket.resolved_at.isoformat() if ticket.resolved_at else None,
+        "resolved_by": ticket.resolved_by,
+        "messages": [
+            {
+                "id": m.id,
+                "sender_id": m.sender_id,
+                "sender_role": m.sender_role,
+                "sender_name": m.sender_name,
+                "message": m.message,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            }
+            for m in ticket.messages
+        ],
+    }
+
+
+@router.post("/support/tickets/{ticket_id}/reply")
+def admin_reply_to_ticket(
+    ticket_id: int,
+    payload: AdminTicketReplyIn,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    if not payload.message.strip():
+        raise HTTPException(status_code=400, detail="Reply message cannot be empty.")
+    
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found.")
+    
+    # Add message
+    msg = TicketMessage(
+        ticket_id=ticket.id,
+        sender_id=admin.id,
+        sender_role="admin",
+        sender_name="PathMind Support",
+        message=payload.message.strip(),
+    )
+    db.add(msg)
+    
+    # Update status
+    target_status = payload.status or "in_progress"
+    ticket.status = target_status
+    ticket.updated_at = datetime.utcnow()
+    if target_status == "resolved":
+        ticket.resolved_at = datetime.utcnow()
+        ticket.resolved_by = f"Superadmin ({admin.email})"
+    
+    db.commit()
+    return {"status": "success", "message": "Support reply dispatched to user."}
+
+
+@router.put("/support/tickets/{ticket_id}/status")
+def admin_update_ticket_status(
+    ticket_id: int,
+    payload: AdminTicketStatusIn,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found.")
+    
+    ticket.status = payload.status
+    ticket.updated_at = datetime.utcnow()
+    if payload.status == "resolved":
+        ticket.resolved_at = datetime.utcnow()
+        ticket.resolved_by = f"Superadmin ({admin.email})"
+    elif payload.status in ["open", "in_progress"]:
+        ticket.resolved_at = None
+        ticket.resolved_by = None
+    
+    db.commit()
+    return {"status": "success", "message": f"Ticket status changed to {payload.status}."}
+
+
+@router.delete("/support/tickets/{ticket_id}")
+def admin_delete_ticket(
+    ticket_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found.")
+    
+    db.delete(ticket)
+    db.commit()
+    return {"status": "success", "message": "Ticket disposed and deleted."}
+
+
 # ── Stats Overview ────────────────────────────────────────────────────────────
 
 @router.get("/stats")
@@ -290,6 +460,8 @@ def get_admin_stats(
     total_users = db.query(User).count()
     active_paths = db.query(LearningPath).filter(LearningPath.status == "active").count()
     total_notifications = db.query(SystemNotification).count()
+    open_tickets = db.query(SupportTicket).filter(SupportTicket.status.in_(["open", "in_progress"])).count()
+    total_tickets = db.query(SupportTicket).count()
     m_mode = db.query(SystemSetting).filter(SystemSetting.key == "maintenance_mode").first()
     is_maintenance = m_mode.value.lower() == "true" if m_mode else False
 
@@ -297,5 +469,7 @@ def get_admin_stats(
         "total_users": total_users,
         "active_paths": active_paths,
         "total_notifications": total_notifications,
+        "open_tickets": open_tickets,
+        "total_tickets": total_tickets,
         "is_maintenance": is_maintenance,
     }

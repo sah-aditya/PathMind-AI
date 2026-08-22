@@ -6,7 +6,8 @@ import {
   Trash2, Search, CheckCircle, Eye, EyeOff, Copy, Check,
   AlertTriangle, RefreshCw, X, Megaphone, Send,
   Cpu, Database, Lock, Sparkles, Server, CheckSquare,
-  Pencil
+  Pencil, LifeBuoy, MessageSquare, CornerDownRight,
+  Filter, UserCheck, Inbox
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 
@@ -80,6 +81,13 @@ export default function Admin() {
   const [selectedMaintMode, setSelectedMaintMode] = useState(MAINTENANCE_MODES[0].id)
   const [customMaintText, setCustomMaintText] = useState('')
 
+  // Support Helpdesk state
+  const [ticketStatusFilter, setTicketStatusFilter] = useState('ALL')
+  const [selectedTicketForAdmin, setSelectedTicketForAdmin] = useState(null)
+  const [adminReplyInput, setAdminReplyInput] = useState('')
+  const [adminReplyStatus, setAdminReplyStatus] = useState('in_progress')
+  const [supportSuccessToast, setSupportSuccessToast] = useState('')
+
   // New Announcement form state
   const [notifTitle, setNotifTitle] = useState('')
   const [notifMsg, setNotifMsg] = useState('')
@@ -109,6 +117,21 @@ export default function Admin() {
   const { data: notifications = [] } = useQuery({
     queryKey: ['adminNotifications'],
     queryFn: () => adminApi.getNotifications().then(r => r.data),
+  })
+
+  // 5. Fetch Support Tickets
+  const { data: supportTickets = [], isLoading: ticketsLoading } = useQuery({
+    queryKey: ['adminSupportTickets', ticketStatusFilter],
+    queryFn: () => adminApi.getSupportTickets(ticketStatusFilter, 'ALL').then(r => r.data),
+    refetchInterval: 10000,
+  })
+
+  // 6. Fetch Single Ticket Thread Detail for Modal
+  const { data: adminTicketDetail, isLoading: detailLoading } = useQuery({
+    queryKey: ['adminSupportTicketDetail', selectedTicketForAdmin?.id],
+    queryFn: () => adminApi.getSupportTicketDetail(selectedTicketForAdmin.id).then(r => r.data),
+    enabled: !!selectedTicketForAdmin,
+    refetchInterval: 4000,
   })
 
   // Mutations
@@ -185,6 +208,37 @@ export default function Admin() {
     },
   })
 
+  // Support Mutations
+  const adminReplyTicketMutation = useMutation({
+    mutationFn: ({ ticketId, message, status }) => adminApi.replySupportTicket(ticketId, message, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportTicketDetail', selectedTicketForAdmin?.id] })
+      queryClient.invalidateQueries({ queryKey: ['adminSupportTickets'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      setAdminReplyInput('')
+      setSupportSuccessToast('Reply dispatched directly to user window.')
+      setTimeout(() => setSupportSuccessToast(''), 3000)
+    },
+  })
+
+  const updateTicketStatusMutation = useMutation({
+    mutationFn: ({ ticketId, status }) => adminApi.updateSupportTicketStatus(ticketId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportTicketDetail', selectedTicketForAdmin?.id] })
+      queryClient.invalidateQueries({ queryKey: ['adminSupportTickets'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+    },
+  })
+
+  const deleteTicketMutation = useMutation({
+    mutationFn: (ticketId) => adminApi.deleteSupportTicket(ticketId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportTickets'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      setSelectedTicketForAdmin(null)
+    },
+  })
+
   const togglePasswordVisibility = (userId) => {
     setRevealedPasswords(prev => ({ ...prev, [userId]: !prev[userId] }))
   }
@@ -198,13 +252,11 @@ export default function Admin() {
   // Handle Maintenance Toggle Click
   const handleMaintenanceToggle = () => {
     if (settings?.maintenance_mode) {
-      // Currently ON -> Turn OFF immediately
       maintenanceMutation.mutate({
         enabled: false,
         message: settings?.maintenance_message,
       })
     } else {
-      // Currently OFF -> Prompt to select 1 of 6 professional modes
       setMaintModalOpen(true)
     }
   }
@@ -280,6 +332,24 @@ export default function Admin() {
           </div>
         </div>
 
+        {/* Support Tickets Queue */}
+        <div className="p-5 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card flex flex-col justify-between h-32">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500">Support Desk</span>
+            <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-subtle">
+              <LifeBuoy className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
+              {stats?.open_tickets ?? 0}
+            </p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+              Active open queries
+            </p>
+          </div>
+        </div>
+
         {/* Active Paths */}
         <div className="p-5 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card flex flex-col justify-between h-32">
           <div className="flex items-center justify-between">
@@ -294,24 +364,6 @@ export default function Admin() {
             </p>
             <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
               Topological DAGs running
-            </p>
-          </div>
-        </div>
-
-        {/* Announcements */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card flex flex-col justify-between h-32">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500">Announcements</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-subtle">
-              <Bell className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
-              {stats?.total_notifications ?? '…'}
-            </p>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-              Global broadcast messages
             </p>
           </div>
         </div>
@@ -353,7 +405,6 @@ export default function Admin() {
             </p>
           </div>
 
-          {/* Maintenance Switch & Change Button */}
           <div className="flex items-center gap-3 self-start sm:self-auto">
             {settings?.maintenance_mode && (
               <button
@@ -384,7 +435,6 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Active notice display */}
         {settings?.maintenance_mode && (
           <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
@@ -396,6 +446,167 @@ export default function Admin() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* ── Support Helpdesk Command Section ──────────── */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <LifeBuoy className="w-5 h-5 text-rose-500" />
+              Learner Support Desk & Queries
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Handle queries raised by learners, reply directly to their window, and resolve issues
+            </p>
+          </div>
+
+          {/* Ticket Status Filter Tabs */}
+          <div className="flex rounded-2xl border border-slate-200 dark:border-darkBg-border p-1 bg-slate-100 dark:bg-darkBg-canvas text-xs font-semibold">
+            {['ALL', 'open', 'in_progress', 'resolved'].map((st) => (
+              <button
+                key={st}
+                onClick={() => setTicketStatusFilter(st)}
+                className={`px-3 py-1 rounded-xl transition-colors capitalize ${
+                  ticketStatusFilter === st
+                    ? 'bg-white dark:bg-darkBg-card text-slate-900 dark:text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                {st.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tickets Table */}
+        <div className="rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 dark:bg-darkBg-cardSub/60 border-b border-slate-200/80 dark:border-darkBg-border text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="px-5 py-3.5">Learner</th>
+                  <th className="px-5 py-3.5">Subject & Preview</th>
+                  <th className="px-5 py-3.5">Category</th>
+                  <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5">Date</th>
+                  <th className="px-5 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-darkBg-border">
+                {ticketsLoading ? (
+                  <tr>
+                    <td colSpan="6" className="p-8 text-center text-slate-400">Loading support tickets…</td>
+                  </tr>
+                ) : supportTickets.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="p-8 text-center text-slate-400">
+                      No support tickets found in this queue.
+                    </td>
+                  </tr>
+                ) : (
+                  supportTickets.map((t) => {
+                    const isResolved = t.status === 'resolved' || t.status === 'closed'
+                    const isUserLast = t.last_sender_role === 'user'
+
+                    return (
+                      <tr key={t.id} className="hover:bg-slate-50/70 dark:hover:bg-darkBg-cardSub/40 transition-colors">
+                        
+                        {/* Learner Info */}
+                        <td className="px-5 py-4">
+                          <p className="font-bold text-slate-900 dark:text-white">{t.user_name}</p>
+                          <p className="text-slate-400 dark:text-slate-500 font-mono text-[11px]">{t.user_email}</p>
+                          <p className="text-[10px] text-slate-400">{t.user_goal}</p>
+                        </td>
+
+                        {/* Subject & Latest Message */}
+                        <td className="px-5 py-4 max-w-xs">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="font-bold text-slate-900 dark:text-white line-clamp-1">{t.subject}</span>
+                            {isUserLast && !isResolved && (
+                              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-shrink-0" title="Awaiting Admin Reply" />
+                            )}
+                          </div>
+                          <p className="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">
+                            {t.latest_message}
+                          </p>
+                        </td>
+
+                        {/* Category & Priority */}
+                        <td className="px-5 py-4">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300 capitalize text-xs block">
+                            {t.category.replace('_', ' ')}
+                          </span>
+                          <span className="text-[10px] text-slate-400 uppercase font-mono">
+                            {t.priority}
+                          </span>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-5 py-4">
+                          <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-xl inline-block border ${
+                            isResolved
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                              : t.status === 'in_progress'
+                              ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
+                              : 'bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300'
+                          }`}>
+                            {t.status.replace('_', ' ')}
+                          </span>
+                        </td>
+
+                        {/* Date */}
+                        <td className="px-5 py-4 text-[11px] text-slate-400">
+                          {t.updated_at ? new Date(t.updated_at).toLocaleDateString() : ''}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-5 py-4 text-right">
+                          <div className="inline-flex items-center gap-1.5">
+                            
+                            {/* Open / Reply Thread */}
+                            <button
+                              onClick={() => setSelectedTicketForAdmin(t)}
+                              className="btn-primary text-xs py-1.5 px-3 rounded-xl flex items-center gap-1"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" /> Reply
+                            </button>
+
+                            {/* Mark Resolved directly */}
+                            {!isResolved && (
+                              <button
+                                onClick={() => updateTicketStatusMutation.mutate({ ticketId: t.id, status: 'resolved' })}
+                                className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800"
+                                title="Mark as Resolved"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            {/* Delete Ticket */}
+                            <button
+                              onClick={() => {
+                                if (confirm(`Dispose and delete support ticket "${t.subject}"?`)) {
+                                  deleteTicketMutation.mutate(t.id)
+                                }
+                              }}
+                              className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50"
+                              title="Delete Ticket"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+
+                          </div>
+                        </td>
+
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {/* ── User Management Section ──────────────────── */}
@@ -793,6 +1004,139 @@ export default function Admin() {
         </div>
 
       </div>
+
+      {/* ── Admin Support Ticket Thread & Reply Modal ── */}
+      {selectedTicketForAdmin && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-4">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${
+                    selectedTicketForAdmin.status === 'resolved'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                      : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                  }`}>
+                    {selectedTicketForAdmin.status.replace('_', ' ')}
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    Ticket #{selectedTicketForAdmin.id} • {selectedTicketForAdmin.category}
+                  </span>
+                </div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  {selectedTicketForAdmin.subject}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Learner: <strong className="text-slate-800 dark:text-slate-200">{selectedTicketForAdmin.user_name}</strong> ({selectedTicketForAdmin.user_email})
+                </p>
+              </div>
+
+              <button
+                onClick={() => setSelectedTicketForAdmin(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Conversation Thread Messages */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-72">
+              {detailLoading ? (
+                <p className="text-xs text-slate-400 text-center py-6">Loading conversation…</p>
+              ) : adminTicketDetail?.messages?.map((m) => {
+                const isAdmin = m.sender_role === 'admin'
+
+                return (
+                  <div key={m.id} className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}>
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 px-1">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">
+                        {m.sender_name} {isAdmin ? '(Support)' : ''}
+                      </span>
+                      <span>•</span>
+                      <span>{m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                    </div>
+
+                    <div className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
+                      isAdmin
+                        ? 'bg-purple-600 text-white rounded-tr-sm shadow-subtle'
+                        : 'bg-slate-100 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-slate-100 rounded-tl-sm shadow-subtle'
+                    }`}>
+                      <p className="whitespace-pre-wrap">{m.message}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Support Success Toast */}
+            {supportSuccessToast && (
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">{supportSuccessToast}</p>
+            )}
+
+            {/* Admin Reply Composer */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!adminReplyInput.trim()) return
+                adminReplyTicketMutation.mutate({
+                  ticketId: selectedTicketForAdmin.id,
+                  message: adminReplyInput.trim(),
+                  status: adminReplyStatus,
+                })
+              }}
+              className="space-y-3 pt-3 border-t border-slate-100 dark:border-darkBg-border"
+            >
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                  Dispatch Reply to Learner
+                </label>
+                <textarea
+                  rows="3"
+                  placeholder="Type your response to the user..."
+                  value={adminReplyInput}
+                  onChange={(e) => setAdminReplyInput(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">After replying set status to:</span>
+                  <select
+                    value={adminReplyStatus}
+                    onChange={(e) => setAdminReplyStatus(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs font-semibold"
+                  >
+                    <option value="in_progress">In Progress (Open)</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTicketForAdmin(null)}
+                    className="btn-secondary text-xs px-4 py-2 rounded-xl"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={adminReplyTicketMutation.isPending || !adminReplyInput.trim()}
+                    className="btn-primary text-xs px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold flex items-center gap-1.5"
+                  >
+                    <Send className="w-3.5 h-3.5" /> Send Reply
+                  </button>
+                </div>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
 
       {/* ── 6 Selectable Professional Maintenance Modes Modal ── */}
       {maintModalOpen && (

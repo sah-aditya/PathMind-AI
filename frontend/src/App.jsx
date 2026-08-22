@@ -16,6 +16,7 @@ import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import Admin from './pages/Admin'
 import Maintenance from './pages/Maintenance'
+import Help from './pages/Help'
 import AppLayout from './components/AppLayout'
 
 function PrivateRoute({ children }) {
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/roadmap" element={<Roadmap />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/resource/:id" element={<ResourceDetail />} />
+          <Route path="/help" element={<Help />} />
           
           {/* Admin Command Portal */}
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />

@@ -2,7 +2,7 @@ import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
 import {
   LayoutDashboard, Map, GitBranch, LogOut, Brain,
-  MessageCircle, Menu, X, Sun, Moon, RefreshCcw, Shield, BookOpen, ChevronDown
+  MessageCircle, Menu, X, Sun, Moon, RefreshCcw, Shield, BookOpen, ChevronDown, LifeBuoy
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
@@ -130,6 +130,14 @@ export default function AppLayout() {
               <RefreshCcw className="w-4 h-4 flex-shrink-0 text-slate-500" />
               <span>Re-Onboard Goal</span>
             </button>
+            <NavLink
+              to="/help"
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <LifeBuoy className="w-4 h-4 flex-shrink-0 text-brand-600 dark:text-brand-400" />
+              <span>Help & Support</span>
+            </NavLink>
           </div>
 
           {/* Admin Portal Link */}

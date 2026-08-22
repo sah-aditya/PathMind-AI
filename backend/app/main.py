@@ -3,13 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.api.routes import auth, profile, learning_path, assessment, dashboard, chat, resources, admin, notifications
+from app.api.routes import auth, profile, learning_path, assessment, dashboard, chat, resources, admin, notifications, support
 
 from contextlib import asynccontextmanager
 import logging
 
 from app.db.database import engine, Base, SessionLocal
-from app.models import user, profile as prof_model, learning, admin as admin_models
+from app.models import user, profile as prof_model, learning, admin as admin_models, support as support_models
 from app.core.security import hash_password
 
 logger = logging.getLogger(__name__)
@@ -164,6 +164,7 @@ app.include_router(assessment.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(resources.router, prefix="/api")
+app.include_router(support.router, prefix="/api")
 
 
 @app.get("/")

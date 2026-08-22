@@ -100,6 +100,25 @@ export const adminApi = {
   getNotifications: () => api.get('/admin/notifications'),
   createNotification: (data) => api.post('/admin/notifications', data),
   deleteNotification: (id) => api.delete(`/admin/notifications/${id}`),
+  getSupportTickets: (status, category) =>
+    api.get('/admin/support/tickets', { params: { status_filter: status, category_filter: category } }),
+  getSupportTicketDetail: (id) =>
+    api.get(`/admin/support/tickets/${id}`),
+  replySupportTicket: (id, message, status) =>
+    api.post(`/admin/support/tickets/${id}/reply`, { message, status }),
+  updateSupportTicketStatus: (id, status) =>
+    api.put(`/admin/support/tickets/${id}/status`, { status }),
+  deleteSupportTicket: (id) =>
+    api.delete(`/admin/support/tickets/${id}`),
+}
+
+// ── Support Tickets (Learner) ──────────────────────────────────────────────────
+export const supportApi = {
+  createTicket: (data) => api.post('/support/tickets', data),
+  getTickets: () => api.get('/support/tickets'),
+  getTicketDetail: (id) => api.get(`/support/tickets/${id}`),
+  replyTicket: (id, message) => api.post(`/support/tickets/${id}/reply`, { message }),
+  resolveTicket: (id) => api.put(`/support/tickets/${id}/resolve`),
 }
 
 // ── Notifications & System Status ─────────────────────────────────────────────
