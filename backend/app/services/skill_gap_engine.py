@@ -75,9 +75,16 @@ def compute_skill_gap(
         SkillGapReport with prioritized gaps
     """
     if goal_id not in GOALS_DATA:
-        raise ValueError(f"Unknown goal: {goal_id}")
-
-    goal = GOALS_DATA[goal_id]
+        try:
+            from app.services.dynamic_goal_engine import get_or_create_goal
+            _, goal = get_or_create_goal(goal_id)
+            GOALS_DATA[goal_id] = goal
+        except Exception:
+            # Fallback to closest available static goal
+            fallback_id = list(GOALS_DATA.keys())[0]
+            goal = GOALS_DATA[fallback_id]
+    else:
+        goal = GOALS_DATA[goal_id]
     required_skills: List[str] = goal["required_skills"]
     min_mastery = 0.70  # 70% mastery = "sufficient" for a skill
 

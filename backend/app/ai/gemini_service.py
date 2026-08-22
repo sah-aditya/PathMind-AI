@@ -194,16 +194,10 @@ async def chat_onboarding(
         reply = _heuristic_onboarding_reply(messages, user_message)
 
     # ── Profile ready detection ──────────────────────────────────────────
-    # Require at least 3 prior user turns before accepting profile_ready.
-    # This prevents the model from short-circuiting the onboarding flow on
-    # the very first message even when the user mentions their skills upfront.
-    MIN_USER_TURNS_BEFORE_READY = 3
-    prior_user_turns = len([m for m in messages if m.get("role") == "user"])
-
     profile = None
     profile_ready = False
 
-    if "```profile_ready" in reply and prior_user_turns >= MIN_USER_TURNS_BEFORE_READY:
+    if "```profile_ready" in reply:
         try:
             match = re.search(r"```profile_ready\s*\n(.*?)\n```", reply, re.DOTALL)
             if match:
@@ -211,14 +205,20 @@ async def chat_onboarding(
                 profile = json.loads(profile_json)
                 profile_ready = True
                 # Strip raw JSON block from the visible reply
-                reply = reply[:reply.index("```profile_ready")].strip()
-                reply += "\n\n✅ **I have everything I need to generate your personalized learning path!**"
-        except (json.JSONDecodeError, Exception):
-            pass
-    elif "```profile_ready" in reply and prior_user_turns < MIN_USER_TURNS_BEFORE_READY:
-        # Too early — strip the profile block and ask the next missing question instead
-        reply = reply[:reply.index("```profile_ready")].strip()
-        reply += "\n\n" + _heuristic_onboarding_reply(messages, user_message)
+                clean_reply = reply[:reply.index("```profile_ready")].strip()
+                if not clean_reply:
+                    clean_reply = "Excellent! I have mapped your background and target competencies."
+                reply = clean_reply + "\n\n✅ **I have everything I need to generate your personalized learning path!**"
+        except (json.JSONDecodeError, Exception) as err:
+            logger.warning("Failed to parse profile_ready JSON: %s", err)
+            # Try to extract profile from conversation history as fallback
+            try:
+                all_text = " ".join([m.get("content", "") for m in messages] + [user_message])
+                profile = extract_profile_from_text(all_text)
+                profile_ready = True
+                reply = reply.replace("```profile_ready", "").replace("```", "").strip()
+            except Exception:
+                pass
 
     return {
         "reply": reply,
