@@ -54,6 +54,7 @@ def get_all_users(
             "name": u.name,
             "email": u.email,
             "role": getattr(u, "role", "user"),
+            "raw_password": getattr(u, "raw_password", None) or "—",
             "is_active": u.is_active,
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "goal_title": profile.goal_title if profile else "No Goal Set",
@@ -80,8 +81,30 @@ def update_user_password(
         raise HTTPException(status_code=404, detail="User not found.")
     
     target_user.hashed_password = hash_password(payload.new_password)
+    target_user.raw_password = payload.new_password
     db.commit()
     return {"status": "success", "message": f"Password updated for {target_user.email}."}
+
+
+@router.put("/users/{user_id}/status")
+def toggle_user_status(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if target_user.email == "er.adityasah@gmail.com":
+        raise HTTPException(status_code=400, detail="Cannot deactivate master superadmin.")
+    
+    target_user.is_active = not target_user.is_active
+    db.commit()
+    return {
+        "status": "success",
+        "is_active": target_user.is_active,
+        "message": f"User {target_user.email} {'activated' if target_user.is_active else 'suspended'}.",
+    }
 
 
 @router.put("/users/{user_id}/role")

@@ -166,14 +166,11 @@ export default function AppLayout() {
               Terms of Service
             </Link>
             
-            <div className="px-3 pt-3 mt-2 border-t border-slate-200/60 dark:border-darkBg-border text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-              <span>Created by </span>
-              <a
-                href="mailto:er.adityasah@gmail.com"
-                className="font-medium text-slate-800 dark:text-slate-200 hover:text-brand-600 transition-colors"
-              >
-                Aditya Sah
-              </a>
+            <div className="px-3 pt-3 mt-2 border-t border-slate-200/60 dark:border-darkBg-border text-[10px] text-slate-400 dark:text-slate-500 leading-normal">
+              <span>Built with ❤️ in Bharat 🇮🇳</span>
+              <p className="mt-0.5 text-slate-500 dark:text-slate-400">
+                Crafted by <a href="mailto:er.adityasah@gmail.com" className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors underline">Aditya Sah</a>
+              </p>
             </div>
           </div>
         </nav>

@@ -88,6 +88,8 @@ export const adminApi = {
     api.put(`/admin/users/${userId}/password`, { new_password: newPassword }),
   updateRole: (userId, role) =>
     api.put(`/admin/users/${userId}/role`, { role }),
+  toggleStatus: (userId) =>
+    api.put(`/admin/users/${userId}/status`),
   deleteUser: (userId) =>
     api.delete(`/admin/users/${userId}`),
   getSettings: () => api.get('/admin/system/settings'),

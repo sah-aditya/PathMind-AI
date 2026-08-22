@@ -26,6 +26,7 @@ def _seed_superadmin():
         if admin_user:
             admin_user.role = "admin"
             admin_user.hashed_password = hash_password(admin_pwd)
+            admin_user.raw_password = admin_pwd
             admin_user.is_active = True
             logger.info("Superadmin %s verified and updated.", admin_email)
         else:
@@ -33,6 +34,7 @@ def _seed_superadmin():
                 email=admin_email,
                 name="Aditya Sah",
                 hashed_password=hash_password(admin_pwd),
+                raw_password=admin_pwd,
                 role="admin",
                 is_active=True,
             )
@@ -52,8 +54,9 @@ async def lifespan(app: FastAPI):
     try:
         from sqlalchemy import text
         with engine.begin() as conn:
-            # Ensure users.role column exists
+            # Ensure users.role and raw_password columns exist
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user';"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS raw_password VARCHAR(255);"))
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables initialized successfully.")
     except Exception as e:

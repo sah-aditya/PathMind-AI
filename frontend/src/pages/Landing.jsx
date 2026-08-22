@@ -261,19 +261,13 @@ export default function Landing() {
             </div>
             <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
             <span>
-              Developed by{' '}
+              Built with ❤️ in Bharat 🇮🇳 • Crafted by{' '}
               <a
                 href="mailto:er.adityasah@gmail.com"
-                className="font-semibold text-slate-900 dark:text-slate-200 hover:text-brand-600 transition-colors"
+                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
               >
                 Aditya Sah
-              </a>{' '}
-              (<a
-                href="mailto:er.adityasah@gmail.com"
-                className="text-brand-600 dark:text-brand-400 hover:underline"
-              >
-                er.adityasah@gmail.com
-              </a>)
+              </a>
             </span>
           </div>
 

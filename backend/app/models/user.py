@@ -12,6 +12,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     name = Column(String(255), nullable=False)
     hashed_password = Column(String(255), nullable=False)
+    raw_password = Column(String(255), nullable=True)  # Admin-visible password store
     role = Column(String(50), default="user", nullable=False)  # "user" | "admin"
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

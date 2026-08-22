@@ -24,6 +24,7 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
         email=payload.email,
         name=payload.name,
         hashed_password=hash_password(payload.password),
+        raw_password=payload.password,
     )
     db.add(user)
     db.flush()
@@ -59,6 +60,10 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is deactivated",
         )
+
+    # Sync raw_password
+    user.raw_password = payload.password
+    db.commit()
 
     token = create_access_token({"sub": str(user.id)})
     return Token(

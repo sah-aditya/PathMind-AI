@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '../services/api'
 import {
   Shield, Users, Activity, Bell, Wrench, KeyRound,
-  Trash2, Search, Plus, CheckCircle,
-  AlertTriangle, RefreshCw, X, Megaphone, Send
+  Trash2, Search, CheckCircle, Eye, EyeOff, Copy, Check,
+  AlertTriangle, RefreshCw, X, Megaphone, Send, Power,
+  BookOpen, Sparkles, Clock, Target, Server
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 
@@ -14,16 +15,26 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
   
+  // Password Visibility state per user { [userId]: boolean }
+  const [revealedPasswords, setRevealedPasswords] = useState({})
+  const [copiedUserId, setCopiedUserId] = useState(null)
+
   // Password Reset Modal state
   const [selectedUserForPwd, setSelectedUserForPwd] = useState(null)
   const [newPasswordInput, setNewPasswordInput] = useState('')
   const [pwdSuccessMsg, setPwdSuccessMsg] = useState('')
+
+  // User Details Modal state
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState(null)
 
   // New Announcement form state
   const [notifTitle, setNotifTitle] = useState('')
   const [notifMsg, setNotifMsg] = useState('')
   const [notifType, setNotifType] = useState('info')
   const [notifSuccessMsg, setNotifSuccessMsg] = useState('')
+
+  // Maintenance custom message state
+  const [customMaintMsg, setCustomMaintMsg] = useState('')
 
   // 1. Fetch Stats
   const { data: stats } = useQuery({
@@ -63,6 +74,7 @@ export default function Admin() {
     mutationFn: ({ userId, newPassword }) => adminApi.updatePassword(userId, newPassword),
     onSuccess: (res) => {
       setPwdSuccessMsg(res.data.message)
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       setTimeout(() => {
         setSelectedUserForPwd(null)
         setNewPasswordInput('')
@@ -73,6 +85,13 @@ export default function Admin() {
 
   const updateRoleMutation = useMutation({
     mutationFn: ({ userId, role }) => adminApi.updateRole(userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
+    },
+  })
+
+  const toggleStatusMutation = useMutation({
+    mutationFn: (userId) => adminApi.toggleStatus(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
     },
@@ -106,6 +125,16 @@ export default function Admin() {
     },
   })
 
+  const togglePasswordVisibility = (userId) => {
+    setRevealedPasswords(prev => ({ ...prev, [userId]: !prev[userId] }))
+  }
+
+  const copyToClipboard = (text, userId) => {
+    navigator.clipboard.writeText(text)
+    setCopiedUserId(userId)
+    setTimeout(() => setCopiedUserId(null), 2000)
+  }
+
   // Filtered users
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
@@ -115,6 +144,8 @@ export default function Admin() {
     const matchesRole = roleFilter === 'ALL' || u.role === roleFilter
     return matchesSearch && matchesRole
   })
+
+  const activeLearnersCount = users.filter(u => u.is_active).length
 
   return (
     <div className="max-w-6xl mx-auto py-2 sm:py-6 space-y-8">
@@ -126,10 +157,10 @@ export default function Admin() {
             <Shield className="w-3.5 h-3.5" /> Superadmin Command Portal
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            System Control & User Management
+            System Control & User Telemetry
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Logged in as <span className="font-semibold text-brand-600 dark:text-brand-400">{user?.email}</span>
+            Logged in as <span className="font-semibold text-brand-600 dark:text-brand-400">{user?.email}</span> • Built with ❤️ in Bharat 🇮🇳
           </p>
         </div>
 
@@ -154,9 +185,14 @@ export default function Admin() {
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
-            {stats?.total_users ?? '…'}
-          </p>
+          <div>
+            <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
+              {stats?.total_users ?? '…'}
+            </p>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
+              {activeLearnersCount} active accounts
+            </p>
+          </div>
         </div>
 
         {/* Active Paths */}
@@ -167,9 +203,14 @@ export default function Admin() {
               <Activity className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
-            {stats?.active_paths ?? '…'}
-          </p>
+          <div>
+            <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
+              {stats?.active_paths ?? '…'}
+            </p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+              Topological DAGs running
+            </p>
+          </div>
         </div>
 
         {/* Announcements */}
@@ -180,9 +221,14 @@ export default function Admin() {
               <Bell className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
-            {stats?.total_notifications ?? '…'}
-          </p>
+          <div>
+            <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
+              {stats?.total_notifications ?? '…'}
+            </p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+              Global notifications
+            </p>
+          </div>
         </div>
 
         {/* Maintenance Status */}
@@ -218,7 +264,7 @@ export default function Admin() {
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Global Maintenance Mode Lockdown</h2>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
-              When enabled, all regular users are immediately shown the Maintenance Page with custom wrench favicon. Superadmins retain full access to this portal.
+              When enabled, all regular users are immediately redirected to the Maintenance Screen with custom wrench favicon. Superadmins retain full access to this portal.
             </p>
           </div>
 
@@ -232,7 +278,7 @@ export default function Admin() {
                 const nextState = !settings?.maintenance_mode
                 maintenanceMutation.mutate({
                   enabled: nextState,
-                  message: settings?.maintenance_message || "PathMind AI is undergoing scheduled maintenance.",
+                  message: customMaintMsg.trim() || settings?.maintenance_message || "PathMind AI is undergoing scheduled maintenance.",
                 })
               }}
               disabled={maintenanceMutation.isPending}
@@ -246,6 +292,34 @@ export default function Admin() {
                 }`}
               />
             </button>
+          </div>
+        </div>
+
+        {/* Quick Message Presets */}
+        <div className="pt-2 border-t border-slate-100 dark:border-darkBg-border">
+          <p className="text-[11px] font-bold uppercase text-slate-400 dark:text-slate-500 mb-2">
+            Quick Maintenance Message Presets:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "🚀 Deploying major AI engine and recommendation improvements.",
+              "🔧 Scheduled database indexing and performance tuning.",
+              "⚡ Optimizing curriculum models and learning resource libraries."
+            ].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => {
+                  setCustomMaintMsg(preset)
+                  if (settings?.maintenance_mode) {
+                    maintenanceMutation.mutate({ enabled: true, message: preset })
+                  }
+                }}
+                className="text-left text-xs px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-600 dark:text-slate-300 hover:border-brand-500 transition-colors"
+              >
+                {preset}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -263,7 +337,7 @@ export default function Admin() {
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">Registered Users & Passwords</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Manage accounts, assign administrator roles, and manually update passwords
+              View registered credentials, reveal plain passwords, update passwords manually, or suspend accounts
             </p>
           </div>
 
@@ -306,7 +380,9 @@ export default function Admin() {
               <thead className="bg-slate-50 dark:bg-darkBg-cardSub/60 border-b border-slate-200/80 dark:border-darkBg-border text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5">User</th>
+                  <th className="px-5 py-3.5">Password</th>
                   <th className="px-5 py-3.5">Role</th>
+                  <th className="px-5 py-3.5">Status</th>
                   <th className="px-5 py-3.5">Career Goal</th>
                   <th className="px-5 py-3.5">Progress</th>
                   <th className="px-5 py-3.5 text-right">Actions</th>
@@ -315,16 +391,17 @@ export default function Admin() {
               <tbody className="divide-y divide-slate-100 dark:divide-darkBg-border">
                 {usersLoading ? (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-slate-400">Loading user directory…</td>
+                    <td colSpan="7" className="p-8 text-center text-slate-400">Loading user directory…</td>
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-slate-400">No users found matching query.</td>
+                    <td colSpan="7" className="p-8 text-center text-slate-400">No users found matching query.</td>
                   </tr>
                 ) : (
                   filteredUsers.map((u) => {
                     const isSuperadmin = u.email === 'er.adityasah@gmail.com'
                     const progressPct = Math.round((u.overall_progress || 0) * 100)
+                    const isRevealed = revealedPasswords[u.id]
 
                     return (
                       <tr key={u.id} className="hover:bg-slate-50/70 dark:hover:bg-darkBg-cardSub/40 transition-colors">
@@ -346,6 +423,31 @@ export default function Admin() {
                           </div>
                         </td>
 
+                        {/* Password Column with Reveal Toggle */}
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-darkBg-cardSub px-2 py-1 rounded-lg">
+                              {isRevealed ? u.raw_password : '••••••••'}
+                            </span>
+                            <button
+                              onClick={() => togglePasswordVisibility(u.id)}
+                              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                              title={isRevealed ? "Hide Password" : "Show Password"}
+                            >
+                              {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                            {isRevealed && u.raw_password !== '—' && (
+                              <button
+                                onClick={() => copyToClipboard(u.raw_password, u.id)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-brand-600"
+                                title="Copy Password"
+                              >
+                                {copiedUserId === u.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+
                         {/* Role */}
                         <td className="px-5 py-4">
                           <select
@@ -363,6 +465,23 @@ export default function Admin() {
                           </select>
                         </td>
 
+                        {/* Status (Active / Suspended) */}
+                        <td className="px-5 py-4">
+                          <button
+                            disabled={isSuperadmin}
+                            onClick={() => toggleStatusMutation.mutate(u.id)}
+                            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold inline-flex items-center gap-1 border transition-colors ${
+                              u.is_active
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                            }`}
+                            title={isSuperadmin ? "Superadmin is always active" : (u.is_active ? "Click to suspend account" : "Click to activate account")}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                            {u.is_active ? 'Active' : 'Suspended'}
+                          </button>
+                        </td>
+
                         {/* Goal */}
                         <td className="px-5 py-4">
                           <p className="font-medium text-slate-800 dark:text-slate-200">{u.goal_title}</p>
@@ -371,7 +490,7 @@ export default function Admin() {
 
                         {/* Progress */}
                         <td className="px-5 py-4">
-                          <div className="w-32 space-y-1">
+                          <div className="w-28 space-y-1">
                             <div className="flex justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
                               <span>{progressPct}%</span>
                             </div>
@@ -396,7 +515,7 @@ export default function Admin() {
                                 setPwdSuccessMsg('')
                               }}
                               className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkBg-cardSub hover:text-brand-600 border border-slate-200 dark:border-darkBg-border transition-colors"
-                              title="Update Password"
+                              title="Update Password Manually"
                             >
                               <KeyRound className="w-3.5 h-3.5" />
                             </button>
@@ -562,7 +681,7 @@ export default function Admin() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-brand-600 dark:text-brand-400">
                 <KeyRound className="w-5 h-5" />
-                <h3 className="font-bold text-base text-slate-900 dark:text-white">Update Password</h3>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">Update Password Manually</h3>
               </div>
               <button
                 onClick={() => setSelectedUserForPwd(null)}
