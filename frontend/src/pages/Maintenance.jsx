@@ -27,13 +27,13 @@ export default function Maintenance({ message }) {
       </div>
 
       {/* Center Maintenance Card */}
-      <div className="max-w-md mx-auto w-full text-center space-y-6 my-auto py-8">
+      <div className="max-w-lg mx-auto w-full text-center space-y-6 my-auto py-8">
         
         {/* Animated Icon Container */}
-        <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-          <div className="absolute inset-0 rounded-3xl bg-amber-500/20 dark:bg-amber-500/10 animate-ping opacity-60" />
-          <div className="relative w-20 h-20 rounded-3xl bg-amber-500 text-white flex items-center justify-center shadow-xl">
-            <Wrench className="w-10 h-10 animate-bounce" />
+        <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+          <div className="absolute inset-0 rounded-3xl bg-amber-500/20 dark:bg-amber-500/10 animate-ping opacity-50" />
+          <div className="relative w-16 h-16 rounded-3xl bg-amber-500 text-white flex items-center justify-center shadow-lg">
+            <Wrench className="w-8 h-8" />
           </div>
         </div>
 
@@ -44,18 +44,18 @@ export default function Maintenance({ message }) {
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            We'll Be Right Back!
+            Platform Maintenance in Progress
           </h1>
 
-          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-sm mx-auto">
-            {message || "PathMind AI is temporarily undergoing scheduled performance upgrades and maintenance. All learning records are safe."}
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-md mx-auto">
+            {message || "PathMind AI is currently undergoing scheduled system maintenance to enhance platform reliability. Please check back shortly."}
           </p>
         </div>
 
         {/* Estimated Status Box */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-sm text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
+        <div className="p-4 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-sm text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 max-w-sm mx-auto">
           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-          <span>Engine optimizations in progress</span>
+          <span>Engineering optimizations in progress • Data secure</span>
         </div>
 
       </div>

@@ -4,10 +4,56 @@ import { adminApi } from '../services/api'
 import {
   Shield, Users, Activity, Bell, Wrench, KeyRound,
   Trash2, Search, CheckCircle, Eye, EyeOff, Copy, Check,
-  AlertTriangle, RefreshCw, X, Megaphone, Send, Power,
-  BookOpen, Sparkles, Clock, Target, Server
+  AlertTriangle, RefreshCw, X, Megaphone, Send,
+  Cpu, Database, Lock, Sparkles, Server, CheckSquare
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
+
+// 6 Selectable Professional Maintenance Modes (Short, Professional, No Emojis)
+export const MAINTENANCE_MODES = [
+  {
+    id: 'scheduled',
+    title: 'Scheduled System Maintenance',
+    tag: 'Standard Upgrade',
+    icon: Wrench,
+    description: 'PathMind AI is currently undergoing scheduled system maintenance to enhance platform reliability. Please check back shortly.',
+  },
+  {
+    id: 'ai-engine',
+    title: 'AI Recommendation Engine Upgrade',
+    tag: 'Model Optimization',
+    icon: Cpu,
+    description: 'We are deploying updates to the core curriculum and recommendation algorithms. Service will resume shortly.',
+  },
+  {
+    id: 'database',
+    title: 'Database Performance Optimization',
+    tag: 'Data Infrastructure',
+    icon: Database,
+    description: 'Routine database indexing and infrastructure optimization in progress. All learning records remain secure.',
+  },
+  {
+    id: 'security',
+    title: 'Platform Security & Infrastructure Updates',
+    tag: 'Security Patching',
+    icon: Lock,
+    description: 'Applying critical infrastructure and security updates to protect learner data and improve system availability.',
+  },
+  {
+    id: 'curriculum',
+    title: 'Major Feature & Curriculum Deployment',
+    tag: 'Feature Release',
+    icon: Sparkles,
+    description: 'New career tracks and curriculum updates are currently being deployed to the platform. We will be back online soon.',
+  },
+  {
+    id: 'diagnostic',
+    title: 'Server Diagnostic & Network Maintenance',
+    tag: 'Infrastructure Health',
+    icon: Server,
+    description: 'Conducting temporary server diagnostics and network health checks. Full access will be restored momentarily.',
+  },
+]
 
 export default function Admin() {
   const { user } = useAuthStore()
@@ -24,17 +70,16 @@ export default function Admin() {
   const [newPasswordInput, setNewPasswordInput] = useState('')
   const [pwdSuccessMsg, setPwdSuccessMsg] = useState('')
 
-  // User Details Modal state
-  const [selectedUserForDetails, setSelectedUserForDetails] = useState(null)
+  // Maintenance Selection Modal state
+  const [maintModalOpen, setMaintModalOpen] = useState(false)
+  const [selectedMaintMode, setSelectedMaintMode] = useState(MAINTENANCE_MODES[0].id)
+  const [customMaintText, setCustomMaintText] = useState('')
 
   // New Announcement form state
   const [notifTitle, setNotifTitle] = useState('')
   const [notifMsg, setNotifMsg] = useState('')
   const [notifType, setNotifType] = useState('info')
   const [notifSuccessMsg, setNotifSuccessMsg] = useState('')
-
-  // Maintenance custom message state
-  const [customMaintMsg, setCustomMaintMsg] = useState('')
 
   // 1. Fetch Stats
   const { data: stats } = useQuery({
@@ -67,6 +112,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminSettings'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      setMaintModalOpen(false)
     },
   })
 
@@ -112,7 +158,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
       setNotifTitle('')
       setNotifMsg('')
-      setNotifSuccessMsg('Announcement broadcasted successfully!')
+      setNotifSuccessMsg('Announcement broadcasted successfully.')
       setTimeout(() => setNotifSuccessMsg(''), 3000)
     },
   })
@@ -133,6 +179,31 @@ export default function Admin() {
     navigator.clipboard.writeText(text)
     setCopiedUserId(userId)
     setTimeout(() => setCopiedUserId(null), 2000)
+  }
+
+  // Handle Maintenance Toggle Click
+  const handleMaintenanceToggle = () => {
+    if (settings?.maintenance_mode) {
+      // Currently ON -> Turn OFF immediately
+      maintenanceMutation.mutate({
+        enabled: false,
+        message: settings?.maintenance_message,
+      })
+    } else {
+      // Currently OFF -> Prompt to select 1 of 6 professional modes
+      setMaintModalOpen(true)
+    }
+  }
+
+  // Confirm and activate selected maintenance mode
+  const handleConfirmMaintenanceMode = () => {
+    const chosenMode = MAINTENANCE_MODES.find(m => m.id === selectedMaintMode)
+    const finalMessage = customMaintText.trim() || chosenMode?.description || MAINTENANCE_MODES[0].description
+    
+    maintenanceMutation.mutate({
+      enabled: true,
+      message: finalMessage,
+    })
   }
 
   // Filtered users
@@ -157,7 +228,7 @@ export default function Admin() {
             <Shield className="w-3.5 h-3.5" /> Superadmin Command Portal
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            System Control & User Telemetry
+            System Control & User Management
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Logged in as <span className="font-semibold text-brand-600 dark:text-brand-400">{user?.email}</span> • Built with ❤️ in Bharat 🇮🇳
@@ -226,7 +297,7 @@ export default function Admin() {
               {stats?.total_notifications ?? '…'}
             </p>
             <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-              Global notifications
+              Global broadcast messages
             </p>
           </div>
         </div>
@@ -255,7 +326,7 @@ export default function Admin() {
 
       </div>
 
-      {/* ── Global Maintenance Mode Toggle Card ──────── */}
+      {/* ── Global Maintenance Mode Lockdown Card ──────── */}
       <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
@@ -264,23 +335,27 @@ export default function Admin() {
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">Global Maintenance Mode Lockdown</h2>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
-              When enabled, all regular users are immediately redirected to the Maintenance Screen with custom wrench favicon. Superadmins retain full access to this portal.
+              Select from 6 professional maintenance presets to display to visitors. Superadmins retain full access to this portal.
             </p>
           </div>
 
-          {/* Maintenance Switch */}
+          {/* Maintenance Switch & Change Button */}
           <div className="flex items-center gap-3 self-start sm:self-auto">
+            {settings?.maintenance_mode && (
+              <button
+                onClick={() => setMaintModalOpen(true)}
+                className="btn-secondary text-xs px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300"
+              >
+                Change Mode
+              </button>
+            )}
+
             <span className="text-xs font-bold font-mono text-slate-600 dark:text-slate-300">
               {settings?.maintenance_mode ? 'ON' : 'OFF'}
             </span>
+
             <button
-              onClick={() => {
-                const nextState = !settings?.maintenance_mode
-                maintenanceMutation.mutate({
-                  enabled: nextState,
-                  message: customMaintMsg.trim() || settings?.maintenance_message || "PathMind AI is undergoing scheduled maintenance.",
-                })
-              }}
+              onClick={handleMaintenanceToggle}
               disabled={maintenanceMutation.isPending}
               className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${
                 settings?.maintenance_mode ? 'bg-amber-500' : 'bg-slate-300 dark:bg-darkBg-cardSub'
@@ -295,38 +370,16 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Quick Message Presets */}
-        <div className="pt-2 border-t border-slate-100 dark:border-darkBg-border">
-          <p className="text-[11px] font-bold uppercase text-slate-400 dark:text-slate-500 mb-2">
-            Quick Maintenance Message Presets:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {[
-              "🚀 Deploying major AI engine and recommendation improvements.",
-              "🔧 Scheduled database indexing and performance tuning.",
-              "⚡ Optimizing curriculum models and learning resource libraries."
-            ].map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                onClick={() => {
-                  setCustomMaintMsg(preset)
-                  if (settings?.maintenance_mode) {
-                    maintenanceMutation.mutate({ enabled: true, message: preset })
-                  }
-                }}
-                className="text-left text-xs px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-600 dark:text-slate-300 hover:border-brand-500 transition-colors"
-              >
-                {preset}
-              </button>
-            ))}
-          </div>
-        </div>
-
+        {/* Active notice display */}
         {settings?.maintenance_mode && (
-          <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            <span>Active maintenance notice: <strong>{settings?.maintenance_message}</strong></span>
+          <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Active Maintenance Announcement Broadcasted to Users:</p>
+              <p className="mt-0.5 leading-relaxed font-mono text-[11px] text-amber-800 dark:text-amber-300">
+                "{settings?.maintenance_message}"
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -337,7 +390,7 @@ export default function Admin() {
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">Registered Users & Passwords</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              View registered credentials, reveal plain passwords, update passwords manually, or suspend accounts
+              View registered credentials, reveal user passwords, update credentials, or suspend accounts
             </p>
           </div>
 
@@ -672,6 +725,114 @@ export default function Admin() {
         </div>
 
       </div>
+
+      {/* ── 6 Selectable Professional Maintenance Modes Modal ── */}
+      {maintModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-4">
+              <div className="flex items-center gap-2.5 text-amber-600 dark:text-amber-400">
+                <Wrench className="w-5 h-5" />
+                <div>
+                  <h3 className="font-bold text-lg text-slate-900 dark:text-white leading-tight">
+                    Select Maintenance Mode Message
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Choose one of 6 professional, emoji-free announcements for the website
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setMaintModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 6 Selectable Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {MAINTENANCE_MODES.map((mode) => {
+                const isSelected = selectedMaintMode === mode.id
+                const IconComponent = mode.icon
+
+                return (
+                  <div
+                    key={mode.id}
+                    onClick={() => {
+                      setSelectedMaintMode(mode.id)
+                      setCustomMaintText(mode.description)
+                    }}
+                    className={`p-4 rounded-2xl border transition-all duration-150 cursor-pointer flex flex-col justify-between space-y-2 ${
+                      isSelected
+                        ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/40'
+                        : 'bg-slate-50 dark:bg-darkBg-cardSub/60 border-slate-200 dark:border-darkBg-border hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                          isSelected ? 'bg-amber-500 text-white' : 'bg-slate-200 dark:bg-darkBg-border text-slate-600 dark:text-slate-400'
+                        }`}>
+                          <IconComponent className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-bold text-xs text-slate-900 dark:text-white">{mode.title}</span>
+                      </div>
+                      {isSelected && (
+                        <CheckSquare className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                      )}
+                    </div>
+
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                      "{mode.description}"
+                    </p>
+
+                    <div className="pt-1">
+                      <span className="text-[10px] font-mono uppercase font-bold text-slate-400 dark:text-slate-500">
+                        {mode.tag}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Custom Edit Box */}
+            <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-darkBg-border">
+              <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
+                Selected Message Preview (or Customize):
+              </label>
+              <textarea
+                rows="2"
+                value={customMaintText || (MAINTENANCE_MODES.find(m => m.id === selectedMaintMode)?.description || '')}
+                onChange={(e) => setCustomMaintText(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+              />
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3">
+              <button
+                type="button"
+                onClick={() => setMaintModalOpen(false)}
+                className="btn-secondary text-xs px-4 py-2.5 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmMaintenanceMode}
+                disabled={maintenanceMutation.isPending}
+                className="btn-primary text-xs px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 text-white font-semibold"
+              >
+                {maintenanceMutation.isPending ? 'Activating…' : 'Activate Maintenance Mode'}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* ── Password Reset Modal ─────────────────────── */}
       {selectedUserForPwd && (
