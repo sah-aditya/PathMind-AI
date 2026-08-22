@@ -53,36 +53,27 @@ async def send_message(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # ── Load phase-specific history ─────────────────────────────────────────
-    # For onboarding: only load messages from the CURRENT onboarding session
-    # (i.e., messages after the last reset, which is the most recent batch
-    # that have phase='onboarding').
-    # For Q&A assistant: only load phase='assistant' messages.
-    if payload.phase == "onboarding":
-        history_rows = (
-            db.query(ChatMessage)
-            .filter(
-                ChatMessage.user_id == current_user.id,
-                ChatMessage.msg_metadata["phase"].astext == "onboarding",
-            )
-            .order_by(ChatMessage.created_at.asc())
-            .limit(30)  # Keep current session context
-            .all()
-        )
-    else:
-        # Q&A: only assistant-phase messages, last 12 (6 exchanges)
-        history_rows = (
-            db.query(ChatMessage)
-            .filter(
-                ChatMessage.user_id == current_user.id,
-                ChatMessage.msg_metadata["phase"].astext == "assistant",
-            )
-            .order_by(ChatMessage.created_at.asc())
-            .limit(12)
-            .all()
-        )
+    # ── Load phase-specific history safely ──────────────────────────────────
+    # Fetch recent messages for the user ordered by creation time
+    all_user_messages = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.user_id == current_user.id)
+        .order_by(ChatMessage.created_at.asc())
+        .all()
+    )
 
-    history = [{"role": m.role, "content": m.content, "phase": payload.phase} for m in history_rows]
+    # Filter in Python by phase to avoid database dialect / JSON column issues
+    target_phase = payload.phase or "assistant"
+    filtered_rows = [
+        m for m in all_user_messages
+        if isinstance(m.msg_metadata, dict) and m.msg_metadata.get("phase") == target_phase
+    ]
+
+    # Limit to reasonable recent context
+    limit_count = 30 if target_phase == "onboarding" else 12
+    history_rows = filtered_rows[-limit_count:]
+
+    history = [{"role": m.role, "content": m.content, "phase": target_phase} for m in history_rows]
 
     # Save user message
     user_msg = ChatMessage(
@@ -184,10 +175,18 @@ def get_chat_history(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    query = db.query(ChatMessage).filter(ChatMessage.user_id == current_user.id)
+    messages = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.user_id == current_user.id)
+        .order_by(ChatMessage.created_at.asc())
+        .all()
+    )
     if phase:
-        query = query.filter(ChatMessage.msg_metadata["phase"].astext == phase)
-    messages = query.order_by(ChatMessage.created_at.asc()).limit(limit).all()
+        messages = [
+            m for m in messages
+            if isinstance(m.msg_metadata, dict) and m.msg_metadata.get("phase") == phase
+        ]
+    messages = messages[-limit:]
     return [
         {
             "id": m.id,
