@@ -2,10 +2,12 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import {
   LayoutDashboard, Map, GitBranch, LogOut, Brain,
-  MessageCircle, Menu, X, Bell, Settings, ChevronDown
+  MessageCircle, Menu, X, Bell, Settings, ChevronDown, RefreshCcw
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import ChatOverlay from './ChatOverlay'
+import { chatApi } from '../services/api'
+import toast from 'react-hot-toast'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -31,6 +33,16 @@ export default function AppLayout() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const handleLogout = () => { logout(); navigate('/') }
+
+  const handleReOnboard = async () => {
+    setMobileMenuOpen(false)
+    try {
+      await chatApi.reset()
+    } catch {
+      // Non-critical — proceed even if reset fails
+    }
+    navigate('/onboarding')
+  }
 
   const greeting = () => {
     const h = new Date().getHours()
@@ -94,14 +106,13 @@ export default function AppLayout() {
                 <MessageCircle className="w-4 h-4 flex-shrink-0" />
                 AI Assistant
               </button>
-              <NavLink
-                to="/onboarding"
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
+              <button
+                onClick={handleReOnboard}
+                className="nav-item w-full text-left"
               >
-                <Brain className="w-4 h-4 flex-shrink-0" />
+                <RefreshCcw className="w-4 h-4 flex-shrink-0" />
                 Re-onboard
-              </NavLink>
+              </button>
             </div>
           </nav>
 

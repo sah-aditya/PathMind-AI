@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
+import re
 
 from app.db.database import get_db
 from app.core.security import get_current_user
@@ -9,6 +10,34 @@ from app.models.user import User
 from app.models.learning import ChatMessage
 from app.ai.gemini_service import chat_onboarding, answer_question, match_goal_to_id
 from app.models.profile import LearnerProfile, LearnerSkill
+
+# Keywords that clearly indicate non-tech/non-CS career goals
+_NON_TECH_KEYWORDS = [
+    "pilot", "aviation", "flight", "cockpit", "airline",
+    "doctor", "physician", "surgeon", "nurse", "medical",
+    "lawyer", "attorney", "legal", "advocate",
+    "chef", "cook", "culinary",
+    "actor", "singer", "musician", "performer",
+    "athlete", "football", "cricket", "basketball", "sports",
+    "soldier", "army", "military", "navy", "airforce",
+    "teacher", "professor", "educator",
+    "accountant", "chartered accountant", "ca ",
+    "fashion", "model", "modeling",
+]
+
+def _is_non_tech_goal(text: str) -> bool:
+    low = text.lower()
+    return any(kw in low for kw in _NON_TECH_KEYWORDS)
+
+_NON_TECH_REPLY = (
+    "That's a wonderful aspiration! ✈️ However, **PathMind AI specializes in "
+    "tech and software career paths** — fields like Data Science, Web Development, "
+    "DevOps, Mobile Development, UI/UX Design, and more.\n\n"
+    "If you're interested in breaking into tech or adding technical skills alongside "
+    "your other goals, I'd love to help! Otherwise, there are great resources outside "
+    "PathMind for your specific path.\n\n"
+    "Would you like to explore a tech career goal instead?"
+)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -24,15 +53,36 @@ async def send_message(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Load recent chat history
-    history_rows = (
-        db.query(ChatMessage)
-        .filter(ChatMessage.user_id == current_user.id)
-        .order_by(ChatMessage.created_at.asc())
-        .limit(20)
-        .all()
-    )
-    history = [{"role": m.role, "content": m.content} for m in history_rows]
+    # ── Load phase-specific history ─────────────────────────────────────────
+    # For onboarding: only load messages from the CURRENT onboarding session
+    # (i.e., messages after the last reset, which is the most recent batch
+    # that have phase='onboarding').
+    # For Q&A assistant: only load phase='assistant' messages.
+    if payload.phase == "onboarding":
+        history_rows = (
+            db.query(ChatMessage)
+            .filter(
+                ChatMessage.user_id == current_user.id,
+                ChatMessage.msg_metadata["phase"].astext == "onboarding",
+            )
+            .order_by(ChatMessage.created_at.asc())
+            .limit(30)  # Keep current session context
+            .all()
+        )
+    else:
+        # Q&A: only assistant-phase messages, last 12 (6 exchanges)
+        history_rows = (
+            db.query(ChatMessage)
+            .filter(
+                ChatMessage.user_id == current_user.id,
+                ChatMessage.msg_metadata["phase"].astext == "assistant",
+            )
+            .order_by(ChatMessage.created_at.asc())
+            .limit(12)
+            .all()
+        )
+
+    history = [{"role": m.role, "content": m.content, "phase": payload.phase} for m in history_rows]
 
     # Save user message
     user_msg = ChatMessage(
@@ -45,21 +95,29 @@ async def send_message(
     db.flush()
 
     if payload.phase == "onboarding":
-        result = await chat_onboarding(
-            messages=history,
-            user_message=payload.message,
-        )
-        reply = result["reply"]
-        profile_ready = result["profile_ready"]
-        extracted_profile = result.get("profile")
-
-        # If profile is ready, save it
-        if profile_ready and extracted_profile:
-            await _save_extracted_profile(
-                user_id=current_user.id,
-                extracted=extracted_profile,
-                db=db,
+        # ── Non-tech goal detection ────────────────────────────────────────
+        # Check the first user message for clearly non-tech goals
+        first_user_turns = [m for m in history if m["role"] == "user"]
+        if len(first_user_turns) == 0 and _is_non_tech_goal(payload.message):
+            reply = _NON_TECH_REPLY
+            profile_ready = False
+            extracted_profile = None
+        else:
+            result = await chat_onboarding(
+                messages=history,
+                user_message=payload.message,
             )
+            reply = result["reply"]
+            profile_ready = result["profile_ready"]
+            extracted_profile = result.get("profile")
+
+            # If profile is ready, save it
+            if profile_ready and extracted_profile:
+                await _save_extracted_profile(
+                    user_id=current_user.id,
+                    extracted=extracted_profile,
+                    db=db,
+                )
 
     else:
         # Build learner context for Q&A
@@ -99,6 +157,24 @@ async def send_message(
         "profile_ready": profile_ready,
         "profile": extracted_profile,
     }
+
+
+@router.post("/reset")
+def reset_chat_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Delete ALL chat history for the current user.
+    Called when the user navigates to Re-onboard to start fresh.
+    """
+    deleted = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.user_id == current_user.id)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return {"deleted": deleted, "message": "Chat history cleared. Starting fresh!"}
 
 
 @router.get("/history")

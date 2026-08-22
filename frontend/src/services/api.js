@@ -48,6 +48,8 @@ export const chatApi = {
     api.post('/chat/message', { message, phase }),
   getHistory: (phase, limit = 50) =>
     api.get('/chat/history', { params: { phase, limit } }),
+  reset: () =>
+    api.post('/chat/reset'),
 }
 
 // ── Learning Path ─────────────────────────────────────────────────────────────
