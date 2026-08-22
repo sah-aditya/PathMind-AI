@@ -3,11 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '../services/api'
 import {
   Shield, Users, Activity, Bell, Wrench, KeyRound,
-  Trash2, UserCheck, UserX, Search, Plus, CheckCircle,
-  AlertTriangle, Info, RefreshCw, Lock, Sparkles, X
+  Trash2, Search, Plus, CheckCircle,
+  AlertTriangle, RefreshCw, X, Megaphone, Send
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
-import useThemeStore from '../store/themeStore'
 
 export default function Admin() {
   const { user } = useAuthStore()
@@ -151,7 +150,7 @@ export default function Admin() {
         <div className="p-5 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card flex flex-col justify-between h-32">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500">Registered Users</span>
-            <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center shadow-subtle">
               <Users className="w-4 h-4" />
             </div>
           </div>
@@ -164,7 +163,7 @@ export default function Admin() {
         <div className="p-5 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card flex flex-col justify-between h-32">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500">Active Roadmaps</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-subtle">
               <Activity className="w-4 h-4" />
             </div>
           </div>
@@ -177,7 +176,7 @@ export default function Admin() {
         <div className="p-5 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card flex flex-col justify-between h-32">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500">Announcements</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-subtle">
               <Bell className="w-4 h-4" />
             </div>
           </div>
@@ -277,7 +276,7 @@ export default function Admin() {
                 placeholder="Search user, email, goal..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-field pl-9 pr-4 py-2 text-xs w-56 rounded-2xl"
+                className="w-56 pl-9 pr-4 py-2 text-xs rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
 
@@ -353,14 +352,14 @@ export default function Admin() {
                             value={u.role}
                             disabled={isSuperadmin}
                             onChange={(e) => updateRoleMutation.mutate({ userId: u.id, role: e.target.value })}
-                            className={`px-2.5 py-1 rounded-xl text-xs font-bold font-mono border focus:outline-none transition-colors ${
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold font-mono border focus:outline-none transition-colors ${
                               u.role === 'admin'
                                 ? 'bg-purple-50 dark:bg-purple-950/50 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300'
-                                : 'bg-slate-100 dark:bg-darkBg-cardSub border-slate-200 dark:border-darkBg-border text-slate-700 dark:text-slate-300'
+                                : 'bg-slate-50 dark:bg-darkBg-cardSub border-slate-200 dark:border-darkBg-border text-slate-700 dark:text-slate-300'
                             } ${isSuperadmin ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
                           >
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
+                            <option value="user" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white">User</option>
+                            <option value="admin" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white">Admin</option>
                           </select>
                         </td>
 
@@ -373,7 +372,7 @@ export default function Admin() {
                         {/* Progress */}
                         <td className="px-5 py-4">
                           <div className="w-32 space-y-1">
-                            <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                            <div className="flex justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
                               <span>{progressPct}%</span>
                             </div>
                             <div className="h-1.5 bg-slate-100 dark:bg-darkBg-border rounded-full overflow-hidden">
@@ -435,7 +434,7 @@ export default function Admin() {
         {/* Create Broadcast Form */}
         <div className="p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-4">
           <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <Megaphone className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             <h3 className="font-bold text-slate-900 dark:text-white text-base">Broadcast Announcement</h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -452,42 +451,48 @@ export default function Admin() {
                 type: notifType,
               })
             }}
-            className="space-y-3 pt-2"
+            className="space-y-4 pt-2"
           >
             <div>
-              <label className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Title</label>
+              <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
+                Announcement Title
+              </label>
               <input
                 type="text"
                 placeholder="e.g. New Distributed Systems Track Available"
                 value={notifTitle}
                 onChange={(e) => setNotifTitle(e.target.value)}
                 required
-                className="input-field mt-1 text-xs"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
 
             <div>
-              <label className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Type</label>
+              <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
+                Notification Type
+              </label>
               <select
                 value={notifType}
                 onChange={(e) => setNotifType(e.target.value)}
-                className="input-field mt-1 text-xs"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
               >
-                <option value="info">Information (Blue)</option>
-                <option value="success">Success (Green)</option>
-                <option value="warning">Alert (Yellow)</option>
+                <option value="info" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white py-1">Information (Blue)</option>
+                <option value="success" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white py-1">Success (Green)</option>
+                <option value="warning" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white py-1">Alert (Yellow)</option>
               </select>
             </div>
 
             <div>
-              <label className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">Message</label>
+              <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
+                Announcement Message
+              </label>
               <textarea
                 rows="3"
                 placeholder="Write your announcement details..."
                 value={notifMsg}
                 onChange={(e) => setNotifMsg(e.target.value)}
                 required
-                className="input-field mt-1 text-xs"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
 
@@ -498,9 +503,9 @@ export default function Admin() {
             <button
               type="submit"
               disabled={createNotifMutation.isPending}
-              className="btn-primary w-full py-2.5 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1.5"
+              className="btn-primary w-full py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1.5"
             >
-              <Plus className="w-3.5 h-3.5" /> Send Broadcast
+              <Send className="w-3.5 h-3.5" /> Send Broadcast
             </button>
           </form>
         </div>
@@ -583,7 +588,7 @@ export default function Admin() {
               className="space-y-4"
             >
               <div>
-                <label className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">New Password</label>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">New Password</label>
                 <input
                   type="text"
                   placeholder="Enter new password (min 6 chars)"
@@ -591,7 +596,7 @@ export default function Admin() {
                   onChange={(e) => setNewPasswordInput(e.target.value)}
                   required
                   minLength={6}
-                  className="input-field mt-1 text-xs font-mono"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
 
