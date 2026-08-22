@@ -16,12 +16,33 @@ const DIFF_CLASS  = { beginner: 'badge-green', intermediate: 'badge-yellow', adv
 
 const STATUS_CONFIG = {
   pending:     { label: 'Not started', dot: 'bg-slate-300',   text: 'text-text-muted' },
-  in_progress: { label: 'In progress', dot: 'bg-amber-400',   text: 'text-amber-600' },
-  completed:   { label: 'Completed',   dot: 'bg-emerald-500', text: 'text-emerald-600' },
+  in_progress: { label: 'In progress', dot: 'bg-amber-500',   text: 'text-amber-700' },
+  completed:   { label: 'Completed',   dot: 'bg-emerald-600', text: 'text-emerald-700' },
   skipped:     { label: 'Skipped',     dot: 'bg-slate-300',   text: 'text-text-muted' },
 }
 
-/* ── Resource card ────────────────────────────────────── */
+/* ── Skeleton Loading State ───────────────────────────── */
+function RoadmapSkeleton() {
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-pulse">
+      <div className="space-y-2">
+        <div className="h-4 w-28 bg-slate-200 rounded" />
+        <div className="h-7 w-72 bg-slate-200 rounded" />
+      </div>
+      <div className="card h-28 bg-white" />
+      <div className="space-y-4 pt-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="flex gap-4">
+            <div className="w-9 h-9 rounded-lg bg-slate-200 flex-shrink-0" />
+            <div className="flex-1 card h-32 bg-white" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Resource Card ────────────────────────────────────── */
 function ResourceCard({ item, onStatusChange, onOpen }) {
   const Icon = TYPE_ICON[item.type] || BookOpen
   const cfg  = STATUS_CONFIG[item.status] || STATUS_CONFIG.pending
@@ -33,26 +54,18 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
     <div
       onClick={() => onOpen(item)}
       className={`
-        group relative bg-white border rounded-xl p-4 cursor-pointer
-        transition-all duration-200 hover:shadow-card-md hover:-translate-y-0.5
-        ${isCompleted  ? 'border-emerald-200 bg-emerald-50/40' : ''}
-        ${isInProgress ? 'border-amber-200 bg-amber-50/30' : ''}
-        ${isRevision && !isCompleted ? 'border-amber-200' : ''}
+        group relative bg-white border rounded-lg p-3.5 cursor-pointer
+        transition-colors duration-150 hover:border-slate-300
+        ${isCompleted  ? 'border-emerald-200 bg-emerald-50/20' : ''}
+        ${isInProgress ? 'border-amber-200 bg-amber-50/20' : ''}
         ${!isCompleted && !isInProgress ? 'border-surface-200' : ''}
       `}
     >
-      {/* Left accent bar */}
-      <div className={`
-        absolute left-0 inset-y-0 w-1 rounded-l-xl
-        ${isCompleted ? 'bg-emerald-400' : isInProgress ? 'bg-amber-400' : 'bg-transparent group-hover:bg-brand-400'}
-        transition-colors
-      `} />
-
-      <div className="flex items-start gap-3 pl-2">
-        {/* Icon */}
+      <div className="flex items-start gap-3">
+        {/* Icon / Status Icon */}
         <div className={`
-          w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5
-          ${isCompleted ? 'bg-emerald-100 text-emerald-600' : 'bg-brand-50 text-brand-600'}
+          w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5
+          ${isCompleted ? 'bg-emerald-100 text-emerald-700' : isInProgress ? 'bg-amber-100 text-amber-700' : 'bg-surface-100 text-slate-700'}
         `}>
           {isCompleted
             ? <CheckCircle className="w-4 h-4" />
@@ -62,12 +75,12 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1.5">
-            <p className={`text-sm font-semibold leading-tight ${isCompleted ? 'text-text-muted line-through' : 'text-text-primary'}`}>
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <p className={`text-sm font-semibold leading-snug ${isCompleted ? 'text-text-muted line-through' : 'text-slate-900'}`}>
               {item.title}
             </p>
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              {isRevision && <span className="badge badge-yellow">Revision</span>}
+              {isRevision && <span className="badge badge-yellow text-[10px]">Adaptive Revision</span>}
               <span className={`flex items-center gap-1 text-xs font-medium ${cfg.text}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                 {cfg.label}
@@ -75,40 +88,39 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`badge ${TYPE_CLASS[item.type] || 'badge-gray'}`}>{item.type}</span>
-            <span className={`badge ${DIFF_CLASS[item.difficulty] || 'badge-gray'}`}>{item.difficulty}</span>
-            {item.has_assessment && <span className="badge badge-indigo">Assessment</span>}
-            <span className="flex items-center gap-1 text-xs text-text-muted">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className={`badge ${TYPE_CLASS[item.type] || 'badge-gray'} text-[10px] uppercase`}>{item.type}</span>
+            <span className={`badge ${DIFF_CLASS[item.difficulty] || 'badge-gray'} text-[10px]`}>{item.difficulty}</span>
+            {item.has_assessment && <span className="badge badge-indigo text-[10px]">Assessment Check</span>}
+            <span className="flex items-center gap-1 text-text-secondary">
               <Clock className="w-3 h-3" /> {item.duration_hours}h
             </span>
             {item.rating && (
-              <span className="flex items-center gap-1 text-xs text-amber-500">
-                <Star className="w-3 h-3 fill-amber-400" /> {item.rating}
+              <span className="flex items-center gap-1 text-amber-700 font-medium">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> {item.rating}
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Action row */}
+      {/* Action Row */}
       {!isCompleted && (
         <div className="flex gap-2 mt-3 pl-11" onClick={e => e.stopPropagation()}>
           {item.status === 'pending' && (
             <button
               onClick={() => onStatusChange(item.id, 'in_progress')}
-              className="btn-secondary text-xs py-1.5 px-3"
+              className="btn-secondary text-xs py-1 px-2.5"
             >
-              <PlayCircle className="w-3 h-3" /> Start
+              <PlayCircle className="w-3 h-3" /> Start Unit
             </button>
           )}
           {item.status === 'in_progress' && (
             <button
               onClick={() => onStatusChange(item.id, 'completed')}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg
-                         bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+              className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
             >
-              <CheckCircle className="w-3 h-3" /> Mark complete
+              <CheckCircle className="w-3 h-3" /> Mark as Completed
             </button>
           )}
         </div>
@@ -117,7 +129,7 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
   )
 }
 
-/* ── Phase accordion ──────────────────────────────────── */
+/* ── Phase Accordion ──────────────────────────────────── */
 function PhaseAccordion({ phase, onStatusChange, onOpen, defaultOpen, isLast }) {
   const [open, setOpen] = useState(defaultOpen)
   const progress  = phase.items_total > 0 ? (phase.items_completed / phase.items_total) * 100 : 0
@@ -126,25 +138,22 @@ function PhaseAccordion({ phase, onStatusChange, onOpen, defaultOpen, isLast }) 
 
   return (
     <div className="relative flex gap-4">
-      {/* Timeline column */}
-      <div className="flex flex-col items-center flex-shrink-0 w-10">
-        {/* Phase circle */}
+      {/* Timeline connector */}
+      <div className="flex flex-col items-center flex-shrink-0 w-9">
         <div className={`
-          w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black z-10
-          ${isLocked ? 'bg-surface-200 text-text-muted' : isDone ? 'bg-emerald-500 text-white' : 'bg-brand-600 text-white shadow-brand-sm'}
+          w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold z-10
+          ${isLocked ? 'bg-surface-200 text-text-muted border border-surface-300' : isDone ? 'bg-emerald-600 text-white' : 'bg-brand-600 text-white shadow-subtle'}
         `}>
-          {isLocked ? <Lock className="w-4 h-4" /> : isDone ? <CheckCircle className="w-4 h-4" /> : phase.phase_number}
+          {isLocked ? <Lock className="w-3.5 h-3.5" /> : isDone ? <CheckCircle className="w-3.5 h-3.5" /> : phase.phase_number}
         </div>
-        {/* Connector */}
         {!isLast && (
-          <div className="flex-1 w-0.5 bg-surface-200 mt-2 mb-0 min-h-[24px]" />
+          <div className="flex-1 w-0.5 bg-surface-200 mt-2 mb-0 min-h-[20px]" />
         )}
       </div>
 
-      {/* Card */}
-      <div className={`flex-1 mb-6 ${isLocked ? 'opacity-60' : ''}`}>
-        <div className="card shadow-card">
-          {/* Phase header */}
+      {/* Card Body */}
+      <div className={`flex-1 mb-5 ${isLocked ? 'opacity-60' : ''}`}>
+        <div className="card p-4 sm:p-5">
           <button
             className="w-full flex items-start gap-3 text-left"
             onClick={() => !isLocked && setOpen(!open)}
@@ -152,9 +161,9 @@ function PhaseAccordion({ phase, onStatusChange, onOpen, defaultOpen, isLast }) 
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="font-bold text-text-primary text-sm leading-tight">{phase.title}</h3>
+                <h3 className="font-bold text-slate-900 text-sm">{phase.title}</h3>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs text-text-muted">
+                  <span className="text-xs text-text-secondary font-mono">
                     Week {phase.week_start}–{phase.week_end}
                   </span>
                   {!isLocked && (
@@ -169,24 +178,22 @@ function PhaseAccordion({ phase, onStatusChange, onOpen, defaultOpen, isLast }) 
                 <div className="flex items-center gap-3 mt-2">
                   <div className="progress-bar flex-1 h-1.5">
                     <div
-                      className={`h-full rounded-full transition-all duration-700 ${isDone ? 'bg-emerald-500' : 'bg-brand-500'}`}
+                      className={`h-full rounded-full transition-all duration-500 ${isDone ? 'bg-emerald-600' : 'bg-brand-600'}`}
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <span className="text-xs text-text-muted flex-shrink-0 font-medium">
-                    {phase.items_completed}/{phase.items_total}
+                  <span className="text-[11px] text-text-secondary flex-shrink-0 font-medium">
+                    {phase.items_completed}/{phase.items_total} Done
                   </span>
-                  {isDone && <span className="badge badge-green">Done</span>}
                 </div>
               )}
             </div>
           </button>
 
-          {/* Expanded content */}
           {open && !isLocked && (
-            <div className="mt-4 pt-4 border-t border-surface-200 space-y-2">
+            <div className="mt-4 pt-3.5 border-t border-surface-200 space-y-2.5">
               {phase.description && (
-                <p className="text-xs text-text-muted mb-3 pb-2">{phase.description}</p>
+                <p className="text-xs text-text-secondary pb-1">{phase.description}</p>
               )}
               {phase.items.map(item => (
                 <ResourceCard
@@ -204,12 +211,12 @@ function PhaseAccordion({ phase, onStatusChange, onOpen, defaultOpen, isLast }) 
   )
 }
 
-/* ── Main Roadmap page ────────────────────────────────── */
+/* ── Main Roadmap Page ────────────────────────────────── */
 export default function Roadmap() {
   const navigate  = useNavigate()
   const qc        = useQueryClient()
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['active-path'],
     queryFn:  () => pathApi.getActive().then(r => r.data.path),
   })
@@ -217,137 +224,128 @@ export default function Roadmap() {
   const statusMutation = useMutation({
     mutationFn: ({ itemId, status }) => pathApi.updateItemStatus(itemId, status),
     onSuccess:  () => { qc.invalidateQueries(['active-path']); qc.invalidateQueries(['dashboard']) },
-    onError:    () => toast.error('Failed to update status'),
+    onError:    () => toast.error('Failed to update milestone status'),
   })
 
   const generateMutation = useMutation({
     mutationFn: () => pathApi.generate(),
-    onSuccess:  () => { qc.invalidateQueries(['active-path']); toast.success('Learning path generated!') },
+    onSuccess:  () => { qc.invalidateQueries(['active-path']); toast.success('Learning path refreshed') },
     onError:    err => toast.error(err.response?.data?.detail || 'Failed to generate path'),
   })
 
-  /* ── Loading ── */
-  if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-65px)]">
-      <div className="text-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-500 mx-auto mb-3" />
-        <p className="text-text-secondary text-sm">Loading your roadmap…</p>
-      </div>
-    </div>
-  )
+  if (isLoading) {
+    return <RoadmapSkeleton />
+  }
 
-  /* ── Empty state ── */
-  if (!data) return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-65px)] px-4">
-      <div className="card text-center max-w-sm w-full shadow-card-lg">
-        <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-4">
-          <Map className="w-7 h-7 text-brand-600" />
-        </div>
-        <h2 className="font-bold text-text-primary text-lg mb-2">No active path yet</h2>
-        <p className="text-text-secondary text-sm mb-6">
-          Complete onboarding first, then generate your ML-powered roadmap.
-        </p>
-        <div className="space-y-2">
-          <button onClick={() => navigate('/onboarding')} className="btn-primary w-full justify-center">
-            Start Onboarding <ArrowRight className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => generateMutation.mutate()}
-            disabled={generateMutation.isPending}
-            className="btn-secondary w-full justify-center"
-          >
-            {generateMutation.isPending
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
-              : <><RefreshCw className="w-4 h-4" /> Generate Path</>}
-          </button>
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-65px)] px-4">
+        <div className="card text-center max-w-sm w-full p-6 space-y-3">
+          <div className="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center mx-auto text-slate-700">
+            <Map className="w-6 h-6" />
+          </div>
+          <h2 className="font-bold text-slate-900 text-base">No Active Roadmap Found</h2>
+          <p className="text-text-secondary text-xs leading-relaxed">
+            Complete onboarding to configure your career goals and generate your sequenced learning schedule.
+          </p>
+          <div className="space-y-2 pt-2">
+            <button onClick={() => navigate('/onboarding')} className="btn-primary w-full justify-center text-xs">
+              Start Onboarding <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => generateMutation.mutate()}
+              disabled={generateMutation.isPending}
+              className="btn-secondary w-full justify-center text-xs"
+            >
+              {generateMutation.isPending
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Synthesizing…</>
+                : <><RefreshCw className="w-3.5 h-3.5" /> Synthesize Curriculum</>}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const overallPct = Math.round((data.overall_progress || 0) * 100)
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-      {/* ── Header ────────────────────────────────── */}
-      <div className="mb-6 animate-fade-in">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-brand-600 mb-2 uppercase tracking-wide">
-              <Map className="w-3.5 h-3.5" /> Learning Roadmap
-            </div>
-            <h1 className="text-2xl font-black text-text-primary">{data.title}</h1>
-            <p className="text-text-secondary text-sm mt-1">
-              Week {data.current_week} of {data.total_weeks} · {overallPct}% complete
-            </p>
+      {/* ── Page Header ───────────────────────────── */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-brand-700 uppercase tracking-wider mb-1">
+            <Map className="w-3.5 h-3.5" /> Phased Milestone Schedule
           </div>
-          <button
-            onClick={() => generateMutation.mutate()}
-            disabled={generateMutation.isPending}
-            className="btn-ghost text-xs flex-shrink-0"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
-            Regenerate
-          </button>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{data.title}</h1>
+          <p className="text-text-secondary text-xs mt-1 font-mono">
+            Week {data.current_week} of {data.total_weeks} · {overallPct}% completed
+          </p>
         </div>
-
-        {/* Overall progress card */}
-        <div className="card mt-4 shadow-card">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm font-semibold text-text-primary">Overall Progress</p>
-              <p className="text-xs text-text-muted">
-                {data.phases?.filter(p => p.items_completed === p.items_total && p.items_total > 0).length || 0} of {data.phases?.length || 0} phases complete
-              </p>
-            </div>
-            <span className="text-3xl font-black gradient-text">{overallPct}%</span>
-          </div>
-          <div className="h-3 bg-surface-200 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all duration-1000"
-              style={{ width: `${overallPct}%` }}
-            />
-          </div>
-
-          {data.adaptations?.length > 0 && (
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-surface-200">
-              <Zap className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-              <p className="text-xs text-amber-600 font-medium">
-                Path adapted {data.adaptations.length} time(s) by AI based on your progress
-              </p>
-            </div>
-          )}
-        </div>
+        <button
+          onClick={() => generateMutation.mutate()}
+          disabled={generateMutation.isPending}
+          className="btn-ghost text-xs flex-shrink-0"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
+          <span>Regenerate</span>
+        </button>
       </div>
 
-      {/* ── Recent adaptations ────────────────────── */}
+      {/* ── Overall Progress Card ─────────────────── */}
+      <div className="card p-5 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold text-slate-900">Curriculum Completion</p>
+            <p className="text-xs text-text-secondary">
+              {data.phases?.filter(p => p.items_completed === p.items_total && p.items_total > 0).length || 0} of {data.phases?.length || 0} phases completed
+            </p>
+          </div>
+          <span className="text-2xl font-bold font-mono text-brand-700">{overallPct}%</span>
+        </div>
+        <div className="progress-bar h-2.5">
+          <div
+            className="progress-fill"
+            style={{ width: `${overallPct}%` }}
+          />
+        </div>
+
+        {data.adaptations?.length > 0 && (
+          <div className="flex items-center gap-2 pt-2 text-xs text-amber-800 border-t border-surface-200">
+            <Zap className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+            <span>Path dynamically adjusted {data.adaptations.length} time(s) based on assessment feedback.</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Adaptations Callout ────────────────────── */}
       {data.adaptations?.length > 0 && (
-        <div className="mb-6 space-y-2 animate-fade-in">
+        <div className="space-y-2">
           {data.adaptations.slice(-2).map(a => (
-            <div key={a.id} className="card border-amber-200 bg-amber-50 flex items-start gap-3 !p-4">
-              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div key={a.id} className="p-3 rounded-lg border border-amber-200 bg-amber-50/80 flex items-start gap-2.5 text-xs text-amber-900">
+              <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-amber-700 mb-0.5">🔄 Path Adaptation</p>
-                <p className="text-sm text-text-secondary">{a.description}</p>
+                <span className="font-bold uppercase tracking-wider text-[10px] text-amber-800">Adaptive Event:</span>
+                <p className="mt-0.5 leading-relaxed">{a.description}</p>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* ── Timeline phases ───────────────────────── */}
-      <div className="animate-slide-up">
-        {/* Legend */}
-        <div className="flex items-center gap-4 mb-6 text-xs text-text-muted">
+      {/* ── Timeline Phases ───────────────────────── */}
+      <div className="pt-2">
+        {/* Status Legend */}
+        <div className="flex items-center gap-4 mb-5 text-xs text-text-secondary">
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-md bg-brand-600 inline-block" /> Active
+            <span className="w-2.5 h-2.5 rounded-sm bg-brand-600" /> Active
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-md bg-emerald-500 inline-block" /> Completed
+            <span className="w-2.5 h-2.5 rounded-sm bg-emerald-600" /> Completed
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-md bg-surface-300 inline-block" /> Locked
+            <span className="w-2.5 h-2.5 rounded-sm bg-surface-300" /> Locked
           </span>
         </div>
 
@@ -362,25 +360,26 @@ export default function Roadmap() {
           />
         ))}
 
-        {/* Finish milestone */}
-        <div className="flex gap-4 items-center pl-0">
-          <div className="w-10 flex justify-center">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${overallPct === 100 ? 'bg-emerald-500' : 'bg-surface-200'}`}>
-              <Flag className={`w-4 h-4 ${overallPct === 100 ? 'text-white' : 'text-text-muted'}`} />
+        {/* Milestone Endpoint */}
+        <div className="flex gap-4 items-center">
+          <div className="w-9 flex justify-center flex-shrink-0">
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${overallPct === 100 ? 'bg-emerald-600 text-white' : 'bg-surface-200 text-text-muted border border-surface-300'}`}>
+              <Flag className="w-4 h-4" />
             </div>
           </div>
-          <div className="card flex-1 border-dashed border-surface-300 bg-surface-50 !py-3 !px-4">
-            <p className="text-sm font-bold text-text-primary">
-              {overallPct === 100 ? '🎉 Goal achieved!' : 'Goal: ' + data.title}
+          <div className="card flex-1 p-3.5 bg-surface-50 border-surface-200">
+            <p className="text-xs font-bold text-slate-900">
+              {overallPct === 100 ? 'Goal Milestones Achieved' : 'Goal Completion Objective'}
             </p>
-            <p className="text-xs text-text-muted">
+            <p className="text-[11px] text-text-secondary mt-0.5">
               {overallPct === 100
-                ? 'Congratulations! You\'ve completed your entire learning roadmap.'
-                : `${100 - overallPct}% remaining — keep going!`}
+                ? 'All foundational and advanced modules in this roadmap have been completed.'
+                : `${100 - overallPct}% remaining across remaining units.`}
             </p>
           </div>
         </div>
       </div>
+
     </div>
   )
 }

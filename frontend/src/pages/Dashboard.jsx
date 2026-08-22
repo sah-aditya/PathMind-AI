@@ -8,18 +8,18 @@ import {
 } from 'recharts'
 import {
   ArrowRight, PlayCircle, Zap, Target, CheckCircle,
-  AlertTriangle, Loader2, Brain, BookOpen, Clock,
+  AlertTriangle, Brain, BookOpen, Clock,
   TrendingUp, Award, Calendar, ChevronRight,
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 
-/* ── tiny Stat card ──────────────────────────────────── */
+/* ── Stat Card Component ─────────────────────────────── */
 function StatCard({ label, value, sub, icon: Icon, accent, trend }) {
   return (
-    <div className="stat-card animate-fade-in">
+    <div className="stat-card">
       <div className="flex items-start justify-between">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${accent}`}>
-          <Icon className="w-5 h-5" />
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${accent}`}>
+          <Icon className="w-4 h-4" />
         </div>
         {trend != null && (
           <span className={`text-xs font-semibold flex items-center gap-0.5 ${trend >= 0 ? 'stat-positive' : 'stat-negative'}`}>
@@ -28,29 +28,57 @@ function StatCard({ label, value, sub, icon: Icon, accent, trend }) {
           </span>
         )}
       </div>
-      <p className="stat-value mt-3">{value}</p>
+      <p className="stat-value mt-2.5">{value}</p>
       <p className="stat-label">{label}</p>
-      {sub && <p className="stat-sub text-text-muted">{sub}</p>}
+      {sub && <p className="stat-sub">{sub}</p>}
     </div>
   )
 }
 
-/* ── Circular progress ring ─────────────────────────── */
-function ProgressRing({ pct, size = 96, stroke = 8 }) {
+/* ── Circular Progress Ring ──────────────────────────── */
+function ProgressRing({ pct, size = 96, stroke = 7 }) {
   const r = (size - stroke * 2) / 2
   const circ = 2 * Math.PI * r
   const offset = circ - (pct / 100) * circ
   return (
     <svg width={size} height={size} className="-rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e8edf5" strokeWidth={stroke} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e2e8f0" strokeWidth={stroke} />
       <circle
         cx={size / 2} cy={size / 2} r={r} fill="none"
         stroke="#4f46e5" strokeWidth={stroke}
         strokeDasharray={circ} strokeDashoffset={offset}
         strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 1s ease' }}
+        style={{ transition: 'stroke-dashoffset 0.8s ease' }}
       />
     </svg>
+  )
+}
+
+/* ── Dashboard Skeleton Loading State ────────────────── */
+function DashboardSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6 animate-pulse">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="card space-y-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-200" />
+            <div className="h-6 w-16 bg-slate-200 rounded" />
+            <div className="h-3.5 w-24 bg-slate-200 rounded" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="card h-64 bg-white flex flex-col items-center justify-center gap-3">
+          <div className="w-24 h-24 rounded-full bg-slate-200" />
+          <div className="h-4 w-32 bg-slate-200 rounded" />
+        </div>
+        <div className="lg:col-span-2 card h-64 bg-white space-y-4">
+          <div className="h-4 w-28 bg-slate-200 rounded" />
+          <div className="h-6 w-3/4 bg-slate-200 rounded" />
+          <div className="h-16 bg-slate-100 rounded-lg" />
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -64,14 +92,9 @@ export default function Dashboard() {
     refetchInterval: 60000,
   })
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-65px)]">
-      <div className="text-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-500 mx-auto mb-3" />
-        <p className="text-text-secondary text-sm">Loading your dashboard…</p>
-      </div>
-    </div>
-  )
+  if (isLoading) {
+    return <DashboardSkeleton />
+  }
 
   const { active_path, next_action, skill_categories, skills_map, recent_adaptations } = data || {}
   const overallPct = Math.round((active_path?.overall_progress || 0) * 100)
@@ -99,250 +122,229 @@ export default function Dashboard() {
     { week: 'W7', hours: 11 }, { week: 'W8', hours: 10 },
   ]
 
-  const SKILL_COLORS = ['#4f46e5', '#7c3aed', '#2563eb', '#0891b2', '#059669', '#d97706']
+  const SKILL_COLORS = ['#4f46e5', '#6366f1', '#2563eb', '#0891b2', '#059669', '#d97706']
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-      {/* ── No path CTA ────────────────────────────────────────────── */}
+      {/* ── No Active Path State ─────────────────────────── */}
       {!active_path && (
-        <div className="card overflow-hidden animate-fade-in">
-          {/* Gradient top strip */}
-          <div className="h-1 -mx-6 -mt-6 mb-6 bg-gradient-to-r from-brand-500 via-violet-500 to-indigo-500" />
+        <div className="card overflow-hidden bg-white border border-surface-200 shadow-subtle p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row items-center gap-8">
-            {/* Icon */}
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center shadow-brand flex-shrink-0">
-              <Brain className="w-10 h-10 text-white" />
+            <div className="w-16 h-16 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 flex-shrink-0">
+              <Brain className="w-8 h-8" />
             </div>
-            {/* Copy */}
-            <div className="flex-1 text-center lg:text-left">
-              <h2 className="text-2xl font-black text-text-primary mb-2">Start your personalized journey</h2>
-              <p className="text-text-secondary mb-5 max-w-lg">
-                Chat with PathMind AI to build your profile. Our ML engine will map your skill gaps,
-                sequence prerequisites, and generate a week-by-week roadmap — tailored to your goal.
+            <div className="flex-1 text-center lg:text-left space-y-3">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                Initialize Your Learning Roadmap
+              </h2>
+              <p className="text-sm text-text-secondary max-w-xl leading-relaxed">
+                Complete a guided onboarding session to identify your current background, map skill gaps, and generate your sequenced curriculum.
               </p>
-              <div className="flex flex-wrap gap-3 mb-6 justify-center lg:justify-start">
-                {['Skill Gap Analysis', 'AI Recommendations', 'Adaptive Assessments', 'Progress Tracking'].map(t => (
-                  <span key={t} className="flex items-center gap-1.5 text-xs text-text-secondary">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> {t}
-                  </span>
-                ))}
+              <div className="pt-2">
+                <button onClick={() => navigate('/onboarding')} className="btn-primary">
+                  Begin Onboarding <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
-              <button onClick={() => navigate('/onboarding')} className="btn-primary">
-                Begin Onboarding <ArrowRight className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Stat row ─────────────────────────────────── */}
+      {/* ── Metric Stat Row ─────────────────────────────── */}
       {active_path && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             label="Overall Progress"
             value={`${overallPct}%`}
-            sub={`${active_path.resources_completed} resources done`}
+            sub={`${active_path.resources_completed} modules completed`}
             icon={Award}
-            accent="bg-brand-50 text-brand-600"
-            trend={overallPct > 0 ? 7 : null}
+            accent="bg-brand-50 text-brand-700"
+            trend={overallPct > 0 ? 5 : null}
           />
           <StatCard
             label="Weeks Remaining"
             value={Math.max(0, (active_path.total_weeks || 0) - (active_path.current_week || 0) + 1)}
             sub={`of ${active_path.total_weeks} total weeks`}
             icon={Calendar}
-            accent="bg-violet-50 text-violet-600"
+            accent="bg-slate-100 text-slate-700"
           />
           <StatCard
-            label="Skills Tracked"
+            label="Skills Monitored"
             value={Object.keys(skills_map || {}).length}
-            sub="in your profile"
+            sub="in active competency profile"
             icon={Target}
-            accent="bg-emerald-50 text-emerald-600"
+            accent="bg-emerald-50 text-emerald-700"
           />
           <StatCard
-            label="Path Adaptations"
+            label="Adaptive Events"
             value={recent_adaptations?.length || 0}
-            sub="AI-driven updates"
+            sub="curriculum adjustments"
             icon={Zap}
-            accent="bg-amber-50 text-amber-600"
+            accent="bg-amber-50 text-amber-700"
           />
         </div>
       )}
 
-      {/* ── Middle: progress ring + next action ─────── */}
+      {/* ── Active Module & Progress ────────────────────── */}
       {active_path && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Progress ring card */}
-          <div className="card flex flex-col items-center justify-center text-center animate-slide-up">
-            <p className="text-sm font-semibold text-text-secondary mb-4">Path Completion</p>
-            <div className="relative mb-4">
-              <ProgressRing pct={overallPct} size={120} stroke={10} />
+          {/* Progress Ring Card */}
+          <div className="card flex flex-col items-center justify-center text-center p-6">
+            <span className="input-label mb-3">Roadmap Completion</span>
+            <div className="relative my-2">
+              <ProgressRing pct={overallPct} size={116} stroke={8} />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-black text-text-primary">{overallPct}%</span>
-                <span className="text-xs text-text-muted">complete</span>
+                <span className="text-2xl font-bold text-slate-900 tracking-tight">{overallPct}%</span>
+                <span className="text-[11px] text-text-muted">overall</span>
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-text-primary">{active_path.goal_title}</h3>
-            <div className="grid grid-cols-2 gap-3 w-full mt-4">
-              <div className="bg-surface-100 rounded-xl p-2.5">
-                <p className="text-lg font-bold text-text-primary">{active_path.resources_completed}</p>
-                <p className="text-xs text-text-muted">done</p>
+            <h3 className="text-xs font-semibold text-slate-900 mt-2">{active_path.goal_title}</h3>
+            <div className="grid grid-cols-2 gap-2 w-full mt-4 pt-4 border-t border-surface-200 text-xs">
+              <div className="p-2 bg-surface-50 rounded border border-surface-200">
+                <p className="font-bold text-slate-900">{active_path.resources_completed}</p>
+                <p className="text-[11px] text-text-muted">Completed</p>
               </div>
-              <div className="bg-surface-100 rounded-xl p-2.5">
-                <p className="text-lg font-bold text-text-primary">Week {active_path.current_week}</p>
-                <p className="text-xs text-text-muted">of {active_path.total_weeks}</p>
+              <div className="p-2 bg-surface-50 rounded border border-surface-200">
+                <p className="font-bold text-slate-900">Week {active_path.current_week}</p>
+                <p className="text-[11px] text-text-muted">of {active_path.total_weeks}</p>
               </div>
             </div>
           </div>
 
-          {/* Next action card — spans 2 cols */}
-          <div className="lg:col-span-2 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            <div className="card h-full flex flex-col">
-              <div className="flex items-center gap-2 mb-5">
-                <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
-                  <Zap className="w-3.5 h-3.5 text-amber-600" />
-                </div>
-                <h3 className="text-sm font-semibold text-text-secondary">Up next</h3>
+          {/* Up Next Action Card */}
+          <div className="lg:col-span-2 card flex flex-col justify-between p-6">
+            <div>
+              <div className="flex items-center justify-between border-b border-surface-200 pb-3 mb-4">
+                <span className="input-label !mb-0">Current Learning Objective</span>
+                <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                  {next_action?.phase_title || 'Active Milestone'}
+                </span>
               </div>
 
               {next_action ? (
-                <>
-                  <div className="flex-1">
-                    <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">
-                      {next_action.phase_title}
+                <div className="space-y-3">
+                  <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">{next_action.title}</h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="flex items-center gap-1 text-xs text-text-secondary">
+                      <Clock className="w-3.5 h-3.5" /> {next_action.duration_hours}h estimated
                     </span>
-                    <h2 className="text-xl font-bold text-text-primary mt-3 mb-2">{next_action.title}</h2>
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                      <span className="flex items-center gap-1 text-xs text-text-muted">
-                        <Clock className="w-3.5 h-3.5" /> {next_action.duration_hours}h
+                    <span className="badge badge-gray uppercase">{next_action.type}</span>
+                    {next_action.has_assessment && <span className="badge badge-yellow">Knowledge Check Included</span>}
+                  </div>
+
+                  <div className="p-3 bg-surface-50 rounded-lg border border-surface-200 space-y-1.5 mt-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-text-secondary">Milestone Timeline</span>
+                      <span className="font-semibold text-slate-900">
+                        Week {active_path.current_week} / {active_path.total_weeks}
                       </span>
-                      <span className={`badge ${next_action.type === 'project' ? 'badge-purple' : 'badge-blue'}`}>
-                        {next_action.type}
-                      </span>
-                      {next_action.has_assessment && <span className="badge badge-yellow">Has Assessment</span>}
                     </div>
-                    {/* Progress bar for phase */}
-                    <div className="bg-surface-100 rounded-xl p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs text-text-muted">Phase progress</span>
-                        <span className="text-xs font-semibold text-brand-600">
-                          {Math.round((active_path.current_week / active_path.total_weeks) * 100)}%
-                        </span>
-                      </div>
-                      <div className="progress-bar">
-                        <div
-                          className="progress-fill"
-                          style={{ width: `${Math.round((active_path.current_week / active_path.total_weeks) * 100)}%` }}
-                        />
-                      </div>
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${Math.round((active_path.current_week / active_path.total_weeks) * 100)}%` }}
+                      />
                     </div>
                   </div>
-                  <button
-                    onClick={() => navigate(`/resource/${next_action.resource_id}`, { state: { pathItemId: next_action.item_id } })}
-                    className="btn-primary mt-5 justify-center w-full"
-                  >
-                    <PlayCircle className="w-4 h-4" /> Continue Learning
-                  </button>
-                </>
+                </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center py-6">
-                    <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-                    <p className="font-semibold text-text-primary">All caught up!</p>
-                    <p className="text-text-secondary text-sm mt-1">Check your roadmap for remaining items.</p>
-                    <button onClick={() => navigate('/roadmap')} className="btn-secondary mt-4 mx-auto">
-                      View Roadmap <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
+                <div className="text-center py-8 space-y-2">
+                  <CheckCircle className="w-10 h-10 text-emerald-600 mx-auto" />
+                  <p className="font-semibold text-slate-900">All current milestones completed</p>
+                  <p className="text-xs text-text-secondary">Check your full roadmap for upcoming units.</p>
                 </div>
               )}
             </div>
+
+            {next_action && (
+              <button
+                onClick={() => navigate(`/resource/${next_action.resource_id}`, { state: { pathItemId: next_action.item_id } })}
+                className="btn-primary w-full justify-center mt-5"
+              >
+                <PlayCircle className="w-4 h-4" /> Open Learning Module
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── Charts row ───────────────────────────────── */}
+      {/* ── Activity & Competency Charts ────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Weekly learning hours area chart */}
-        <div className="lg:col-span-2 card animate-fade-in">
-          <div className="flex items-center justify-between mb-5">
+        {/* Weekly Activity */}
+        <div className="lg:col-span-2 card p-5 space-y-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="section-title text-base">Learning Activity</h2>
-              <p className="section-sub text-xs">Weekly hours invested</p>
+              <h2 className="section-title">Weekly Study Engagement</h2>
+              <p className="section-sub">Hours logged across recent milestones</p>
             </div>
-            <span className="badge badge-indigo">Last 8 weeks</span>
+            <span className="badge badge-gray font-mono">Last 8 Weeks</span>
           </div>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={weeklyData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="hoursGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="10%" stopColor="#4f46e5" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.12} />
+                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e8edf5" vertical={false} />
-                <XAxis dataKey="week" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis dataKey="week" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ background: '#fff', border: '1px solid #e8edf5', borderRadius: '12px', color: '#1e293b', boxShadow: '0 4px 6px rgba(0,0,0,0.07)' }}
-                  formatter={v => [`${v}h`]}
+                  formatter={v => [`${v} hours`]}
                 />
-                <Area type="monotone" dataKey="hours" stroke="#4f46e5" strokeWidth={2.5} fill="url(#hoursGrad)" dot={{ fill: '#4f46e5', r: 3 }} activeDot={{ r: 5 }} />
+                <Area type="monotone" dataKey="hours" stroke="#4f46e5" strokeWidth={2} fill="url(#hoursGrad)" dot={{ fill: '#4f46e5', r: 3 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Skills radar */}
-        <div className="card animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <h2 className="section-title text-base mb-1">Skills Overview</h2>
-          <p className="section-sub text-xs mb-4">Mastery by domain</p>
+        {/* Skills Radar */}
+        <div className="card p-5 space-y-4">
+          <div>
+            <h2 className="section-title">Domain Mastery</h2>
+            <p className="section-sub">Competency distribution</p>
+          </div>
           {radarData.length > 0 ? (
             <div className="h-52">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData}>
-                  <PolarGrid stroke="#e8edf5" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 10 }} />
-                  <Radar name="Level" dataKey="Level" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.18} strokeWidth={2} />
+                  <PolarGrid stroke="#e2e8f0" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 10 }} />
+                  <Radar name="Mastery" dataKey="Level" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.15} strokeWidth={1.5} />
                   <Tooltip
-                    contentStyle={{ background: '#fff', border: '1px solid #e8edf5', borderRadius: '12px', color: '#1e293b' }}
                     formatter={v => [`${v}%`]}
                   />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="h-52 flex items-center justify-center">
-              <div className="text-center">
-                <Target className="w-8 h-8 text-text-muted mx-auto mb-2" />
-                <p className="text-text-muted text-sm">Complete assessments to see skills</p>
-              </div>
+            <div className="h-52 flex items-center justify-center text-center text-xs text-text-muted">
+              Complete initial assessments to plot competency radar.
             </div>
           )}
         </div>
       </div>
 
-      {/* ── Bottom: top skills + adaptations ────────── */}
+      {/* ── Bottom Section: Skills & Quick Actions ──────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top skills bar chart */}
-        <div className="card animate-fade-in">
-          <h2 className="section-title text-base mb-1">Top Skills</h2>
-          <p className="section-sub text-xs mb-5">Your strongest competencies</p>
+        {/* Top Skills List */}
+        <div className="card p-5 space-y-4">
+          <div>
+            <h2 className="section-title">Verified Competencies</h2>
+            <p className="section-sub">Highest scoring skill areas</p>
+          </div>
           {topSkills.length > 0 ? (
             <div className="h-52">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topSkills} layout="vertical" margin={{ left: 0, right: 12 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e8edf5" horizontal={false} />
-                  <XAxis type="number" domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} width={100} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: '#fff', border: '1px solid #e8edf5', borderRadius: '12px', color: '#1e293b' }}
-                    formatter={v => [`${v}%`]}
-                  />
-                  <Bar dataKey="level" radius={[0, 6, 6, 0]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                  <XAxis type="number" domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fill: '#334155', fontSize: 11 }} width={100} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={v => [`${v}%`]} />
+                  <Bar dataKey="level" radius={[0, 4, 4, 0]}>
                     {topSkills.map((_, i) => (
                       <Cell key={i} fill={SKILL_COLORS[i % SKILL_COLORS.length]} />
                     ))}
@@ -351,65 +353,43 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="h-52 flex items-center justify-center">
-              <div className="text-center">
-                <BookOpen className="w-8 h-8 text-text-muted mx-auto mb-2" />
-                <p className="text-text-muted text-sm">Complete onboarding to see skills</p>
-              </div>
+            <div className="h-52 flex items-center justify-center text-center text-xs text-text-muted">
+              No skill assessments logged yet.
             </div>
           )}
         </div>
 
-        {/* Recent adaptations + quick links */}
-        <div className="flex flex-col gap-4">
-          {/* Recent adaptations */}
-          {recent_adaptations?.length > 0 && (
-            <div className="card animate-fade-in">
-              <h2 className="section-title text-base mb-3">Recent Adaptations</h2>
-              <div className="space-y-2">
-                {recent_adaptations.slice(0, 2).map(a => (
-                  <div key={a.id} className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-semibold text-amber-700 capitalize mb-0.5">
-                        {a.trigger?.replace(/_/g, ' ')}
-                      </p>
-                      <p className="text-sm text-text-secondary">{a.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Quick links */}
-          <div className="card animate-slide-up">
-            <h2 className="section-title text-base mb-3">Quick Actions</h2>
-            <div className="space-y-2">
-              {[
-                { label: 'View Full Roadmap', icon: BookOpen, to: '/roadmap', color: 'text-brand-600 bg-brand-50', desc: 'See all phases and milestones' },
-                { label: 'Skill Gap Analysis', icon: Target, to: '/skill-gap', color: 'text-emerald-600 bg-emerald-50', desc: 'Identify what you need to learn' },
-                { label: 'AI Onboarding', icon: Brain, to: '/onboarding', color: 'text-violet-600 bg-violet-50', desc: 'Update your profile' },
-              ].map((link, i) => (
-                <button
-                  key={i}
-                  onClick={() => navigate(link.to)}
-                  className="card-hover w-full text-left flex items-center gap-3 !p-3"
-                >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${link.color}`}>
-                    <link.icon className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-text-primary text-sm">{link.label}</p>
-                    <p className="text-xs text-text-muted">{link.desc}</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-text-muted flex-shrink-0" />
-                </button>
-              ))}
-            </div>
+        {/* Quick Actions / Navigation */}
+        <div className="card p-5 space-y-3">
+          <div>
+            <h2 className="section-title">Navigation Shortcuts</h2>
+            <p className="section-sub">Explore full learning curriculum</p>
+          </div>
+          <div className="space-y-2 pt-1">
+            {[
+              { label: 'My Roadmap', icon: BookOpen, to: '/roadmap', desc: 'Inspect full weekly phased milestone schedule' },
+              { label: 'Skill Gap Breakdown', icon: Target, to: '/skill-gap', desc: 'Review prerequisite gaps and target mastery' },
+              { label: 'Re-Onboard Goal', icon: Brain, to: '/onboarding', desc: 'Reconfigure target career goal or weekly study hours' },
+            ].map((link, i) => (
+              <button
+                key={i}
+                onClick={() => navigate(link.to)}
+                className="w-full text-left flex items-center gap-3 p-3 rounded-lg border border-surface-200 hover:border-slate-300 hover:bg-surface-50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-lg bg-surface-100 flex items-center justify-center text-slate-700 flex-shrink-0">
+                  <link.icon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-900 text-sm">{link.label}</p>
+                  <p className="text-xs text-text-secondary truncate">{link.desc}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-text-muted flex-shrink-0" />
+              </button>
+            ))}
           </div>
         </div>
       </div>
+
     </div>
   )
 }

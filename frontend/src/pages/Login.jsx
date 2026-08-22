@@ -1,16 +1,26 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Brain, Mail, Lock, Loader2, Eye, EyeOff, CheckCircle, Sparkles } from 'lucide-react'
+import { Brain, Mail, Lock, Loader2, Eye, EyeOff, GitBranch, Cpu, Compass } from 'lucide-react'
 import { authApi } from '../services/api'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
 
-const PERKS = [
-  'AI-powered personalized roadmap',
-  'TF-IDF + SVD recommendation engine',
-  'Bayesian skill mastery tracking',
-  'Real-time path adaptation',
-  'Knowledge graph prerequisite ordering',
+const HIGHLIGHTS = [
+  {
+    icon: Compass,
+    title: 'Topological Prerequisite Ordering',
+    desc: 'Dependencies sequenced using graph algorithms so foundations precede advanced concepts.'
+  },
+  {
+    icon: Cpu,
+    title: 'Hybrid Multi-Factor Recommendation',
+    desc: 'Combines TF-IDF semantic relevance and collaborative signals for gap-closure efficiency.'
+  },
+  {
+    icon: GitBranch,
+    title: 'Bayesian Adaptive Updates',
+    desc: 'Evaluates mastery via knowledge checks and continuously adjusts your curriculum.'
+  },
 ]
 
 export default function Login() {
@@ -39,28 +49,30 @@ export default function Login() {
     <div className="min-h-screen bg-surface flex">
 
       {/* ── Left: Form panel ─────────────────────────── */}
-      <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-16 xl:px-24 bg-white">
+      <div className="flex-1 flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16 xl:px-24 bg-white border-r border-surface-200">
+        
         {/* Logo */}
-        <div className="mb-10">
+        <div className="mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center shadow-brand-sm">
-              <Brain className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white shadow-subtle">
+              <Brain className="w-4 h-4" />
             </div>
-            <span className="font-bold text-text-primary text-base">PathMind AI</span>
+            <span className="font-bold text-slate-900 text-base tracking-tight">PathMind AI</span>
           </Link>
         </div>
 
-        <div className="max-w-sm w-full">
-          <h1 className="text-3xl font-black text-text-primary mb-1">Welcome back</h1>
-          <p className="text-text-secondary mb-8">Continue your learning journey</p>
+        <div className="max-w-sm w-full mx-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mb-1.5">Sign In</h1>
+          <p className="text-text-secondary text-sm mb-6">Continue your structured learning journey.</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div>
-              <label className="input-label">Email address</label>
+              <label className="input-label" htmlFor="email-input">Email address</label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-text-muted" />
+                <Mail className="absolute left-3.5 top-3 w-4 h-4 text-text-muted" />
                 <input
+                  id="email-input"
                   type="email" required
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
@@ -72,10 +84,11 @@ export default function Login() {
 
             {/* Password */}
             <div>
-              <label className="input-label">Password</label>
+              <label className="input-label" htmlFor="password-input">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-text-muted" />
+                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-text-muted" />
                 <input
+                  id="password-input"
                   type={showPw ? 'text' : 'password'} required
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
@@ -84,8 +97,9 @@ export default function Login() {
                 />
                 <button
                   type="button"
+                  aria-label={showPw ? "Hide password" : "Show password"}
                   onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3.5 top-3.5 text-text-muted hover:text-text-secondary transition-colors"
+                  className="absolute right-3.5 top-3 text-text-muted hover:text-text-secondary transition-colors"
                 >
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -95,57 +109,63 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full justify-center py-3.5 text-base"
+              className="btn-primary w-full justify-center py-2.5 text-sm font-semibold mt-2"
             >
               {loading
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</>
-                : 'Sign in'}
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Authenticating…</>
+                : 'Sign In'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-text-secondary mt-6">
-            Don't have an account?{' '}
+          <p className="text-center text-xs text-text-secondary mt-6">
+            Don't have an account yet?{' '}
             <Link to="/register" className="text-brand-600 font-semibold hover:text-brand-700">
               Create one free
             </Link>
           </p>
 
-          {/* Demo hint */}
-          <div className="mt-6 p-4 rounded-xl bg-brand-50 border border-brand-100">
-            <p className="text-xs font-semibold text-brand-700 mb-1 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" /> Demo credentials
+          {/* Demo account banner */}
+          <div className="mt-6 p-3.5 rounded-lg bg-surface-100 border border-surface-200">
+            <p className="text-xs font-semibold text-slate-800 mb-1">
+              Sample Exploration Account
             </p>
-            <p className="text-xs text-brand-600">
-              <span className="font-medium">Email:</span> demo@pathmind.ai
-              <br />
-              <span className="font-medium">Password:</span> Demo@1234
-            </p>
+            <div className="text-xs text-text-secondary space-y-0.5 font-mono">
+              <p><span className="text-text-muted font-sans font-normal">Email:</span> demo@pathmind.ai</p>
+              <p><span className="text-text-muted font-sans font-normal">Password:</span> Demo@1234</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ── Right: Brand panel ───────────────────────── */}
-      <div className="hidden lg:flex flex-1 flex-col justify-center bg-gradient-to-br from-brand-600 to-violet-700 px-16 text-white">
-        <div className="max-w-md">
-          <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-8">
-            <Brain className="w-7 h-7 text-white" />
+      {/* ── Right: Technical Capability panel ──────────── */}
+      <div className="hidden lg:flex flex-1 flex-col justify-center bg-slate-900 px-14 xl:px-20 text-white border-l border-slate-800">
+        <div className="max-w-md space-y-8">
+          <div>
+            <span className="text-xs font-mono font-semibold text-brand-400 uppercase tracking-wider">Engine Architecture</span>
+            <h2 className="text-3xl font-bold tracking-tight text-white mt-2 leading-tight">
+              Adaptive Curriculum Engineering
+            </h2>
+            <p className="text-slate-400 text-sm mt-3 leading-relaxed">
+              PathMind pairs topological graph ordering with probabilistic Bayesian estimation to deliver precision learning roadmaps.
+            </p>
           </div>
-          <h2 className="text-4xl font-black leading-tight mb-4">
-            Learn smarter with AI-powered paths
-          </h2>
-          <p className="text-brand-200 text-lg mb-10 leading-relaxed">
-            PathMind's ML engine uses TF-IDF, SVD, and Bayesian algorithms to create
-            a roadmap that's truly yours.
-          </p>
-          <div className="space-y-3">
-            {PERKS.map(p => (
-              <div key={p} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="w-3 h-3 text-white" />
+
+          <div className="space-y-4">
+            {HIGHLIGHTS.map((item) => (
+              <div key={item.title} className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-1.5">
+                <div className="flex items-center gap-2 text-brand-400">
+                  <item.icon className="w-4 h-4" />
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wide">{item.title}</h3>
                 </div>
-                <span className="text-sm text-white/90">{p}</span>
+                <p className="text-xs text-slate-300 leading-relaxed pl-6">{item.desc}</p>
               </div>
             ))}
+          </div>
+
+          <div className="pt-2 flex items-center gap-4 text-xs text-slate-500 border-t border-slate-800">
+            <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+            <span>•</span>
+            <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
           </div>
         </div>
       </div>

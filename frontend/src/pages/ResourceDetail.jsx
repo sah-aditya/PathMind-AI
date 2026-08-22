@@ -5,10 +5,9 @@ import { resourcesApi, assessmentApi, pathApi } from '../services/api'
 import {
   ArrowLeft, Clock, Star, BookOpen, Wrench, ClipboardList,
   CheckCircle, Loader2, AlertCircle, ExternalLink, Brain,
-  Sparkles, Trophy, RotateCcw, ChevronRight,
+  Trophy, RotateCcw, ChevronRight,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import MarkdownMessage from '../components/MarkdownMessage'
 
 const TYPE_ICON   = { course: BookOpen, project: Wrench, assessment: ClipboardList }
 const DIFF_CONFIG = {
@@ -45,12 +44,12 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
       qc.invalidateQueries(['dashboard'])
       onComplete?.(data)
     },
-    onError: () => toast.error('Failed to submit assessment'),
+    onError: () => toast.error('Failed to submit assessment evaluation'),
   })
 
   if (isLoading) return (
     <div className="flex justify-center py-10">
-      <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
+      <Loader2 className="w-6 h-6 animate-spin text-brand-600" />
     </div>
   )
   if (!asmt) return null
@@ -63,61 +62,61 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
     const passed = result.passed
     return (
       <div className="space-y-4 animate-fade-in">
-        {/* Score hero */}
-        <div className={`card text-center border-2 ${passed ? 'border-emerald-200 bg-emerald-50/50' : 'border-amber-200 bg-amber-50/50'}`}>
-          <div className={`text-6xl font-black mb-2 ${pct >= 85 ? 'score-high' : pct >= 50 ? 'score-mid' : 'score-low'}`}>
+        {/* Score Card */}
+        <div className={`card text-center p-6 border ${passed ? 'border-emerald-200 bg-emerald-50/30' : 'border-amber-200 bg-amber-50/30'}`}>
+          <div className={`text-5xl font-bold font-mono tracking-tight mb-2 ${pct >= 85 ? 'score-high' : pct >= 50 ? 'score-mid' : 'score-low'}`}>
             {pct}%
           </div>
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold mb-2 ${
-            passed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider mb-2 ${
+            passed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
           }`}>
-            {passed ? <><Trophy className="w-4 h-4" /> Passed!</> : <><RotateCcw className="w-4 h-4" /> Keep practicing</>}
+            {passed ? <><Trophy className="w-3.5 h-3.5" /> Assessment Passed</> : <><RotateCcw className="w-3.5 h-3.5" /> Needs Practice</>}
           </div>
-          <p className="text-text-muted text-sm">
-            {result.correct}/{result.total} correct · Pass mark: {Math.round(result.passing_score * 100)}%
+          <p className="text-text-secondary text-xs">
+            {result.correct} of {result.total} questions correct · Passing threshold: {Math.round(result.passing_score * 100)}%
           </p>
         </div>
 
-        {/* Adaptation message */}
+        {/* Adaptation Feedback */}
         {result.adaptation?.message && (
-          <div className={`card border-2 ${result.adaptation.action === 'revision_added' ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
+          <div className={`card p-4 border ${result.adaptation.action === 'revision_added' ? 'border-amber-200 bg-amber-50/50' : 'border-emerald-200 bg-emerald-50/50'}`}>
             <div className="flex items-start gap-3">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                result.adaptation.action === 'revision_added' ? 'bg-amber-100' : 'bg-emerald-100'
+              <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${
+                result.adaptation.action === 'revision_added' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
               }`}>
-                <Brain className={`w-4 h-4 ${result.adaptation.action === 'revision_added' ? 'text-amber-600' : 'text-emerald-600'}`} />
+                <Brain className="w-4 h-4" />
               </div>
-              <div>
-                <p className="text-xs font-semibold text-brand-600 mb-1">PathMind AI Adapted Your Path</p>
-                <p className="text-sm text-text-secondary">{result.adaptation.message}</p>
+              <div className="text-xs space-y-0.5">
+                <p className="font-bold text-slate-900">Curriculum Adjusted</p>
+                <p className="text-text-secondary leading-relaxed">{result.adaptation.message}</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Question breakdown */}
-        <div className="space-y-3">
-          <h3 className="font-bold text-text-primary text-sm">Question Breakdown</h3>
+        {/* Question Breakdown */}
+        <div className="space-y-3 pt-2">
+          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Question Evaluation</h3>
           {result.feedback.map((f, i) => (
-            <div key={i} className={`card-sm border ${f.is_correct ? 'border-emerald-200 bg-emerald-50/40' : 'border-red-200 bg-red-50/40'}`}>
-              <div className="flex items-start gap-3">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                  f.is_correct ? 'bg-emerald-100' : 'bg-red-100'
+            <div key={i} className={`p-3.5 rounded-lg border text-xs ${f.is_correct ? 'border-emerald-200 bg-emerald-50/20' : 'border-rose-200 bg-rose-50/20'}`}>
+              <div className="flex items-start gap-2.5">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                  f.is_correct ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
                 }`}>
                   {f.is_correct
-                    ? <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                    : <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                    ? <CheckCircle className="w-3.5 h-3.5" />
+                    : <AlertCircle className="w-3.5 h-3.5" />
                   }
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-text-secondary mb-1">{asmt.questions[i]?.question}</p>
+                <div className="flex-1 space-y-1.5">
+                  <p className="font-medium text-slate-900">{asmt.questions[i]?.question}</p>
                   {!f.is_correct && (
-                    <p className="text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-1 rounded-lg inline-block">
-                      ✓ {asmt.questions[i]?.options[f.correct_index]}
+                    <p className="text-emerald-800 font-semibold bg-emerald-100/60 px-2 py-0.5 rounded inline-block">
+                      Correct: {asmt.questions[i]?.options[f.correct_index]}
                     </p>
                   )}
                   {f.explanation && (
-                    <p className="text-xs text-text-muted mt-1 leading-relaxed">{f.explanation}</p>
+                    <p className="text-text-secondary leading-relaxed pt-0.5">{f.explanation}</p>
                   )}
                 </div>
               </div>
@@ -128,54 +127,55 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
     )
   }
 
-  /* ── Questions screen ── */
+  /* ── Questions Screen ── */
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-surface-200 pb-3">
         <div>
-          <h3 className="font-bold text-text-primary">{asmt.title}</h3>
-          <p className="text-xs text-text-muted mt-0.5">
-            {asmt.questions.length} questions · {asmt.time_limit_minutes} min · Pass: {Math.round(asmt.passing_score * 100)}%
+          <h3 className="font-bold text-slate-900 text-sm">{asmt.title}</h3>
+          <p className="text-xs text-text-secondary mt-0.5">
+            {asmt.questions.length} questions · {asmt.time_limit_minutes} min limit · Pass: {Math.round(asmt.passing_score * 100)}%
           </p>
         </div>
         <span className="badge badge-indigo">{asmt.skill?.replace(/-/g, ' ')}</span>
       </div>
 
-      {/* Progress indicator */}
+      {/* Progress */}
       <div className="flex items-center gap-2">
-        <div className="flex-1 h-1.5 bg-surface-200 rounded-full overflow-hidden">
+        <div className="flex-1 progress-bar h-1.5">
           <div
-            className="h-full bg-brand-500 rounded-full transition-all duration-500"
+            className="progress-fill"
             style={{ width: `${(Object.keys(answers).length / asmt.questions.length) * 100}%` }}
           />
         </div>
-        <span className="text-xs text-text-muted font-medium">
+        <span className="text-[11px] font-mono text-text-secondary font-medium">
           {Object.keys(answers).length}/{asmt.questions.length}
         </span>
       </div>
 
       {asmt.questions.map((q, qi) => (
-        <div key={q.id} className="card border border-surface-200">
+        <div key={q.id} className="card p-4 space-y-3 border border-surface-200">
           {q.scenario && (
-            <div className="bg-brand-50 border border-brand-100 rounded-xl p-3 mb-3 text-xs text-brand-700 leading-relaxed">
-              📋 {q.scenario}
+            <div className="p-2.5 rounded bg-surface-100 border border-surface-200 text-xs text-text-secondary leading-relaxed">
+              <span className="font-semibold text-slate-900 block mb-0.5">Scenario:</span>
+              {q.scenario}
             </div>
           )}
-          <p className="text-sm font-semibold text-text-primary mb-3">
-            <span className="text-brand-600 mr-1.5">Q{qi + 1}.</span>{q.question}
+          <p className="text-sm font-semibold text-slate-900">
+            <span className="text-brand-700 mr-1.5 font-mono">Q{qi + 1}.</span>{q.question}
           </p>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {q.options.map((opt, oi) => (
               <button
                 key={oi}
                 onClick={() => setAnswers({ ...answers, [q.id]: oi })}
-                className={`w-full text-left px-4 py-3 rounded-xl text-sm border transition-all duration-150 ${
+                className={`w-full text-left px-3.5 py-2.5 rounded-lg text-xs border transition-colors ${
                   answers[q.id] === oi
-                    ? 'bg-brand-50 border-brand-400 text-brand-700 shadow-brand-sm'
-                    : 'bg-white border-surface-200 text-text-secondary hover:border-brand-200 hover:bg-brand-50/40'
+                    ? 'bg-brand-50 border-brand-500 text-brand-900 font-medium'
+                    : 'bg-white border-surface-200 text-text-secondary hover:border-slate-300 hover:bg-surface-50'
                 }`}
               >
-                <span className="font-semibold text-brand-500 mr-2">{String.fromCharCode(65 + oi)}.</span>
+                <span className="font-bold text-brand-700 mr-2 font-mono">{String.fromCharCode(65 + oi)}.</span>
                 {opt}
               </button>
             ))}
@@ -186,11 +186,11 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
       <button
         onClick={() => submitMutation.mutate()}
         disabled={!allAnswered || submitMutation.isPending}
-        className="btn-primary w-full justify-center py-3.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+        className="btn-primary w-full justify-center py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {submitMutation.isPending
-          ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</>
-          : `Submit Assessment (${Object.keys(answers).length}/${asmt.questions.length} answered)`
+          ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting Evaluation…</>
+          : `Submit Knowledge Check (${Object.keys(answers).length}/${asmt.questions.length} Answered)`
         }
       </button>
     </div>
@@ -198,7 +198,7 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
 }
 
 /* ─────────────────────────────────────────────── */
-/* Main ResourceDetail page                        */
+/* Main ResourceDetail Page                        */
 /* ─────────────────────────────────────────────── */
 export default function ResourceDetail() {
   const { id }      = useParams()
@@ -221,8 +221,8 @@ export default function ResourceDetail() {
     onSuccess: (_, status) => {
       qc.invalidateQueries(['active-path'])
       qc.invalidateQueries(['dashboard'])
-      if (status === 'completed') toast.success('Marked as complete! 🎉')
-      else toast.success('Marked as in progress')
+      if (status === 'completed') toast.success('Module marked as completed')
+      else toast.success('Status updated to in progress')
     },
     onError: () => toast.error('Failed to update status'),
   })
@@ -233,7 +233,7 @@ export default function ResourceDetail() {
       const { data } = await resourcesApi.explain(id)
       setAiExplanation(data.explanation)
     } catch {
-      toast.error('Could not load explanation')
+      toast.error('Could not load AI explanation')
     } finally {
       setLoadingExplanation(false)
     }
@@ -241,9 +241,9 @@ export default function ResourceDetail() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center min-h-[calc(100vh-65px)]">
-      <div className="text-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-500 mx-auto mb-3" />
-        <p className="text-text-secondary text-sm">Loading resource…</p>
+      <div className="text-center space-y-2">
+        <Loader2 className="w-7 h-7 animate-spin text-brand-600 mx-auto" />
+        <p className="text-text-secondary text-xs">Loading module details…</p>
       </div>
     </div>
   )
@@ -253,53 +253,50 @@ export default function ResourceDetail() {
   const diffCfg = DIFF_CONFIG[resource.difficulty] || DIFF_CONFIG.beginner
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-5">
 
-      {/* ── Back button ──────────────────────────── */}
-      <button onClick={() => navigate(-1)} className="btn-ghost mb-6 -ml-2">
-        <ArrowLeft className="w-4 h-4" /> Back
+      {/* ── Back Navigation ───────────────────────── */}
+      <button onClick={() => navigate(-1)} className="btn-ghost -ml-2 text-xs">
+        <ArrowLeft className="w-4 h-4" /> Back to Schedule
       </button>
 
-      {/* ── Resource header card ─────────────────── */}
-      <div className="card mb-5 animate-fade-in overflow-hidden">
-        {/* Top accent bar */}
-        <div className="h-1.5 -mx-6 -mt-6 mb-6 bg-gradient-to-r from-brand-500 to-violet-500" />
-
+      {/* ── Header Card ───────────────────────────── */}
+      <div className="card p-6 space-y-5">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 flex items-center justify-center flex-shrink-0">
-            <Icon className="w-7 h-7 text-brand-600" />
+          <div className="w-12 h-12 rounded-xl bg-surface-100 border border-surface-200 flex items-center justify-center text-slate-800 flex-shrink-0">
+            <Icon className="w-6 h-6" />
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-text-primary mb-2 leading-tight">{resource.title}</h1>
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className={`badge ${resource.type === 'project' ? 'badge-purple' : resource.type === 'assessment' ? 'badge-yellow' : 'badge-blue'}`}>
+          <div className="flex-1 min-w-0 space-y-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 leading-tight">{resource.title}</h1>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className={`badge ${resource.type === 'project' ? 'badge-purple' : resource.type === 'assessment' ? 'badge-yellow' : 'badge-blue'} uppercase text-[10px]`}>
                 {resource.type}
               </span>
-              <span className={`badge ${diffCfg.cls}`}>{diffCfg.label}</span>
-              <span className="flex items-center gap-1 text-xs text-text-muted">
-                <Clock className="w-3.5 h-3.5" /> {resource.duration_hours}h
+              <span className={`badge ${diffCfg.cls} text-[10px]`}>{diffCfg.label}</span>
+              <span className="flex items-center gap-1 text-text-secondary">
+                <Clock className="w-3.5 h-3.5" /> {resource.duration_hours}h estimated
               </span>
               {resource.rating && (
-                <span className="flex items-center gap-1 text-xs text-amber-600 font-medium">
+                <span className="flex items-center gap-1 text-amber-700 font-medium">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {resource.rating}
                 </span>
               )}
             </div>
-            <p className="text-sm text-text-secondary leading-relaxed">{resource.description}</p>
+            <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">{resource.description}</p>
           </div>
         </div>
 
-        {/* Provider + skills */}
-        <div className="mt-5 pt-5 border-t border-surface-200 grid sm:grid-cols-2 gap-4">
+        {/* Metadata Grid */}
+        <div className="pt-4 border-t border-surface-200 grid sm:grid-cols-2 gap-4 text-xs">
           <div>
-            <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Provider</p>
-            <p className="text-sm font-semibold text-text-primary">{resource.provider}</p>
+            <span className="input-label mb-1">Content Provider</span>
+            <p className="font-semibold text-slate-900">{resource.provider}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Skills you'll learn</p>
-            <div className="flex flex-wrap gap-1.5">
+            <span className="input-label mb-1">Target Skills Taught</span>
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
               {resource.skills_taught?.map(s => (
-                <span key={s} className="badge badge-indigo">
+                <span key={s} className="badge badge-indigo text-[10px]">
                   {s.replace(/-/g, ' ')}
                 </span>
               ))}
@@ -307,10 +304,10 @@ export default function ResourceDetail() {
           </div>
           {resource.prerequisite_skills?.length > 0 && (
             <div className="sm:col-span-2">
-              <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Prerequisites</p>
-              <div className="flex flex-wrap gap-1.5">
+              <span className="input-label mb-1">Prerequisite Dependencies</span>
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
                 {resource.prerequisite_skills.map(s => (
-                  <span key={s} className="badge badge-gray">
+                  <span key={s} className="badge badge-gray text-[10px]">
                     {s.replace(/-/g, ' ')}
                   </span>
                 ))}
@@ -320,92 +317,90 @@ export default function ResourceDetail() {
         </div>
       </div>
 
-      {/* ── Action buttons ───────────────────────── */}
+      {/* ── Status Actions ────────────────────────── */}
       {pathItemId && (
-        <div className="flex gap-3 mb-5 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => statusMutation.mutate('in_progress')}
             disabled={statusMutation.isPending}
-            className="btn-secondary flex-1 justify-center text-sm"
+            className="btn-secondary justify-center text-xs py-2"
           >
-            <ExternalLink className="w-4 h-4" /> Mark In Progress
+            <ExternalLink className="w-3.5 h-3.5" /> Mark In Progress
           </button>
           <button
             onClick={() => statusMutation.mutate('completed')}
             disabled={statusMutation.isPending}
-            className="btn-primary flex-1 justify-center text-sm"
+            className="btn-primary justify-center text-xs py-2"
           >
             {statusMutation.isPending
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <CheckCircle className="w-4 h-4" />
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <CheckCircle className="w-3.5 h-3.5" />
             }
-            Mark Complete
+            Mark as Completed
           </button>
         </div>
       )}
 
-      {/* ── AI Explanation card ───────────────────── */}
-      <div className="card mb-5 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center">
-              <Brain className="w-4 h-4 text-brand-600" />
+      {/* ── Recommendation Rationale ──────────────── */}
+      <div className="card p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-md bg-brand-50 flex items-center justify-center text-brand-700">
+              <Brain className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-text-primary">Why this resource?</h2>
-              <p className="text-xs text-text-muted">AI-personalized explanation</p>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">Recommendation Rationale</h2>
+              <p className="text-[11px] text-text-muted">Why our algorithm sequenced this resource</p>
             </div>
           </div>
           {!aiExplanation && (
             <button
               onClick={loadExplanation}
               disabled={loadingExplanation}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg
-                         bg-brand-50 text-brand-700 border border-brand-100 hover:bg-brand-100 transition-colors"
+              className="btn-secondary text-xs py-1 px-2.5"
             >
               {loadingExplanation
-                ? <><Loader2 className="w-3 h-3 animate-spin" /> Loading…</>
-                : <><Sparkles className="w-3 h-3" /> Ask AI</>
+                ? <><Loader2 className="w-3 h-3 animate-spin" /> Analyzing…</>
+                : <>Explain Choice</>
               }
             </button>
           )}
         </div>
-        {aiExplanation
-          ? <p className="text-sm text-text-secondary leading-relaxed">{aiExplanation}</p>
-          : (
-            <div className="border border-dashed border-brand-100 rounded-xl p-4 text-center">
-              <Sparkles className="w-5 h-5 text-brand-300 mx-auto mb-1.5" />
-              <p className="text-xs text-text-muted leading-relaxed">
-                Click "Ask AI" for a personalized explanation of why this was recommended to you.
-              </p>
-            </div>
-          )
-        }
+
+        {aiExplanation ? (
+          <p className="text-xs text-text-secondary leading-relaxed bg-surface-50 p-3 rounded-lg border border-surface-200">{aiExplanation}</p>
+        ) : (
+          <p className="text-xs text-text-muted">
+            Click "Explain Choice" to see how TF-IDF vector matching and prerequisite scoring selected this unit for your specific gaps.
+          </p>
+        )}
       </div>
 
-      {/* ── Assessment section ────────────────────── */}
+      {/* ── Knowledge Check Section ───────────────── */}
       {resource.has_assessment && (
-        <div className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
+        <div>
           {!showAssessment ? (
-            <div className="card border-2 border-dashed border-brand-200 bg-gradient-to-br from-brand-50 to-violet-50 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-card flex items-center justify-center mx-auto mb-4">
-                <ClipboardList className="w-6 h-6 text-brand-600" />
+            <div className="card p-6 border border-surface-200 text-center space-y-3 bg-surface-50">
+              <div className="w-10 h-10 rounded-lg bg-white border border-surface-200 flex items-center justify-center mx-auto text-slate-800 shadow-subtle">
+                <ClipboardList className="w-5 h-5" />
               </div>
-              <h2 className="font-bold text-text-primary text-lg mb-2">Knowledge Check</h2>
-              <p className="text-text-secondary text-sm mb-5 max-w-sm mx-auto">
-                Test your understanding. PathMind AI will adapt your learning path based on your results.
-              </p>
-              <button
-                onClick={() => setShowAssessment(true)}
-                className="btn-primary mx-auto"
-              >
-                Take Assessment <ChevronRight className="w-4 h-4" />
-              </button>
+              <div>
+                <h2 className="font-bold text-slate-900 text-base">Interactive Knowledge Check</h2>
+                <p className="text-text-secondary text-xs max-w-sm mx-auto mt-1">
+                  Validate your understanding of this module. Your score will update the Bayesian skill model and adapt subsequent phases.
+                </p>
+              </div>
+              <div className="pt-1">
+                <button
+                  onClick={() => setShowAssessment(true)}
+                  className="btn-primary text-xs mx-auto"
+                >
+                  Start Knowledge Check <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="card animate-fade-in">
-              <h2 className="section-title mb-1">Knowledge Assessment</h2>
-              <p className="section-sub text-xs mb-5">Answer all questions to submit</p>
+            <div className="card p-6 space-y-4">
               <AssessmentView
                 assessmentId={resource.assessment_id || `asmt-${id}`}
                 pathItemId={pathItemId}
@@ -417,6 +412,7 @@ export default function ResourceDetail() {
           )}
         </div>
       )}
+
     </div>
   )
 }

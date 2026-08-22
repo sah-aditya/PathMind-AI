@@ -8,6 +8,8 @@ import SkillGap from './pages/SkillGap'
 import Roadmap from './pages/Roadmap'
 import Dashboard from './pages/Dashboard'
 import ResourceDetail from './pages/ResourceDetail'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 import AppLayout from './components/AppLayout'
 
 function PrivateRoute({ children }) {
@@ -26,6 +28,8 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<Landing />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
@@ -43,3 +47,4 @@ export default function App() {
     </BrowserRouter>
   )
 }
+
