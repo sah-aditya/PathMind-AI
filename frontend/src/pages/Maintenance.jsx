@@ -62,7 +62,7 @@ export default function Maintenance({ message }) {
 
       {/* Bottom Admin Bypass Link */}
       <div className="max-w-5xl mx-auto w-full text-center pt-8 border-t border-slate-200/80 dark:border-darkBg-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-        <span>Built with ❤️ in Bharat 🇮🇳 • Aditya Sah</span>
+        <span>Built with ❤️ in Bharat 🇮🇳</span>
         <Link
           to="/login"
           className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors font-medium"

@@ -260,15 +260,7 @@ export default function Landing() {
               <span className="font-bold text-slate-900 dark:text-white">PathMind AI</span>
             </div>
             <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
-            <span>
-              Built with ❤️ in Bharat 🇮🇳 • Crafted by{' '}
-              <a
-                href="mailto:er.adityasah@gmail.com"
-                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
-              >
-                Aditya Sah
-              </a>
-            </span>
+            <span>Built with ❤️ in Bharat 🇮🇳</span>
           </div>
 
           <div className="flex items-center gap-5 text-slate-500 dark:text-slate-400">
