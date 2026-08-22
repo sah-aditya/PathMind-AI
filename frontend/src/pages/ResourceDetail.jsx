@@ -8,6 +8,7 @@ import {
   Trophy, RotateCcw, ChevronRight,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import useThemeStore from '../store/themeStore'
 
 const TYPE_ICON   = { course: BookOpen, project: Wrench, assessment: ClipboardList }
 const DIFF_CONFIG = {
@@ -49,7 +50,7 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
 
   if (isLoading) return (
     <div className="flex justify-center py-10">
-      <Loader2 className="w-6 h-6 animate-spin text-brand-600" />
+      <Loader2 className="w-6 h-6 animate-spin text-brand-600 dark:text-brand-400" />
     </div>
   )
   if (!asmt) return null
@@ -63,32 +64,32 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
     return (
       <div className="space-y-4 animate-fade-in">
         {/* Score Card */}
-        <div className={`card text-center p-6 border ${passed ? 'border-emerald-200 bg-emerald-50/30' : 'border-amber-200 bg-amber-50/30'}`}>
-          <div className={`text-5xl font-bold font-mono tracking-tight mb-2 ${pct >= 85 ? 'score-high' : pct >= 50 ? 'score-mid' : 'score-low'}`}>
+        <div className={`card text-center p-6 border ${passed ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-amber-200 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/20'}`}>
+          <div className="text-5xl font-bold font-mono tracking-tight mb-2 text-slate-900 dark:text-white">
             {pct}%
           </div>
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider mb-2 ${
-            passed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold uppercase tracking-wider mb-2 ${
+            passed ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200' : 'bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200'
           }`}>
             {passed ? <><Trophy className="w-3.5 h-3.5" /> Assessment Passed</> : <><RotateCcw className="w-3.5 h-3.5" /> Needs Practice</>}
           </div>
-          <p className="text-text-secondary text-xs">
+          <p className="text-slate-500 dark:text-slate-400 text-xs">
             {result.correct} of {result.total} questions correct · Passing threshold: {Math.round(result.passing_score * 100)}%
           </p>
         </div>
 
         {/* Adaptation Feedback */}
         {result.adaptation?.message && (
-          <div className={`card p-4 border ${result.adaptation.action === 'revision_added' ? 'border-amber-200 bg-amber-50/50' : 'border-emerald-200 bg-emerald-50/50'}`}>
+          <div className={`card p-4 border ${result.adaptation.action === 'revision_added' ? 'border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20' : 'border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20'}`}>
             <div className="flex items-start gap-3">
-              <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${
-                result.adaptation.action === 'revision_added' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+              <div className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                result.adaptation.action === 'revision_added' ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
               }`}>
                 <Brain className="w-4 h-4" />
               </div>
               <div className="text-xs space-y-0.5">
-                <p className="font-bold text-slate-900">Curriculum Adjusted</p>
-                <p className="text-text-secondary leading-relaxed">{result.adaptation.message}</p>
+                <p className="font-bold text-slate-900 dark:text-white">Curriculum Adjusted</p>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{result.adaptation.message}</p>
               </div>
             </div>
           </div>
@@ -96,12 +97,12 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
 
         {/* Question Breakdown */}
         <div className="space-y-3 pt-2">
-          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Question Evaluation</h3>
+          <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Question Evaluation</h3>
           {result.feedback.map((f, i) => (
-            <div key={i} className={`p-3.5 rounded-lg border text-xs ${f.is_correct ? 'border-emerald-200 bg-emerald-50/20' : 'border-rose-200 bg-rose-50/20'}`}>
+            <div key={i} className={`p-3.5 rounded-xl border text-xs ${f.is_correct ? 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/10' : 'border-rose-200 dark:border-rose-900/40 bg-rose-50/20 dark:bg-rose-950/10'}`}>
               <div className="flex items-start gap-2.5">
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                  f.is_correct ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                  f.is_correct ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300'
                 }`}>
                   {f.is_correct
                     ? <CheckCircle className="w-3.5 h-3.5" />
@@ -109,14 +110,14 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
                   }
                 </div>
                 <div className="flex-1 space-y-1.5">
-                  <p className="font-medium text-slate-900">{asmt.questions[i]?.question}</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{asmt.questions[i]?.question}</p>
                   {!f.is_correct && (
-                    <p className="text-emerald-800 font-semibold bg-emerald-100/60 px-2 py-0.5 rounded inline-block">
+                    <p className="text-emerald-800 dark:text-emerald-300 font-semibold bg-emerald-100/60 dark:bg-emerald-950/50 px-2 py-0.5 rounded-lg inline-block">
                       Correct: {asmt.questions[i]?.options[f.correct_index]}
                     </p>
                   )}
                   {f.explanation && (
-                    <p className="text-text-secondary leading-relaxed pt-0.5">{f.explanation}</p>
+                    <p className="text-slate-500 dark:text-slate-400 leading-relaxed pt-0.5">{f.explanation}</p>
                   )}
                 </div>
               </div>
@@ -130,10 +131,10 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
   /* ── Questions Screen ── */
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between border-b border-surface-200 pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-darkBg-border pb-3">
         <div>
-          <h3 className="font-bold text-slate-900 text-sm">{asmt.title}</h3>
-          <p className="text-xs text-text-secondary mt-0.5">
+          <h3 className="font-bold text-slate-900 dark:text-white text-sm">{asmt.title}</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {asmt.questions.length} questions · {asmt.time_limit_minutes} min limit · Pass: {Math.round(asmt.passing_score * 100)}%
           </p>
         </div>
@@ -148,34 +149,34 @@ function AssessmentView({ assessmentId, pathItemId, onComplete }) {
             style={{ width: `${(Object.keys(answers).length / asmt.questions.length) * 100}%` }}
           />
         </div>
-        <span className="text-[11px] font-mono text-text-secondary font-medium">
+        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 font-medium">
           {Object.keys(answers).length}/{asmt.questions.length}
         </span>
       </div>
 
       {asmt.questions.map((q, qi) => (
-        <div key={q.id} className="card p-4 space-y-3 border border-surface-200">
+        <div key={q.id} className="card p-4 space-y-3">
           {q.scenario && (
-            <div className="p-2.5 rounded bg-surface-100 border border-surface-200 text-xs text-text-secondary leading-relaxed">
-              <span className="font-semibold text-slate-900 block mb-0.5">Scenario:</span>
+            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub/60 border border-slate-200/80 dark:border-darkBg-border text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <span className="font-semibold text-slate-900 dark:text-white block mb-0.5">Scenario:</span>
               {q.scenario}
             </div>
           )}
-          <p className="text-sm font-semibold text-slate-900">
-            <span className="text-brand-700 mr-1.5 font-mono">Q{qi + 1}.</span>{q.question}
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+            <span className="text-brand-600 dark:text-brand-400 mr-1.5 font-mono">Q{qi + 1}.</span>{q.question}
           </p>
           <div className="space-y-1.5">
             {q.options.map((opt, oi) => (
               <button
                 key={oi}
                 onClick={() => setAnswers({ ...answers, [q.id]: oi })}
-                className={`w-full text-left px-3.5 py-2.5 rounded-lg text-xs border transition-colors ${
+                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs border transition-colors ${
                   answers[q.id] === oi
-                    ? 'bg-brand-50 border-brand-500 text-brand-900 font-medium'
-                    : 'bg-white border-surface-200 text-text-secondary hover:border-slate-300 hover:bg-surface-50'
+                    ? 'bg-brand-50 dark:bg-brand-950/40 border-brand-500 text-brand-900 dark:text-brand-200 font-medium'
+                    : 'bg-white dark:bg-darkBg-card border-slate-200 dark:border-darkBg-border text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
-                <span className="font-bold text-brand-700 mr-2 font-mono">{String.fromCharCode(65 + oi)}.</span>
+                <span className="font-bold text-brand-600 dark:text-brand-400 mr-2 font-mono">{String.fromCharCode(65 + oi)}.</span>
                 {opt}
               </button>
             ))}
@@ -240,10 +241,10 @@ export default function ResourceDetail() {
   }
 
   if (isLoading) return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-65px)]">
+    <div className="flex items-center justify-center min-h-[calc(100vh-120px)]">
       <div className="text-center space-y-2">
         <Loader2 className="w-7 h-7 animate-spin text-brand-600 mx-auto" />
-        <p className="text-text-secondary text-xs">Loading module details…</p>
+        <p className="text-slate-500 text-xs">Loading module details…</p>
       </div>
     </div>
   )
@@ -253,7 +254,7 @@ export default function ResourceDetail() {
   const diffCfg = DIFF_CONFIG[resource.difficulty] || DIFF_CONFIG.beginner
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-5">
+    <div className="max-w-3xl mx-auto space-y-5">
 
       {/* ── Back Navigation ───────────────────────── */}
       <button onClick={() => navigate(-1)} className="btn-ghost -ml-2 text-xs">
@@ -263,34 +264,34 @@ export default function ResourceDetail() {
       {/* ── Header Card ───────────────────────────── */}
       <div className="card p-6 space-y-5">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-surface-100 border border-surface-200 flex items-center justify-center text-slate-800 flex-shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-darkBg-cardSub border border-slate-200/80 dark:border-darkBg-border flex items-center justify-center text-slate-800 dark:text-slate-200 flex-shrink-0">
             <Icon className="w-6 h-6" />
           </div>
           <div className="flex-1 min-w-0 space-y-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 leading-tight">{resource.title}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight">{resource.title}</h1>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className={`badge ${resource.type === 'project' ? 'badge-purple' : resource.type === 'assessment' ? 'badge-yellow' : 'badge-blue'} uppercase text-[10px]`}>
                 {resource.type}
               </span>
               <span className={`badge ${diffCfg.cls} text-[10px]`}>{diffCfg.label}</span>
-              <span className="flex items-center gap-1 text-text-secondary">
+              <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                 <Clock className="w-3.5 h-3.5" /> {resource.duration_hours}h estimated
               </span>
               {resource.rating && (
-                <span className="flex items-center gap-1 text-amber-700 font-medium">
+                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {resource.rating}
                 </span>
               )}
             </div>
-            <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">{resource.description}</p>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{resource.description}</p>
           </div>
         </div>
 
         {/* Metadata Grid */}
-        <div className="pt-4 border-t border-surface-200 grid sm:grid-cols-2 gap-4 text-xs">
+        <div className="pt-4 border-t border-slate-200/80 dark:border-darkBg-border grid sm:grid-cols-2 gap-4 text-xs">
           <div>
             <span className="input-label mb-1">Content Provider</span>
-            <p className="font-semibold text-slate-900">{resource.provider}</p>
+            <p className="font-semibold text-slate-900 dark:text-white">{resource.provider}</p>
           </div>
           <div>
             <span className="input-label mb-1">Target Skills Taught</span>
@@ -323,14 +324,14 @@ export default function ResourceDetail() {
           <button
             onClick={() => statusMutation.mutate('in_progress')}
             disabled={statusMutation.isPending}
-            className="btn-secondary justify-center text-xs py-2"
+            className="btn-secondary justify-center text-xs py-2.5"
           >
             <ExternalLink className="w-3.5 h-3.5" /> Mark In Progress
           </button>
           <button
             onClick={() => statusMutation.mutate('completed')}
             disabled={statusMutation.isPending}
-            className="btn-primary justify-center text-xs py-2"
+            className="btn-primary justify-center text-xs py-2.5"
           >
             {statusMutation.isPending
               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -344,13 +345,13 @@ export default function ResourceDetail() {
       {/* ── Recommendation Rationale ──────────────── */}
       <div className="card p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-brand-50 flex items-center justify-center text-brand-700">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-brand-50 dark:bg-brand-950/50 flex items-center justify-center text-brand-600 dark:text-brand-400">
               <Brain className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">Recommendation Rationale</h2>
-              <p className="text-[11px] text-text-muted">Why our algorithm sequenced this resource</p>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">Recommendation Rationale</h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Why our algorithm sequenced this unit</p>
             </div>
           </div>
           {!aiExplanation && (
@@ -368,9 +369,9 @@ export default function ResourceDetail() {
         </div>
 
         {aiExplanation ? (
-          <p className="text-xs text-text-secondary leading-relaxed bg-surface-50 p-3 rounded-lg border border-surface-200">{aiExplanation}</p>
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-darkBg-cardSub/60 p-3 rounded-xl border border-slate-200/80 dark:border-darkBg-border">{aiExplanation}</p>
         ) : (
-          <p className="text-xs text-text-muted">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Click "Explain Choice" to see how TF-IDF vector matching and prerequisite scoring selected this unit for your specific gaps.
           </p>
         )}
@@ -380,13 +381,13 @@ export default function ResourceDetail() {
       {resource.has_assessment && (
         <div>
           {!showAssessment ? (
-            <div className="card p-6 border border-surface-200 text-center space-y-3 bg-surface-50">
-              <div className="w-10 h-10 rounded-lg bg-white border border-surface-200 flex items-center justify-center mx-auto text-slate-800 shadow-subtle">
+            <div className="card p-6 text-center space-y-3 bg-slate-50 dark:bg-darkBg-cardSub/40">
+              <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border flex items-center justify-center mx-auto text-slate-800 dark:text-slate-200 shadow-subtle">
                 <ClipboardList className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-bold text-slate-900 text-base">Interactive Knowledge Check</h2>
-                <p className="text-text-secondary text-xs max-w-sm mx-auto mt-1">
+                <h2 className="font-bold text-slate-900 dark:text-white text-base">Interactive Knowledge Check</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-xs max-w-sm mx-auto mt-1">
                   Validate your understanding of this module. Your score will update the Bayesian skill model and adapt subsequent phases.
                 </p>
               </div>

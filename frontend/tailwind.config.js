@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
@@ -22,31 +23,37 @@ export default {
           900: '#312e81',
           950: '#1e1b4b',
         },
-        // Neutral Slate Surface Palette
-        surface: {
-          DEFAULT: '#f8fafc',
-          50:  '#ffffff',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
+        // Soft Pastel UI Accents (Inspired by SETO & Modern Mobile Tiles)
+        accent: {
+          cyan:    '#e0f2fe',
+          cyanDark:'#0369a1',
+          mint:    '#dcfce7',
+          mintDark:'#15803d',
+          amber:   '#fef3c7',
+          amberDark:'#b45309',
+          purple:  '#f3e8ff',
+          purpleDark:'#7e22ce',
+          rose:    '#ffe4e6',
+          roseDark:'#be123c',
         },
-        // Text hierarchy
-        text: {
-          primary:   '#0f172a',
-          secondary: '#475569',
-          muted:     '#64748b',
-          light:     '#94a3b8',
+        // Dark theme backgrounds and card surfaces
+        darkBg: {
+          canvas: '#090d16',
+          card:   '#111827',
+          cardSub:'#1a2234',
+          border: '#1f293d',
+          borderSub:'#28334b',
         },
       },
       borderRadius: {
-        'sm': '4px',
-        'DEFAULT': '6px',
-        'md': '8px',
-        'lg': '10px',
-        'xl': '12px',
-        '2xl': '16px',
-        '3xl': '20px',
+        'sm': '6px',
+        'DEFAULT': '8px',
+        'md': '10px',
+        'lg': '12px',
+        'xl': '16px',
+        '2xl': '20px',
+        '3xl': '28px',
+        '4xl': '36px',
       },
       boxShadow: {
         'subtle': '0 1px 2px 0 rgba(15, 23, 42, 0.05)',
@@ -60,17 +67,14 @@ export default {
         'slide-up':       'slideUp 0.3s ease-out',
         'slide-in-right': 'slideInRight 0.25s ease-out',
         'scale-in':       'scaleIn 0.2s ease-out',
-        'pulse-subtle':   'pulseSubtle 2.5s infinite ease-in-out',
       },
       keyframes: {
         fadeIn:       { '0%': { opacity: '0' },                                  '100%': { opacity: '1' } },
         slideUp:      { '0%': { transform: 'translateY(12px)', opacity: '0' },   '100%': { transform: 'translateY(0)', opacity: '1' } },
         slideInRight: { '0%': { transform: 'translateX(12px)', opacity: '0' },   '100%': { transform: 'translateX(0)', opacity: '1' } },
         scaleIn:      { '0%': { transform: 'scale(0.97)', opacity: '0' },        '100%': { transform: 'scale(1)', opacity: '1' } },
-        pulseSubtle:  { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0.6' } },
       },
     },
   },
   plugins: [],
 }
-

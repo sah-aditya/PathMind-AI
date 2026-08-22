@@ -2,23 +2,24 @@ import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react'
 import {
   LayoutDashboard, Map, GitBranch, LogOut, Brain,
-  MessageCircle, Menu, X, Bell, ChevronDown, RefreshCcw, Shield, BookOpen
+  MessageCircle, Menu, X, Sun, Moon, RefreshCcw, Shield, BookOpen, ChevronDown
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
+import useThemeStore from '../store/themeStore'
 import ChatOverlay from './ChatOverlay'
 import { chatApi } from '../services/api'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/skill-gap',  icon: GitBranch,       label: 'Skill Gap'  },
-  { to: '/roadmap',    icon: Map,              label: 'My Roadmap' },
+  { to: '/roadmap',    icon: Map,              label: 'Roadmap' },
 ]
 
 function Avatar({ name, size = 'md' }) {
   const initials = (name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const sz = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-9 h-9 text-sm'
   return (
-    <div className={`${sz} rounded-lg bg-brand-600 flex items-center justify-center font-bold text-white flex-shrink-0 shadow-subtle`}>
+    <div className={`${sz} rounded-xl bg-brand-600 dark:bg-brand-500 flex items-center justify-center font-bold text-white flex-shrink-0 shadow-subtle`}>
       {initials}
     </div>
   )
@@ -26,6 +27,7 @@ function Avatar({ name, size = 'md' }) {
 
 export default function AppLayout() {
   const { user, logout } = useAuthStore()
+  const { theme, toggleTheme } = useThemeStore()
   const navigate = useNavigate()
   const [chatOpen, setChatOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -51,180 +53,217 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-surface selection:bg-brand-500 selection:text-white">
+    <div className="flex min-h-screen bg-slate-100/80 dark:bg-darkBg-canvas text-slate-900 dark:text-slate-100 selection:bg-brand-500 selection:text-white pb-16 lg:pb-0">
 
-      {/* ── Sidebar ── */}
-      <>
-        {/* Mobile backdrop */}
-        {mobileMenuOpen && (
-          <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 lg:hidden"
+      {/* ── Mobile Sidebar Backdrop ── */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* ── Studio Left Sidebar (Inspired by SETO studio) ── */}
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-60 flex flex-col bg-white dark:bg-darkBg-card border-r border-slate-200/80 dark:border-darkBg-border
+        shadow-card-lg lg:shadow-none
+        transform transition-transform duration-200 ease-out
+        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0
+      `}>
+        {/* Brand Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200/80 dark:border-darkBg-border">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-brand-600 dark:bg-brand-500 flex items-center justify-center text-white shadow-subtle">
+              <Brain className="w-4 h-4" />
+            </div>
+            <div>
+              <h1 className="font-bold text-slate-900 dark:text-white text-sm leading-tight tracking-tight">PathMind AI</h1>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Curriculum Studio</p>
+            </div>
+          </Link>
+          <button
             onClick={() => setMobileMenuOpen(false)}
-          />
-        )}
+            className="lg:hidden p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg"
+            aria-label="Close menu"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-        <aside className={`
-          fixed lg:static inset-y-0 left-0 z-40
-          w-56 flex flex-col bg-white border-r border-surface-200
-          shadow-card lg:shadow-none
-          transform transition-transform duration-200 ease-out
-          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0
-        `}>
-          {/* Logo */}
-          <div className="flex items-center justify-between px-4 py-3.5 border-b border-surface-200">
-            <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-md bg-brand-600 flex items-center justify-center text-white shadow-subtle">
-                <Brain className="w-4 h-4" />
-              </div>
-              <div>
-                <h1 className="font-bold text-slate-900 text-sm leading-tight tracking-tight">PathMind AI</h1>
-                <p className="text-[10px] text-text-muted">Learning Platform</p>
-              </div>
-            </Link>
-            <button
+        {/* Navigation List */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 py-1.5 mb-1">Navigation</p>
+          {navItems.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to} to={to}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden p-1 text-text-muted hover:text-text-primary rounded-md"
-              aria-label="Close menu"
             >
-              <X className="w-4 h-4" />
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+
+          <div className="pt-4">
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 py-1.5 mb-1">Studio AI</p>
+            <button
+              onClick={() => { setChatOpen(true); setMobileMenuOpen(false) }}
+              className="nav-item w-full text-left"
+            >
+              <MessageCircle className="w-4 h-4 flex-shrink-0 text-brand-600 dark:text-brand-400" />
+              <span>AI Advisor</span>
+            </button>
+            <button
+              onClick={handleReOnboard}
+              className="nav-item w-full text-left"
+            >
+              <RefreshCcw className="w-4 h-4 flex-shrink-0 text-slate-500" />
+              <span>Re-Onboard Goal</span>
             </button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-2.5 space-y-0.5 overflow-y-auto">
-            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider px-2.5 py-1.5 mb-0.5">Core</p>
-            {navItems.map(({ to, icon: Icon, label }) => (
-              <NavLink
-                key={to} to={to}
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {label}
-              </NavLink>
-            ))}
-
-            <div className="pt-3">
-              <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider px-2.5 py-1.5 mb-0.5">AI Tools</p>
-              <button
-                onClick={() => { setChatOpen(true); setMobileMenuOpen(false) }}
-                className="nav-item w-full text-left"
-              >
-                <MessageCircle className="w-4 h-4 flex-shrink-0 text-brand-600" />
-                AI Assistant
-              </button>
-              <button
-                onClick={handleReOnboard}
-                className="nav-item w-full text-left"
-              >
-                <RefreshCcw className="w-4 h-4 flex-shrink-0" />
-                Re-Onboard Goal
-              </button>
-            </div>
-
-            <div className="pt-4 mt-4 border-t border-surface-200/80">
-              <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider px-2.5 py-1 mb-0.5">Legal</p>
-              <Link
-                to="/privacy"
-                className="nav-item text-xs"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Shield className="w-3.5 h-3.5 flex-shrink-0 text-text-muted" />
-                Privacy Policy
-              </Link>
-              <Link
-                to="/terms"
-                className="nav-item text-xs"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <BookOpen className="w-3.5 h-3.5 flex-shrink-0 text-text-muted" />
-                Terms of Service
-              </Link>
-              <div className="px-2.5 pt-3 mt-2 border-t border-surface-200/60 text-[11px] text-text-muted leading-tight">
-                <span>Created by </span>
-                <a
-                  href="mailto:er.adityasah@gmail.com"
-                  className="font-medium text-slate-700 hover:text-brand-600 transition-colors"
-                >
-                  Aditya Sah
-                </a>
-              </div>
-            </div>
-          </nav>
-
-          {/* User section */}
-          <div className="p-2.5 border-t border-surface-200">
-            <div
-              className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-surface-100 cursor-pointer transition-colors"
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
+          <div className="pt-4 mt-4 border-t border-slate-200/80 dark:border-darkBg-border">
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 py-1 mb-1">Legal</p>
+            <Link
+              to="/privacy"
+              className="nav-item text-xs"
+              onClick={() => setMobileMenuOpen(false)}
             >
-              <Avatar name={user?.name} size="sm" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-slate-900 truncate">{user?.name}</p>
-                <p className="text-[10px] text-text-muted truncate">{user?.email}</p>
-              </div>
-              <ChevronDown className="w-3 h-3 text-text-muted flex-shrink-0" />
+              <Shield className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
+              Privacy Policy
+            </Link>
+            <Link
+              to="/terms"
+              className="nav-item text-xs"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <BookOpen className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
+              Terms of Service
+            </Link>
+            
+            <div className="px-3 pt-3 mt-2 border-t border-slate-200/60 dark:border-darkBg-border text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+              <span>Created by </span>
+              <a
+                href="mailto:er.adityasah@gmail.com"
+                className="font-medium text-slate-800 dark:text-slate-200 hover:text-brand-600 transition-colors"
+              >
+                Aditya Sah
+              </a>
             </div>
-
-            {userMenuOpen && (
-              <div className="mt-1 py-1 rounded-lg bg-white border border-surface-200 shadow-card-md animate-scale-in">
-                <button
-                  onClick={handleLogout}
-                  className="btn-danger w-full justify-start rounded-none px-3 py-1.5 text-xs"
-                >
-                  <LogOut className="w-3.5 h-3.5" /> Sign Out
-                </button>
-              </div>
-            )}
           </div>
-        </aside>
-      </>
+        </nav>
 
-      {/* ── Main Content Container ── */}
+        {/* User profile footer */}
+        <div className="p-3 border-t border-slate-200/80 dark:border-darkBg-border">
+          <div
+            className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-darkBg-cardSub cursor-pointer transition-colors"
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+          >
+            <Avatar name={user?.name} size="sm" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.name}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate font-mono">{user?.email}</p>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+          </div>
+
+          {userMenuOpen && (
+            <div className="mt-1 py-1 rounded-xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-card-lg animate-scale-in">
+              <button
+                onClick={handleLogout}
+                className="btn-danger w-full justify-start rounded-none px-3.5 py-2 text-xs"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Sign Out
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* ── Main Content Area ── */}
       <div className="flex-1 flex flex-col min-w-0">
 
-        {/* Top Header */}
-        <header className="bg-white border-b border-surface-200 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-20">
-          {/* Left: Mobile Toggle & Greeting */}
+        {/* Floating Studio Top Header */}
+        <header className="bg-white/80 dark:bg-darkBg-card/80 backdrop-blur-md border-b border-slate-200/80 dark:border-darkBg-border px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-30">
+          
+          {/* Left: Hamburger & Greeting */}
           <div className="flex items-center gap-3">
             <button
-              className="lg:hidden btn-ghost p-1.5 -ml-1 text-slate-700"
+              className="lg:hidden p-2 -ml-1 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-darkBg-cardSub rounded-xl"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open sidebar"
             >
               <Menu className="w-5 h-5" />
             </button>
             <div>
-              <p className="text-[11px] text-text-muted">{greeting()},</p>
-              <h2 className="font-bold text-slate-900 text-sm leading-tight">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">{greeting()},</p>
+              <h2 className="font-bold text-slate-900 dark:text-white text-sm leading-tight">
                 {user?.name?.split(' ')[0]}
               </h2>
             </div>
           </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-2">
+          {/* Right: Theme Toggle & Assistant */}
+          <div className="flex items-center gap-2.5">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border transition-colors shadow-subtle"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+            </button>
+
+            {/* AI Assistant Button */}
             <button
               onClick={() => setChatOpen(true)}
-              className="btn-primary text-xs hidden sm:inline-flex py-2 px-3"
+              className="btn-primary text-xs py-2 px-3.5 hidden sm:inline-flex"
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              AI Assistant
+              AI Advisor
             </button>
+
             <div className="hidden sm:block">
               <Avatar name={user?.name} size="sm" />
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-auto bg-surface">
+        {/* Page Content View */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
           <Outlet />
         </main>
       </div>
 
-      {/* Chat overlay */}
+      {/* ── Mobile Bottom Navigation Bar (Inspired by Image 3) ── */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-darkBg-card/95 backdrop-blur-md border-t border-slate-200/80 dark:border-darkBg-border py-2 px-6 flex items-center justify-around z-30 shadow-card-lg">
+        {navItems.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) => `flex flex-col items-center gap-1 text-[10px] font-semibold py-1 px-2.5 rounded-xl transition-colors ${
+              isActive
+                ? 'text-brand-600 dark:text-brand-400'
+                : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+        <button
+          onClick={() => setChatOpen(true)}
+          className="flex flex-col items-center gap-1 text-[10px] font-semibold py-1 px-2.5 rounded-xl text-slate-500 dark:text-slate-400"
+        >
+          <MessageCircle className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+          <span>Advisor</span>
+        </button>
+      </div>
+
+      {/* Chat Overlay */}
       {chatOpen && <ChatOverlay onClose={() => setChatOpen(false)} />}
     </div>
   )

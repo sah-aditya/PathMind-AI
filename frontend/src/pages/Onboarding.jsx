@@ -24,7 +24,7 @@ const STEPS = [
 
 function AiAvatar() {
   return (
-    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-brand-sm">
+    <div className="w-8 h-8 rounded-xl bg-brand-600 dark:bg-brand-500 flex items-center justify-center flex-shrink-0 shadow-subtle">
       <Brain className="w-4 h-4 text-white" />
     </div>
   )
@@ -33,7 +33,7 @@ function AiAvatar() {
 function UserAvatar({ name }) {
   const initials = (name || 'U')[0].toUpperCase()
   return (
-    <div className="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">
+    <div className="w-8 h-8 rounded-xl bg-slate-800 dark:bg-slate-700 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold shadow-subtle">
       {initials}
     </div>
   )
@@ -70,7 +70,6 @@ export default function Onboarding() {
     }
   }
 
-  // Clear previous session when starting fresh onboarding
   useEffect(() => {
     chatApi.reset().catch(() => {})
   }, [])
@@ -93,7 +92,6 @@ export default function Onboarding() {
     setLoading(true)
     
     try {
-      // Pass the current conversation messages explicitly to eliminate DB context leakage
       const { data } = await chatApi.send(text, 'onboarding', updatedMessages)
       setMessages(m => [...m, { role: 'assistant', content: data.reply }])
 
@@ -122,46 +120,50 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-65px)] bg-surface overflow-hidden">
+    <div className="flex h-[calc(100vh-120px)] lg:h-[calc(100vh-80px)] bg-slate-100/80 dark:bg-darkBg-canvas rounded-2xl overflow-hidden border border-slate-200/80 dark:border-darkBg-border shadow-card">
 
       {/* ── Left: Chat panel ─────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-darkBg-card">
 
         {/* Chat header */}
-        <div className="bg-white border-b border-surface-200 px-6 py-3 flex items-center gap-3">
-          <AiAvatar />
-          <div className="flex-1">
-            <p className="font-bold text-text-primary text-sm">PathMind AI</p>
-            <p className="text-xs text-emerald-600 flex items-center gap-1.5 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-              {profileReady ? 'Profile complete!' : 'Building your profile…'}
-            </p>
+        <div className="border-b border-slate-200/80 dark:border-darkBg-border px-5 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AiAvatar />
+            <div>
+              <p className="font-bold text-slate-900 dark:text-white text-sm">PathMind AI Advisor</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                {profileReady ? 'Profile complete!' : 'Building your curriculum…'}
+              </p>
+            </div>
           </div>
           
-          <button
-            onClick={handleReset}
-            title="Start over"
-            className="btn-ghost p-1.5 text-text-muted hover:text-text-primary text-xs flex items-center gap-1"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Start Over</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleReset}
+              title="Start over"
+              className="btn-ghost p-1.5 text-slate-500 text-xs flex items-center gap-1"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Start Over</span>
+            </button>
 
-          {/* Turn progress dots */}
-          <div className="flex items-center gap-1.5 ml-2">
-            {STEPS.map((_, i) => (
-              <div
-                key={i}
-                className={`w-2 h-2 rounded-full transition-all duration-500 ${
-                  userTurns > i ? 'bg-brand-500 scale-110' : 'bg-surface-300'
-                }`}
-              />
-            ))}
+            {/* Turn progress dots */}
+            <div className="flex items-center gap-1.5 ml-2">
+              {STEPS.map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    userTurns > i ? 'bg-brand-500 scale-110' : 'bg-slate-200 dark:bg-darkBg-border'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-5">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4">
           {messages.map((m, i) => (
             <div
               key={i}
@@ -169,11 +171,7 @@ export default function Onboarding() {
             >
               {m.role === 'assistant' && <AiAvatar />}
 
-              <div className={`max-w-[75%] ${
-                m.role === 'user'
-                  ? 'bg-brand-600 text-white rounded-2xl rounded-tr-sm px-4 py-3'
-                  : 'bg-white border border-surface-200 shadow-card text-text-primary rounded-2xl rounded-tl-sm px-4 py-3'
-              }`}>
+              <div className={m.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}>
                 <MessageContent content={m.content} />
               </div>
 
@@ -185,9 +183,9 @@ export default function Onboarding() {
           {loading && (
             <div className="flex gap-3 animate-fade-in">
               <AiAvatar />
-              <div className="bg-white border border-surface-200 shadow-card rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
+              <div className="chat-bubble-ai flex items-center gap-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-500" />
-                <span className="text-text-muted text-sm">PathMind is thinking…</span>
+                <span className="text-slate-400 text-xs">PathMind is thinking…</span>
               </div>
             </div>
           )}
@@ -195,42 +193,42 @@ export default function Onboarding() {
           {/* Profile ready card */}
           {profileReady && (
             <div className="animate-slide-up">
-              <div className="bg-white border-2 border-emerald-200 rounded-2xl p-5 shadow-card-md">
+              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border-2 border-emerald-300 dark:border-emerald-700 rounded-2xl p-5 shadow-card-md">
                 {/* Header */}
                 <div className="flex items-center gap-2.5 mb-3">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <p className="font-bold text-emerald-700">Profile Complete!</p>
-                    <p className="text-xs text-text-muted">Ready to generate your personalized roadmap</p>
+                    <p className="font-bold text-emerald-800 dark:text-emerald-200 text-sm">Profile Complete!</p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400">Ready to synthesize your DAG learning path</p>
                   </div>
                 </div>
 
                 {/* Profile summary grid */}
                 {extractedProfile && (
                   <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div className="bg-surface-50 border border-surface-200 rounded-xl p-3">
-                      <p className="text-xs text-text-muted mb-0.5">Goal</p>
-                      <p className="text-sm font-semibold text-text-primary leading-tight line-clamp-2">
+                    <div className="bg-white dark:bg-darkBg-card border border-emerald-200/80 dark:border-emerald-800/40 rounded-xl p-3">
+                      <p className="text-[10px] text-slate-400 uppercase font-mono mb-0.5">Goal</p>
+                      <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white leading-tight line-clamp-2">
                         {extractedProfile.goal_text || '—'}
                       </p>
                     </div>
-                    <div className="bg-surface-50 border border-surface-200 rounded-xl p-3">
-                      <p className="text-xs text-text-muted mb-0.5">Level</p>
-                      <p className="text-sm font-semibold text-text-primary capitalize">
+                    <div className="bg-white dark:bg-darkBg-card border border-emerald-200/80 dark:border-emerald-800/40 rounded-xl p-3">
+                      <p className="text-[10px] text-slate-400 uppercase font-mono mb-0.5">Level</p>
+                      <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white capitalize">
                         {extractedProfile.experience_level || '—'}
                       </p>
                     </div>
-                    <div className="bg-surface-50 border border-surface-200 rounded-xl p-3">
-                      <p className="text-xs text-text-muted mb-0.5">Hours/week</p>
-                      <p className="text-sm font-semibold text-text-primary">
+                    <div className="bg-white dark:bg-darkBg-card border border-emerald-200/80 dark:border-emerald-800/40 rounded-xl p-3">
+                      <p className="text-[10px] text-slate-400 uppercase font-mono mb-0.5">Hours/week</p>
+                      <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
                         {extractedProfile.hours_per_week || 8}h
                       </p>
                     </div>
-                    <div className="bg-surface-50 border border-surface-200 rounded-xl p-3">
-                      <p className="text-xs text-text-muted mb-0.5">Skills identified</p>
-                      <p className="text-sm font-semibold text-text-primary">
+                    <div className="bg-white dark:bg-darkBg-card border border-emerald-200/80 dark:border-emerald-800/40 rounded-xl p-3">
+                      <p className="text-[10px] text-slate-400 uppercase font-mono mb-0.5">Skills identified</p>
+                      <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
                         {extractedProfile.known_skills?.length || 0} skills
                       </p>
                     </div>
@@ -240,10 +238,10 @@ export default function Onboarding() {
                 <button
                   onClick={handleGeneratePath}
                   disabled={generating}
-                  className="btn-primary w-full justify-center py-3.5"
+                  className="btn-primary w-full justify-center py-3"
                 >
                   {generating
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating your roadmap…</>
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Synthesizing DAG roadmap…</>
                     : <><Sparkles className="w-4 h-4" /> Generate My Learning Path <ArrowRight className="w-4 h-4" /></>
                   }
                 </button>
@@ -256,8 +254,8 @@ export default function Onboarding() {
 
         {/* Input bar */}
         {!profileReady && (
-          <div className="bg-white border-t border-surface-200 px-4 sm:px-6 py-4">
-            <div className="flex gap-3 max-w-3xl mx-auto">
+          <div className="border-t border-slate-200/80 dark:border-darkBg-border p-4 bg-white dark:bg-darkBg-card">
+            <div className="flex gap-2.5 max-w-3xl mx-auto">
               <input
                 ref={inputRef}
                 value={input}
@@ -275,62 +273,61 @@ export default function Onboarding() {
                 <Send className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-text-muted mt-2 text-center">
+            <p className="text-[11px] text-slate-400 mt-2 text-center">
               Press Enter to send · PathMind will ask {Math.max(0, 4 - userTurns)} more question{Math.max(0, 4 - userTurns) !== 1 ? 's' : ''} to build your profile
             </p>
           </div>
         )}
       </div>
 
-      {/* ── Right: Progress steps panel ──────────────── */}
-      <div className="hidden lg:flex w-72 flex-col bg-white border-l border-surface-200 p-6">
-        <h2 className="font-bold text-text-primary mb-1">Building your profile</h2>
-        <p className="text-xs text-text-muted mb-6">Answer a few questions to get started</p>
+      {/* ── Right: Progress steps panel (Desktop only) ── */}
+      <div className="hidden lg:flex w-72 flex-col bg-slate-50 dark:bg-darkBg-cardSub/40 border-l border-slate-200/80 dark:border-darkBg-border p-5">
+        <h2 className="font-bold text-slate-900 dark:text-white text-sm mb-0.5">Profile Discovery</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">Answer a few questions to calibrate your path</p>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {STEPS.map((step, i) => {
             const done    = userTurns >= step.minTurns
             const current = userTurns === step.minTurns - 1
             return (
-              <div key={i} className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 ${
-                done    ? 'bg-emerald-50 border border-emerald-100' :
-                current ? 'bg-brand-50  border border-brand-100' :
+              <div key={i} className={`flex items-center gap-3 p-2.5 rounded-xl transition-all duration-300 ${
+                done    ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40' :
+                current ? 'bg-brand-50 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-800/40' :
                           'border border-transparent'
               }`}>
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
-                  done    ? 'bg-emerald-500 text-white' :
-                  current ? 'bg-brand-600  text-white' :
-                            'bg-surface-100 text-text-muted'
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                  done    ? 'bg-emerald-600 text-white' :
+                  current ? 'bg-brand-600 text-white' :
+                            'bg-slate-200 dark:bg-darkBg-border text-slate-400'
                 }`}>
                   {done
-                    ? <CheckCircle className="w-4 h-4" />
-                    : <step.icon className="w-4 h-4" />
+                    ? <CheckCircle className="w-3.5 h-3.5" />
+                    : <step.icon className="w-3.5 h-3.5" />
                   }
                 </div>
-                <span className={`text-sm font-medium ${
-                  done    ? 'text-emerald-700' :
-                  current ? 'text-brand-700' :
-                            'text-text-muted'
+                <span className={`text-xs font-medium ${
+                  done    ? 'text-emerald-700 dark:text-emerald-300' :
+                  current ? 'text-brand-700 dark:text-brand-300 font-semibold' :
+                            'text-slate-400 dark:text-slate-500'
                 }`}>
                   {step.label}
                 </span>
                 {current && (
-                  <span className="ml-auto text-xs text-brand-500 font-semibold animate-pulse">Now</span>
+                  <span className="ml-auto text-[10px] text-brand-600 dark:text-brand-400 font-bold animate-pulse">Now</span>
                 )}
               </div>
             )
           })}
         </div>
 
-        {/* Tips */}
-        <div className="mt-auto pt-6 border-t border-surface-200">
-          <div className="bg-brand-50 border border-brand-100 rounded-xl p-3">
-            <p className="text-xs font-semibold text-brand-700 mb-1 flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3" /> How it works
+        {/* Info card */}
+        <div className="mt-auto pt-4 border-t border-slate-200/80 dark:border-darkBg-border">
+          <div className="bg-brand-50/70 dark:bg-brand-950/30 border border-brand-200/60 dark:border-brand-800/40 rounded-xl p-3">
+            <p className="text-xs font-semibold text-brand-700 dark:text-brand-300 mb-1 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3" /> Graph Assembly
             </p>
-            <p className="text-xs text-brand-600 leading-relaxed">
-              PathMind AI builds your profile conversationally — no boring forms.
-              The more you share, the more personalized your ML-powered roadmap.
+            <p className="text-[11px] text-brand-600 dark:text-brand-400 leading-relaxed">
+              PathMind sequences prerequisite skills into a topological graph tailored to your background.
             </p>
           </div>
         </div>
