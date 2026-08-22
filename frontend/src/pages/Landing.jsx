@@ -287,16 +287,33 @@ export default function Landing() {
 
       {/* ── Footer ─────────────────────────────────────────── */}
       <footer className="mt-auto bg-white py-8 border-t border-surface-200 text-xs text-text-secondary">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-brand-600 flex items-center justify-center text-white">
-              <Brain className="w-3.5 h-3.5" />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-brand-600 flex items-center justify-center text-white">
+                <Brain className="w-3.5 h-3.5" />
+              </div>
+              <span className="font-bold text-slate-900">PathMind AI</span>
             </div>
-            <span className="font-bold text-slate-900">PathMind AI</span>
-            <span className="text-text-muted ml-2">© 2026 PathMind Project</span>
+            <span className="hidden sm:inline text-slate-300">•</span>
+            <span>
+              Developed by{' '}
+              <a
+                href="mailto:er.adityasah@gmail.com"
+                className="font-semibold text-slate-900 hover:text-brand-600 transition-colors"
+              >
+                Aditya Sah
+              </a>{' '}
+              (<a
+                href="mailto:er.adityasah@gmail.com"
+                className="text-brand-600 hover:underline"
+              >
+                er.adityasah@gmail.com
+              </a>)
+            </span>
           </div>
 
-          <div className="flex items-center gap-6 text-text-secondary">
+          <div className="flex items-center gap-5 text-text-secondary">
             <Link to="/privacy" className="hover:text-slate-900 transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-slate-900 transition-colors">Terms of Service</Link>
             <a
@@ -305,7 +322,7 @@ export default function Landing() {
               rel="noopener noreferrer"
               className="hover:text-slate-900 transition-colors"
             >
-              GitHub Repository
+              GitHub
             </a>
           </div>
         </div>

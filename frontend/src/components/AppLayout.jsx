@@ -124,7 +124,7 @@ export default function AppLayout() {
             </div>
 
             <div className="pt-4 mt-4 border-t border-surface-200/80">
-              <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider px-2.5 py-1.5 mb-0.5">Legal</p>
+              <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wider px-2.5 py-1 mb-0.5">Legal</p>
               <Link
                 to="/privacy"
                 className="nav-item text-xs"
@@ -141,6 +141,15 @@ export default function AppLayout() {
                 <BookOpen className="w-3.5 h-3.5 flex-shrink-0 text-text-muted" />
                 Terms of Service
               </Link>
+              <div className="px-2.5 pt-3 mt-2 border-t border-surface-200/60 text-[11px] text-text-muted leading-tight">
+                <span>Created by </span>
+                <a
+                  href="mailto:er.adityasah@gmail.com"
+                  className="font-medium text-slate-700 hover:text-brand-600 transition-colors"
+                >
+                  Aditya Sah
+                </a>
+              </div>
             </div>
           </nav>
 

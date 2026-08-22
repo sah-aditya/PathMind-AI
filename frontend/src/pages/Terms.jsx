@@ -66,6 +66,16 @@ export default function Terms() {
               PathMind AI is provided on an "as is" and "as available" basis. We continually improve system accuracy and reserve the right to modify or update features to support enhanced learning outcomes.
             </p>
           </section>
+
+          <section className="space-y-2">
+            <h2 className="text-base font-bold text-slate-900">6. Project Ownership & Contact</h2>
+            <p>
+              PathMind AI is developed by <strong>Aditya Sah</strong>. For inquiries, feedback, or support, please contact{' '}
+              <a href="mailto:er.adityasah@gmail.com" className="text-brand-600 font-semibold hover:underline">
+                er.adityasah@gmail.com
+              </a>.
+            </p>
+          </section>
         </div>
 
       </div>

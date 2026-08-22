@@ -71,9 +71,13 @@ export default function Privacy() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-base font-bold text-slate-900">5. Contact & Open Source</h2>
+            <h2 className="text-base font-bold text-slate-900">5. Contact & Maintainer</h2>
             <p>
-              PathMind AI is an open educational project. Questions regarding this policy can be directed to the repository maintainers on GitHub.
+              PathMind AI is an open educational project created and maintained by <strong>Aditya Sah</strong>. For questions, data requests, or inquiries, reach out at{' '}
+              <a href="mailto:er.adityasah@gmail.com" className="text-brand-600 font-semibold hover:underline">
+                er.adityasah@gmail.com
+              </a>{' '}
+              or via the project's GitHub repository.
             </p>
           </section>
         </div>
