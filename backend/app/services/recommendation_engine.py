@@ -3,17 +3,18 @@ Recommendation Engine
 =====================
 Scores and ranks learning resources for a learner using a hybrid ML approach:
 
-  Heuristic Factors (original):
-  1. Goal Relevance (25%)   — skills taught ∩ required skills (Jaccard)
-  2. Skill Gap Coverage (20%) — fraction of gap skills this resource teaches
-  3. Prerequisite Readiness (15%) — learner already has the prerequisites
-  4. Difficulty Fit (10%)   — difficulty matches learner experience level
-  5. Interest Alignment (5%) — resource tags match learner interests
-  6. Type Preference (5%)   — matches learning style preference
+  Heuristic Factors:
+  1. Goal Relevance (22%)     — skills taught ∩ required skills (Jaccard)
+  2. Skill Gap Coverage (25%) — fraction of gap skills this resource teaches  ← BOOSTED
+  3. Prerequisite Readiness (20%) — learner already has the prerequisites      ← BOOSTED
+  4. Difficulty Fit (10%)     — difficulty matches learner experience level
+  5. Interest Alignment (5%)  — resource tags match learner interests
+  6. Type Preference (3%)     — matches learning style preference
+  7. Rating Boost (5%)        — high-rated resources get a small boost          ← NEW
 
-  ML Factors (new):
-  7. TF-IDF Cosine Similarity (15%) — semantic match between resource text and goal
-  8. SVD Collaborative Score (5%)   — "learners like you completed this" signal
+  ML Factors:
+  8. TF-IDF Cosine Similarity (12%) — semantic match between resource text and goal
+  9. SVD Collaborative Score (3%)   — "learners like you completed this" signal
 
   + ε-greedy Exploration (20% of final list randomly sampled for diversity)
 """
@@ -171,22 +172,28 @@ def score_resources(
         else:
             type_pref = 0.6
 
-        # ── Factor 7: TF-IDF Cosine Similarity — 15% ──
+        # ── Factor 7: Rating Boost — 5% ──
+        # Normalize rating 0-5 to 0-1, default 0.9 for unrated
+        raw_rating = resource.get("rating") or 4.5
+        rating_boost = min(1.0, max(0.0, (raw_rating - 3.0) / 2.0))
+
+        # ── Factor 8: TF-IDF Cosine Similarity — 12% ──
         tfidf_score = tfidf_scores.get(resource["id"], 0.0)
 
-        # ── Factor 8: SVD Collaborative — 5% ──
+        # ── Factor 9: SVD Collaborative — 3% ──
         svd_score = svd_scores.get(resource["id"], 0.0)
 
         # ── Weighted Final Score ──
         final_score = (
-            0.25 * goal_relevance
-            + 0.20 * gap_coverage
-            + 0.15 * prereq_readiness
+            0.22 * goal_relevance
+            + 0.25 * gap_coverage        # Prioritize gap closure
+            + 0.20 * prereq_readiness    # Ensure readiness
             + 0.10 * difficulty_fit
             + 0.05 * interest_alignment
-            + 0.05 * type_pref
-            + 0.15 * tfidf_score
-            + 0.05 * svd_score
+            + 0.03 * type_pref
+            + 0.05 * rating_boost        # Quality signal
+            + 0.12 * tfidf_score
+            + 0.03 * svd_score
         )
 
         scored.append(
@@ -206,6 +213,7 @@ def score_resources(
                     "difficulty_fit":    round(difficulty_fit, 3),
                     "interest_alignment":round(interest_alignment, 3),
                     "type_preference":   round(type_pref, 3),
+                    "rating_boost":      round(rating_boost, 3),
                     "tfidf_similarity":  round(tfidf_score, 3),
                     "collab_filter":     round(svd_score, 3),
                 },

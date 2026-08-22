@@ -7,6 +7,7 @@ import {
 import { chatApi, pathApi } from '../services/api'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
+import MarkdownMessage from '../components/MarkdownMessage'
 
 const WELCOME_MSG = {
   role: 'assistant',
@@ -39,16 +40,7 @@ function UserAvatar({ name }) {
 }
 
 function MessageContent({ content }) {
-  // Render **bold** markdown safely
-  const html = content
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br />')
-  return (
-    <p
-      className="text-sm leading-relaxed"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  )
+  return <MarkdownMessage content={content} className="text-sm" />
 }
 
 export default function Onboarding() {

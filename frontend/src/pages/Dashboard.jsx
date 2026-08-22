@@ -104,19 +104,35 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-      {/* ── No path CTA ─────────────────────────────── */}
+      {/* ── No path CTA ────────────────────────────────────────────── */}
       {!active_path && (
-        <div className="card border-2 border-dashed border-brand-200 bg-brand-50 text-center py-12 animate-fade-in">
-          <div className="w-16 h-16 rounded-2xl bg-white shadow-card flex items-center justify-center mx-auto mb-4">
-            <Brain className="w-8 h-8 text-brand-600" />
+        <div className="card overflow-hidden animate-fade-in">
+          {/* Gradient top strip */}
+          <div className="h-1 -mx-6 -mt-6 mb-6 bg-gradient-to-r from-brand-500 via-violet-500 to-indigo-500" />
+          <div className="flex flex-col lg:flex-row items-center gap-8">
+            {/* Icon */}
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center shadow-brand flex-shrink-0">
+              <Brain className="w-10 h-10 text-white" />
+            </div>
+            {/* Copy */}
+            <div className="flex-1 text-center lg:text-left">
+              <h2 className="text-2xl font-black text-text-primary mb-2">Start your personalized journey</h2>
+              <p className="text-text-secondary mb-5 max-w-lg">
+                Chat with PathMind AI to build your profile. Our ML engine will map your skill gaps,
+                sequence prerequisites, and generate a week-by-week roadmap — tailored to your goal.
+              </p>
+              <div className="flex flex-wrap gap-3 mb-6 justify-center lg:justify-start">
+                {['Skill Gap Analysis', 'AI Recommendations', 'Adaptive Assessments', 'Progress Tracking'].map(t => (
+                  <span key={t} className="flex items-center gap-1.5 text-xs text-text-secondary">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> {t}
+                  </span>
+                ))}
+              </div>
+              <button onClick={() => navigate('/onboarding')} className="btn-primary">
+                Begin Onboarding <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <h2 className="text-xl font-bold text-text-primary mb-2">Start your personalized journey</h2>
-          <p className="text-text-secondary text-sm mb-6 max-w-md mx-auto">
-            Chat with PathMind AI to build your profile. Our ML engine will create your custom roadmap.
-          </p>
-          <button onClick={() => navigate('/onboarding')} className="btn-primary mx-auto">
-            Begin Onboarding <ArrowRight className="w-4 h-4" />
-          </button>
         </div>
       )}
 

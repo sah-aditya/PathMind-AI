@@ -140,5 +140,112 @@
     "optional_skills": ["sql-basics"],
     "typical_path_weeks": 12,
     "phases": ["Networking & Linux", "Python for Security", "Cybersecurity Fundamentals", "Ethical Hacking", "Capstone Project"]
+  },
+
+  "flutter-developer": {
+    "title": "Flutter Developer",
+    "description": "Build cross-platform mobile apps for iOS and Android using Flutter and Dart.",
+    "required_skills": [
+      "dart-basics", "flutter-basics", "flutter-advanced",
+      "mobile-ui", "git-basics", "mobile-deployment"
+    ],
+    "optional_skills": ["react-native", "firebase"],
+    "typical_path_weeks": 14,
+    "phases": ["Dart Fundamentals", "Flutter Basics", "State Management", "Advanced Flutter", "App Store Deployment"]
+  },
+
+  "react-native-developer": {
+    "title": "React Native Developer",
+    "description": "Build cross-platform mobile applications using React Native and JavaScript.",
+    "required_skills": [
+      "javascript-basics", "javascript-advanced",
+      "react-basics", "react-advanced",
+      "react-native", "mobile-ui", "git-basics"
+    ],
+    "optional_skills": ["mobile-deployment"],
+    "typical_path_weeks": 14,
+    "phases": ["JavaScript Mastery", "React Fundamentals", "React Advanced", "React Native", "Deployment & Publishing"]
+  },
+
+  "devops-engineer": {
+    "title": "DevOps / Cloud Engineer",
+    "description": "Automate infrastructure, CI/CD pipelines, and manage cloud-native deployments.",
+    "required_skills": [
+      "linux-basics", "shell-scripting",
+      "git-basics", "docker", "kubernetes",
+      "ci-cd-devops", "aws-fundamentals",
+      "terraform", "monitoring-grafana", "system-design"
+    ],
+    "optional_skills": ["python-intermediate"],
+    "typical_path_weeks": 18,
+    "phases": ["Linux & Shell", "Git & Docker", "Kubernetes", "CI/CD", "Cloud & IaC", "Observability"]
+  },
+
+  "ui-ux-designer": {
+    "title": "UI/UX Designer",
+    "description": "Design user-centered digital products using research, wireframes, and prototypes.",
+    "required_skills": [
+      "figma-basics", "ux-research",
+      "design-systems", "accessibility", "prototyping"
+    ],
+    "optional_skills": ["html-css", "javascript-basics"],
+    "typical_path_weeks": 10,
+    "phases": ["Design Fundamentals", "Figma Mastery", "UX Research", "Design Systems", "Prototyping & Testing"]
+  },
+
+  "data-engineer": {
+    "title": "Data Engineer",
+    "description": "Build reliable data pipelines, warehouses, and streaming architectures at scale.",
+    "required_skills": [
+      "python-intermediate",
+      "sql-basics", "sql-advanced",
+      "linux-basics",
+      "spark", "kafka", "airflow",
+      "data-warehousing", "dbt", "etl-pipelines"
+    ],
+    "optional_skills": ["aws-fundamentals", "docker"],
+    "typical_path_weeks": 18,
+    "phases": ["Python & SQL", "Linux & Bash", "Apache Spark", "Kafka & Streaming", "Airflow & Orchestration", "Data Warehousing"]
+  },
+
+  "frontend-developer": {
+    "title": "Frontend Developer",
+    "description": "Build beautiful, responsive web UIs using modern HTML, CSS, and React.",
+    "required_skills": [
+      "html-css", "javascript-basics", "javascript-advanced",
+      "react-basics", "react-advanced",
+      "git-basics", "accessibility"
+    ],
+    "optional_skills": ["jest-testing", "figma-basics"],
+    "typical_path_weeks": 12,
+    "phases": ["Web Basics", "JavaScript Deep Dive", "React Fundamentals", "React Advanced", "Testing & Accessibility"]
+  },
+
+  "backend-developer": {
+    "title": "Backend Developer",
+    "description": "Build scalable APIs and backend systems with Python, Node.js, and databases.",
+    "required_skills": [
+      "python-intermediate", "python-advanced",
+      "sql-basics", "sql-advanced",
+      "git-basics", "docker",
+      "fastapi-deployment", "system-design"
+    ],
+    "optional_skills": ["nodejs-express", "api-testing"],
+    "typical_path_weeks": 14,
+    "phases": ["Python Mastery", "Databases & SQL", "API Development", "Docker & Deployment", "System Design"]
+  },
+
+  "qa-engineer": {
+    "title": "QA / Test Automation Engineer",
+    "description": "Build automated test suites and ensure software quality across the SDLC.",
+    "required_skills": [
+      "python-basics", "python-intermediate",
+      "javascript-basics",
+      "api-testing", "selenium", "jest-testing",
+      "test-automation", "git-basics", "ci-cd-devops"
+    ],
+    "optional_skills": ["docker"],
+    "typical_path_weeks": 12,
+    "phases": ["Programming Basics", "API Testing", "UI Automation", "Test Strategy & CI/CD", "Capstone Project"]
   }
 }

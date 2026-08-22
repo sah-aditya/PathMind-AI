@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
-import { X, Send, Brain, Loader2, Sparkles } from 'lucide-react'
+import { X, Send, Brain, Loader2, Sparkles, Bot } from 'lucide-react'
 import { chatApi } from '../services/api'
 import toast from 'react-hot-toast'
+import MarkdownMessage from './MarkdownMessage'
 
 const SUGGESTIONS = [
   'Why was my top resource recommended?',
@@ -10,14 +11,19 @@ const SUGGESTIONS = [
   'Explain my skill gap analysis',
 ]
 
+function formatTime(date) {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
 export default function ChatOverlay({ onClose }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "Hi! I'm your PathMind AI assistant. Ask me anything about your learning path, why a resource was recommended, or what to focus on next. 🎯",
+      content: "Hi! I'm your **PathMind AI** assistant. Ask me anything about your learning path, why a resource was recommended, or what to focus on next. 🎯",
+      time: new Date(),
     },
   ])
-  const [input, setInput] = useState('')
+  const [input, setInput]   = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
   const inputRef  = useRef(null)
@@ -34,16 +40,21 @@ export default function ChatOverlay({ onClose }) {
     const msg = text.trim()
     if (!msg || loading) return
     setInput('')
-    setMessages(m => [...m, { role: 'user', content: msg }])
+    // Reset textarea height
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'
+    }
+    setMessages(m => [...m, { role: 'user', content: msg, time: new Date() }])
     setLoading(true)
     try {
       const { data } = await chatApi.send(msg, 'assistant')
-      setMessages(m => [...m, { role: 'assistant', content: data.reply }])
+      setMessages(m => [...m, { role: 'assistant', content: data.reply, time: new Date() }])
     } catch {
       toast.error('Could not reach AI assistant')
       setMessages(m => [...m, {
         role: 'assistant',
         content: 'Sorry, I ran into an issue. Please try again in a moment.',
+        time: new Date(),
       }])
     } finally {
       setLoading(false)
@@ -51,26 +62,26 @@ export default function ChatOverlay({ onClose }) {
   }
 
   return (
-    /* Backdrop */
     <div
       className="fixed inset-0 z-50 flex items-end justify-end p-4 lg:p-6"
-      style={{ background: 'rgba(15,23,42,0.15)' }}
+      style={{ background: 'rgba(15,23,42,0.2)', backdropFilter: 'blur(2px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       {/* Chat panel */}
-      <div className="w-full max-w-md flex flex-col bg-white rounded-2xl shadow-card-lg border border-surface-200 overflow-hidden animate-slide-up"
-        style={{ height: 'min(600px, calc(100vh - 48px))' }}
+      <div
+        className="w-full max-w-md flex flex-col bg-white rounded-2xl shadow-card-lg border border-surface-200 overflow-hidden animate-slide-up"
+        style={{ height: 'min(620px, calc(100vh - 48px))' }}
       >
         {/* ── Header ─────────────────────────────── */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-surface-200 bg-white">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center shadow-brand-sm">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-surface-200 bg-white">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 flex items-center justify-center shadow-brand-sm flex-shrink-0">
             <Brain className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1">
             <p className="font-bold text-text-primary text-sm">PathMind AI</p>
             <p className="text-xs text-emerald-600 flex items-center gap-1 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-              Online
+              Online · Here to help
             </p>
           </div>
           <button
@@ -83,28 +94,46 @@ export default function ChatOverlay({ onClose }) {
         </div>
 
         {/* ── Messages ───────────────────────────── */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-surface-50">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-surface-50">
           {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={i} className={`flex gap-2.5 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {m.role === 'assistant' && (
-                <div className="w-6 h-6 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0 mr-2 mt-1">
-                  <Brain className="w-3 h-3 text-brand-600" />
+                <div className="w-7 h-7 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0 mt-1">
+                  <Bot className="w-3.5 h-3.5 text-brand-600" />
                 </div>
               )}
-              <div className={m.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}>
-                <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
+              <div className="flex flex-col gap-1" style={{ maxWidth: '82%' }}>
+                <div className={m.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}>
+                  {m.role === 'user'
+                    ? <p className="text-sm leading-relaxed">{m.content}</p>
+                    : <MarkdownMessage content={m.content} className="text-sm" />
+                  }
+                </div>
+                {m.time && (
+                  <span className={`text-[10px] text-text-muted ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
+                    {formatTime(m.time)}
+                  </span>
+                )}
               </div>
             </div>
           ))}
 
           {/* Typing indicator */}
           {loading && (
-            <div className="flex justify-start">
-              <div className="w-6 h-6 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0 mr-2 mt-1">
-                <Brain className="w-3 h-3 text-brand-600" />
+            <div className="flex gap-2.5 justify-start">
+              <div className="w-7 h-7 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0 mt-1">
+                <Bot className="w-3.5 h-3.5 text-brand-600" />
               </div>
               <div className="chat-bubble-ai flex items-center gap-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-500" />
+                <span className="flex gap-1">
+                  {[0, 1, 2].map(n => (
+                    <span
+                      key={n}
+                      className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-bounce"
+                      style={{ animationDelay: `${n * 0.15}s` }}
+                    />
+                  ))}
+                </span>
                 <span className="text-text-muted text-xs">Thinking…</span>
               </div>
             </div>
@@ -112,11 +141,11 @@ export default function ChatOverlay({ onClose }) {
           <div ref={bottomRef} />
         </div>
 
-        {/* ── Suggestion chips (only when 1 message) ── */}
+        {/* ── Suggestion chips ────────────────────── */}
         {messages.length === 1 && !loading && (
-          <div className="px-4 py-2 bg-white border-t border-surface-100">
-            <p className="text-xs text-text-muted mb-2 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-brand-500" /> Suggested questions
+          <div className="px-4 py-3 bg-white border-t border-surface-100">
+            <p className="text-xs text-text-muted mb-2 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-brand-500" /> Try asking
             </p>
             <div className="flex flex-wrap gap-1.5">
               {SUGGESTIONS.map(s => (
@@ -141,7 +170,6 @@ export default function ChatOverlay({ onClose }) {
               value={input}
               onChange={e => {
                 setInput(e.target.value)
-                // Auto-resize
                 e.target.style.height = 'auto'
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px'
               }}

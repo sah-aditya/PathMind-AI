@@ -81,10 +81,16 @@ _QA_SYSTEM = """You are PathMind AI, a knowledgeable and supportive AI learning 
 You help learners understand their personalized learning path, explain concepts, 
 and answer questions about their progress and recommendations.
 
-You have access to the learner's profile and current path. Be concise, encouraging, and precise.
-When explaining technical concepts, use simple analogies. 
-When the learner struggles, identify the gap and suggest where to focus.
-Never fabricate courses or resources not in their path."""
+Formatting rules:
+- Use **bold** for key terms, skill names, and important phrases.
+- Use bullet lists for multi-step explanations or comparisons.
+- Use `inline code` for technical terms, commands, or file names.
+- Keep responses concise — 3-6 sentences for simple questions, up to 10 for complex ones.
+- If suggesting resources, ONLY refer to those in the learner's current path.
+- Be warm, encouraging, and precise.
+
+When the learner struggles with a concept, identify the root gap and suggest the specific
+phase or resource in their roadmap to revisit."""
 
 _ADAPTATION_SYSTEM = """You are PathMind AI. A learner just completed an assessment.
 Generate a supportive, personalized message explaining how their learning path was adapted.
@@ -339,32 +345,46 @@ async def answer_question(
 ) -> str:
     """
     Answer learner questions using their profile and path as context.
+    History is trimmed to the last 6 Q&A exchanges only — onboarding
+    messages are excluded to prevent context bleed.
     """
     context_str = json.dumps(learner_context, indent=2)
 
+    # Build system_instruction that includes learner context
+    system_with_context = (
+        f"{_QA_SYSTEM}\n\n"
+        f"=== LEARNER CONTEXT ===\n{context_str}\n===================="
+    )
+
+    # Only keep the last 6 Q&A turns (not onboarding history)
+    # Filter out any messages that look like onboarding (profile_ready, etc.)
+    qa_history = [
+        msg for msg in chat_history
+        if "profile_ready" not in msg.get("content", "")
+        and "I have everything I need" not in msg.get("content", "")
+        and msg.get("phase", "assistant") in ("assistant", "qa", None, "")
+    ][-12:]  # Last 12 messages = 6 exchanges
+
     history = []
-    for msg in chat_history[-10:]:  # Last 10 messages for context
+    for msg in qa_history:
         role = "user" if msg["role"] == "user" else "model"
         history.append({"role": role, "parts": [msg["content"]]})
 
-    prompt = (
-        f"{_QA_SYSTEM}\n\n"
-        f"Learner Context:\n{context_str}\n\n"
-        f"Question: {user_question}"
-    )
-
     for model_name in CANDIDATE_MODELS:
         try:
-            model = genai.GenerativeModel(model_name)
+            model = genai.GenerativeModel(
+                model_name=model_name,
+                system_instruction=system_with_context,
+            )
             chat = model.start_chat(history=history)
-            response = chat.send_message(prompt)
+            response = chat.send_message(user_question)
             if response and response.text:
                 return response.text.strip()
         except Exception as e:
             logger.warning("Q&A with %s failed: %s", model_name, e)
 
     return (
-        "I'm here to support your learning journey! Based on your goal, remember to focus on the next "
+        "I'm here to support your learning journey! Based on your goal, focus on the next "
         "step in your roadmap and take the knowledge checks to reinforce your understanding."
     )
 

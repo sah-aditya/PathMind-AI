@@ -11,10 +11,13 @@ import {
 } from 'lucide-react'
 
 const CATEGORY_COLORS = {
-  'Programming':     '#4f46e5', 'Mathematics':   '#7c3aed', 'Machine Learning': '#2563eb',
-  'Deep Learning':   '#0891b2', 'Data Science':  '#059669', 'NLP':             '#d97706',
-  'Generative AI':   '#db2777', 'Computer Vision': '#16a34a', 'MLOps':          '#dc2626',
-  'Web Development': '#9333ea', 'Cloud':         '#0284c7', 'Cybersecurity':   '#ca8a04',
+  'Programming':       '#4f46e5', 'Mathematics':     '#7c3aed', 'Machine Learning': '#2563eb',
+  'Deep Learning':     '#0891b2', 'Data Science':    '#059669', 'NLP':               '#d97706',
+  'Generative AI':     '#db2777', 'Computer Vision': '#16a34a', 'MLOps':             '#dc2626',
+  'Web Development':   '#9333ea', 'Cloud':           '#0284c7', 'Cybersecurity':     '#ca8a04',
+  'Mobile':            '#0ea5e9', 'DevOps':          '#64748b', 'UI/UX Design':      '#ec4899',
+  'Blockchain':        '#f59e0b', 'Data Engineering':'#10b981', 'QA & Testing':      '#8b5cf6',
+  'Databases':         '#ef4444', 'Tools':           '#6366f1',
 }
 
 export default function SkillGap() {
@@ -274,7 +277,7 @@ export default function SkillGap() {
         <Map className="w-8 h-8 text-brand-600 mx-auto mb-3" />
         <h2 className="text-xl font-bold text-text-primary mb-2">Your roadmap is ready</h2>
         <p className="text-text-secondary text-sm mb-5">
-          We've generated a {estimated_weeks}-week ML-optimized path to close these gaps.
+          We've generated a {estimated_weeks}-week AI-optimized path to close these gaps.
         </p>
         <button onClick={() => navigate('/roadmap')} className="btn-primary mx-auto">
           View My Roadmap <ArrowRight className="w-4 h-4" />
