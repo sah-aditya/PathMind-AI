@@ -3,13 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.api.routes import auth, profile, learning_path, assessment, dashboard, chat, resources, admin, notifications, support
+from app.api.routes import auth, profile, learning_path, assessment, dashboard, chat, resources, admin, notifications, support, certificates
 
 from contextlib import asynccontextmanager
 import logging
 
 from app.db.database import engine, Base, SessionLocal
-from app.models import user, profile as prof_model, learning, admin as admin_models, support as support_models
+from app.models import user, profile as prof_model, learning, admin as admin_models, support as support_models, certificate as certificate_models
 from app.core.security import hash_password
 
 logger = logging.getLogger(__name__)
@@ -75,6 +75,28 @@ async def lifespan(app: FastAPI):
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS raw_password VARCHAR(255);"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_change_name BOOLEAN DEFAULT TRUE;"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_change_password BOOLEAN DEFAULT TRUE;"))
+            
+            # Ensure certificates table exists in PostgreSQL
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS certificates (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    path_id INTEGER NOT NULL REFERENCES learning_paths(id) ON DELETE CASCADE,
+                    code VARCHAR(20) UNIQUE,
+                    recipient_name VARCHAR(255) NOT NULL,
+                    path_title VARCHAR(255) NOT NULL,
+                    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                    rejection_reason TEXT,
+                    approved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                    approved_at TIMESTAMPTZ,
+                    completion_stats JSONB,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ
+                );
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_certificates_code ON certificates(code);"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_certificates_user_id ON certificates(user_id);"))
+        
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables and columns initialized successfully.")
     except Exception as e:
@@ -120,6 +142,7 @@ async def maintenance_middleware(request: Request, call_next):
         or path.startswith("/api/admin")
         or path.startswith("/api/system/status")
         or path.startswith("/api/system/service-flags")
+        or path.startswith("/api/certificates/verify")
         or path == "/"
         or request.method == "OPTIONS"
     ):
@@ -176,6 +199,7 @@ app.include_router(dashboard.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(resources.router, prefix="/api")
 app.include_router(support.router, prefix="/api")
+app.include_router(certificates.router, prefix="/api")
 
 
 @app.get("/")

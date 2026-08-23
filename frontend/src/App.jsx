@@ -19,6 +19,8 @@ import Terms from './pages/Terms'
 import Admin from './pages/Admin'
 import Maintenance from './pages/Maintenance'
 import Help from './pages/Help'
+import Certificates from './pages/Certificates'
+import VerifyCertificate from './pages/VerifyCertificate'
 import AppLayout from './components/AppLayout'
 
 function PrivateRoute({ children }) {
@@ -71,6 +73,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/verify/:code" element={<VerifyCertificate />} />
+          <Route path="/verify" element={<VerifyCertificate />} />
           <Route path="*" element={<Maintenance message={systemStatus?.message} />} />
         </Routes>
         <Analytics />
@@ -86,6 +90,8 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/verify/:code" element={<VerifyCertificate />} />
+        <Route path="/verify" element={<VerifyCertificate />} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
@@ -95,6 +101,7 @@ export default function App() {
           <Route path="/skill-gap" element={<SkillGap />} />
           <Route path="/roadmap" element={<Roadmap />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/certificates" element={<Certificates />} />
           <Route path="/resource/:id" element={<ResourceDetail />} />
           <Route path="/help" element={<Help />} />
           

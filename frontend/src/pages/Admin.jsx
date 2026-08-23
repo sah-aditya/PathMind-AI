@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { adminApi } from '../services/api'
+import { adminApi, certificateApi } from '../services/api'
 import {
   Shield, Users, Activity, Bell, Wrench, KeyRound,
   Trash2, Search, CheckCircle, Eye, EyeOff, Copy, Check,
@@ -249,6 +249,37 @@ export default function Admin() {
   }, isLoading: serviceFlagsLoading } = useQuery({
     queryKey: ['adminServiceFlags'],
     queryFn: () => adminApi.getServiceFlags().then(r => r.data),
+  })
+
+  // 13. Fetch Certificates for Admin
+  const [rejectModalCert, setRejectModalCert] = useState(null)
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('')
+  const [certFilter, setCertFilter] = useState('ALL')
+
+  const { data: adminCerts = [], isLoading: certsLoading } = useQuery({
+    queryKey: ['adminCertificates'],
+    queryFn: () => certificateApi.adminList('all').then(r => r.data),
+    refetchInterval: 15000,
+  })
+
+  const approveCertMutation = useMutation({
+    mutationFn: (id) => certificateApi.adminApprove(id),
+    onSuccess: (res) => {
+      triggerToast(`Certificate approved! Unique Code: ${res.data?.certificate?.code || 'Assigned'}`)
+      queryClient.invalidateQueries({ queryKey: ['adminCertificates'] })
+    },
+    onError: () => triggerToast('Failed to approve certificate.', 'error'),
+  })
+
+  const rejectCertMutation = useMutation({
+    mutationFn: ({ id, reason }) => certificateApi.adminReject(id, reason),
+    onSuccess: () => {
+      triggerToast('Certificate request rejected.')
+      setRejectModalCert(null)
+      setRejectionReasonInput('')
+      queryClient.invalidateQueries({ queryKey: ['adminCertificates'] })
+    },
+    onError: () => triggerToast('Failed to reject certificate.', 'error'),
   })
 
   // Mutations
@@ -871,6 +902,16 @@ export default function Admin() {
             }`}
           >
             <Wrench className="w-3.5 h-3.5" /> Maintenance
+          </button>
+          <button
+            onClick={() => setActiveTab('certificates')}
+            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === 'certificates'
+                ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Award className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Certificates ({adminCerts.filter(c => c.status === 'pending').length})
           </button>
           <button
             onClick={() => setActiveTab('broadcasts')}
@@ -2100,6 +2141,137 @@ export default function Admin() {
         </div>
       )}
 
+      {/* ── TAB CONTENT: CERTIFICATES APPROVAL QUEUE ── */}
+      {(activeTab === 'all' || activeTab === 'certificates') && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Award className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                Course Completion Certificates Queue
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Review learner milestone achievements and approve or reject requested completion credentials with unique 5-digit verification codes.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400">Filter:</span>
+              {['ALL', 'pending', 'approved', 'rejected'].map(st => (
+                <button
+                  key={st}
+                  onClick={() => setCertFilter(st)}
+                  className={`text-xs px-3 py-1.5 rounded-xl uppercase font-mono font-bold transition-all ${
+                    certFilter === st
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-slate-100 dark:bg-darkBg-cardSub text-slate-600 dark:text-zinc-400 hover:bg-slate-200'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="card overflow-hidden border border-slate-200/80 dark:border-white/[0.08] rounded-2xl bg-white dark:bg-darkBg-card">
+            {certsLoading ? (
+              <div className="p-8 text-center text-xs text-slate-400 animate-pulse font-mono">Loading certificate records…</div>
+            ) : adminCerts.filter(c => certFilter === 'ALL' || c.status === certFilter.toLowerCase()).length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-400 font-mono">No certificate requests found matching this filter.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-darkBg-cardSub border-b border-slate-200/80 dark:border-white/[0.08] text-slate-500 dark:text-zinc-400 font-mono uppercase">
+                    <tr>
+                      <th className="p-3.5">Learner</th>
+                      <th className="p-3.5">Curriculum Goal</th>
+                      <th className="p-3.5">Progress</th>
+                      <th className="p-3.5">Credential Code</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/[0.05]">
+                    {adminCerts
+                      .filter(c => certFilter === 'ALL' || c.status === certFilter.toLowerCase())
+                      .map((cert) => (
+                        <tr key={cert.id} className="hover:bg-slate-50/50 dark:hover:bg-darkBg-cardSub/50">
+                          <td className="p-3.5">
+                            <p className="font-bold text-slate-900 dark:text-zinc-100">{cert.user_name}</p>
+                            <p className="text-[11px] text-slate-400 font-mono">{cert.user_email}</p>
+                          </td>
+                          <td className="p-3.5">
+                            <p className="font-semibold text-slate-800 dark:text-zinc-200">{cert.path_title}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">Requested: {new Date(cert.created_at).toLocaleDateString()}</p>
+                          </td>
+                          <td className="p-3.5 font-mono">
+                            <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                              {Math.round((cert.completion_stats?.overall_progress || 0) * 100)}%
+                            </span>
+                            <span className="text-slate-400 text-[10px] block">
+                              {cert.completion_stats?.total_weeks || 12} weeks
+                            </span>
+                          </td>
+                          <td className="p-3.5 font-mono font-bold">
+                            {cert.code ? (
+                              <span className="bg-indigo-50 dark:bg-zinc-800 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded border border-indigo-200/60 dark:border-white/[0.08]">
+                                {cert.code}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 font-normal">Pending</span>
+                            )}
+                          </td>
+                          <td className="p-3.5">
+                            {cert.status === 'approved' && <span className="badge-green text-[10px] uppercase font-mono">Approved</span>}
+                            {cert.status === 'pending' && <span className="badge-yellow text-[10px] uppercase font-mono">Under Review</span>}
+                            {cert.status === 'rejected' && (
+                              <span className="badge-red text-[10px] uppercase font-mono" title={cert.rejection_reason}>
+                                Rejected
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-right space-x-2">
+                            {cert.status === 'pending' && (
+                              <>
+                                <button
+                                  onClick={() => approveCertMutation.mutate(cert.id)}
+                                  disabled={approveCertMutation.isPending}
+                                  className="btn-primary text-[11px] py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                                >
+                                  Approve & Issue Code
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setRejectModalCert(cert)
+                                    setRejectionReasonInput('')
+                                  }}
+                                  className="btn-secondary text-[11px] py-1.5 px-3 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                            {cert.status === 'approved' && (
+                              <a
+                                href={`/verify/${cert.code}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn-secondary text-[11px] py-1.5 px-3 rounded-lg inline-flex items-center gap-1"
+                              >
+                                <ExternalLink className="w-3 h-3" /> View Public Credential
+                              </a>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL: INSPECT LEARNER ROADMAP MODAL ── */}
       {inspectedUserId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -2755,6 +2927,75 @@ export default function Admin() {
         </div>
       )}
 
+      {/* ── MODAL: REJECT CERTIFICATE MODAL ── */}
+      {rejectModalCert && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-3">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                <AlertTriangle className="w-5 h-5" />
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">Reject Certificate Request</h3>
+              </div>
+              <button
+                onClick={() => setRejectModalCert(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Provide feedback for <strong>{rejectModalCert.user_name}</strong> on why this credential request is rejected.
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                rejectCertMutation.mutate({
+                  id: rejectModalCert.id,
+                  reason: rejectionReasonInput.trim() || 'Milestones incomplete.',
+                })
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
+                  Feedback Note for Learner
+                </label>
+                <textarea
+                  rows="3"
+                  placeholder="e.g. Please finish the Phase 3 practical assessment and model deployment checkride before certificate approval."
+                  value={rejectionReasonInput}
+                  onChange={(e) => setRejectionReasonInput(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRejectModalCert(null)}
+                  className="btn-secondary text-xs px-4 py-2 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={rejectCertMutation.isPending}
+                  className="btn-primary text-xs px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-card"
+                >
+                  {rejectCertMutation.isPending ? 'Rejecting…' : 'Confirm Rejection'}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
+

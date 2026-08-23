@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Target, Compass, LogOut, Brain,
   Sparkles, MessageCircle, Menu, X, Sun, Moon, RotateCcw, Shield, BookOpen,
   ChevronDown, LifeBuoy, User as UserIcon, Key, Lock, Check, AlertCircle,
-  PanelLeftClose, PanelLeftOpen
+  PanelLeftClose, PanelLeftOpen, Award
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
@@ -15,9 +15,10 @@ import { chatApi, profileApi, systemApi } from '../services/api'
 import toast from 'react-hot-toast'
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', service: 'dashboard' },
-  { to: '/skill-gap',  icon: Target,          label: 'Skill Gap',  service: 'skill_gap' },
-  { to: '/roadmap',    icon: Compass,         label: 'Roadmap',    service: 'roadmap' },
+  { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard',    service: 'dashboard' },
+  { to: '/skill-gap',    icon: Target,          label: 'Skill Gap',    service: 'skill_gap' },
+  { to: '/roadmap',      icon: Compass,         label: 'Roadmap',      service: 'roadmap' },
+  { to: '/certificates', icon: Award,           label: 'Certificates', service: 'dashboard' },
 ]
 
 function Avatar({ name, size = 'md', className = '' }) {

@@ -146,6 +146,16 @@ export const supportApi = {
   resolveTicket: (id) => api.put(`/support/tickets/${id}/resolve`),
 }
 
+// ── Certificates ─────────────────────────────────────────────────────────────
+export const certificateApi = {
+  request: (pathId = null) => api.post('/certificates/request', { path_id: pathId }),
+  getMyCertificates: () => api.get('/certificates/my'),
+  verifyCode: (code) => api.get(`/certificates/verify/${encodeURIComponent(code)}`),
+  adminList: (statusFilter = 'all') => api.get('/admin/certificates', { params: { status_filter: statusFilter } }),
+  adminApprove: (id) => api.post(`/admin/certificates/${id}/approve`),
+  adminReject: (id, reason) => api.post(`/admin/certificates/${id}/reject`, { reason }),
+}
+
 // ── Notifications & System Status ─────────────────────────────────────────────
 export const notificationApi = {
   getSystemStatus: () => api.get('/system/status'),
@@ -159,3 +169,4 @@ export const systemApi = {
 }
 
 export default api
+

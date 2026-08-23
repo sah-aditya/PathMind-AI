@@ -5,8 +5,10 @@ from app.api.routes.assessment import router as assessment_router
 from app.api.routes.dashboard import router as dashboard_router
 from app.api.routes.chat import router as chat_router
 from app.api.routes.resources import router as resources_router
+from app.api.routes.certificates import router as certificates_router
 
 __all__ = [
     "auth_router", "profile_router", "learning_path_router",
-    "assessment_router", "dashboard_router", "chat_router", "resources_router",
+    "assessment_router", "dashboard_router", "chat_router",
+    "resources_router", "certificates_router",
 ]
