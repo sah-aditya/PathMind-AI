@@ -36,13 +36,14 @@ export default {
           rose:    '#ffe4e6',
           roseDark:'#be123c',
         },
-        // Dark theme backgrounds and card surfaces
+        // Dark theme backgrounds and surface elevations (Obsidian & Slate)
         darkBg: {
-          canvas: '#090d16',
+          canvas: '#0B0F17',
           card:   '#111827',
-          cardSub:'#1a2234',
-          border: '#1f293d',
-          borderSub:'#28334b',
+          cardSub:'#172033',
+          cardElevated: '#1E293B',
+          border: 'rgba(255, 255, 255, 0.08)',
+          borderSub:'rgba(255, 255, 255, 0.05)',
         },
       },
       borderRadius: {
@@ -61,6 +62,8 @@ export default {
         'card-md':'0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.03)',
         'card-lg':'0 10px 15px -3px rgba(15, 23, 42, 0.06), 0 4px 6px -4px rgba(15, 23, 42, 0.03)',
         'elevated':'0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04)',
+        'dark-glow': '0 0 20px -3px rgba(99, 102, 241, 0.2)',
+        'dark-card': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.06)',
       },
       animation: {
         'fade-in':        'fadeIn 0.3s ease-out',
