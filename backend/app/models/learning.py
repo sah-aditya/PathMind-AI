@@ -43,8 +43,8 @@ class LearningPath(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     user = relationship("User", back_populates="learning_paths")
-    phases = relationship("PathPhase", back_populates="path", order_by="PathPhase.phase_number")
-    adaptations = relationship("PathAdaptation", back_populates="path")
+    phases = relationship("PathPhase", back_populates="path", cascade="all, delete-orphan", order_by="PathPhase.phase_number")
+    adaptations = relationship("PathAdaptation", back_populates="path", cascade="all, delete-orphan")
 
 
 class PathPhase(Base):
@@ -61,7 +61,7 @@ class PathPhase(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     path = relationship("LearningPath", back_populates="phases")
-    items = relationship("PathItem", back_populates="phase", order_by="PathItem.order_index")
+    items = relationship("PathItem", back_populates="phase", cascade="all, delete-orphan", order_by="PathItem.order_index")
 
 
 class PathItem(Base):
@@ -78,7 +78,7 @@ class PathItem(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     phase = relationship("PathPhase", back_populates="items")
-    assessment_results = relationship("AssessmentResult", back_populates="path_item")
+    assessment_results = relationship("AssessmentResult", back_populates="path_item", cascade="all, delete-orphan")
 
 
 class PathAdaptation(Base):

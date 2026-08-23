@@ -8,7 +8,7 @@ from app.db.database import get_db
 from app.core.security import get_current_admin_user, hash_password
 from app.models.user import User
 from app.models.profile import LearnerProfile, LearnerSkill
-from app.models.learning import LearningPath
+from app.models.learning import LearningPath, PathPhase, PathItem, PathAdaptation, AssessmentResult, ChatMessage
 from app.models.admin import SystemSetting, SystemNotification, UserNotificationRead
 from app.models.support import SupportTicket, TicketMessage
 
@@ -167,9 +167,50 @@ def delete_user(
     if target_user.email == "er.adityasah@gmail.com":
         raise HTTPException(status_code=400, detail="Cannot delete master superadmin account.")
     
-    db.delete(target_user)
-    db.commit()
-    return {"status": "success", "message": f"User {target_user.email} permanently deleted."}
+    try:
+        user_email = target_user.email
+
+        # 1. Clean up user notification reads
+        db.query(UserNotificationRead).filter(UserNotificationRead.user_id == user_id).delete(synchronize_session=False)
+
+        # 2. Clean up messages sent by this user in support tickets
+        db.query(TicketMessage).filter(TicketMessage.sender_id == user_id).delete(synchronize_session=False)
+
+        # 3. Clean up support tickets created by this user and their messages
+        user_tickets = db.query(SupportTicket).filter(SupportTicket.user_id == user_id).all()
+        for t in user_tickets:
+            db.query(TicketMessage).filter(TicketMessage.ticket_id == t.id).delete(synchronize_session=False)
+            db.delete(t)
+
+        # 4. Clean up chat messages
+        db.query(ChatMessage).filter(ChatMessage.user_id == user_id).delete(synchronize_session=False)
+
+        # 5. Clean up assessment results
+        db.query(AssessmentResult).filter(AssessmentResult.user_id == user_id).delete(synchronize_session=False)
+
+        # 6. Clean up learning paths, phases, items, adaptations
+        user_paths = db.query(LearningPath).filter(LearningPath.user_id == user_id).all()
+        for lp in user_paths:
+            db.query(PathAdaptation).filter(PathAdaptation.path_id == lp.id).delete(synchronize_session=False)
+            phases = db.query(PathPhase).filter(PathPhase.path_id == lp.id).all()
+            for phase in phases:
+                db.query(PathItem).filter(PathItem.phase_id == phase.id).delete(synchronize_session=False)
+                db.delete(phase)
+            db.delete(lp)
+
+        # 7. Clean up learner skills
+        db.query(LearnerSkill).filter(LearnerSkill.user_id == user_id).delete(synchronize_session=False)
+
+        # 8. Clean up learner profile
+        db.query(LearnerProfile).filter(LearnerProfile.user_id == user_id).delete(synchronize_session=False)
+
+        # 9. Delete the user
+        db.delete(target_user)
+        db.commit()
+        return {"status": "success", "message": f"User {user_email} and all associated records permanently deleted."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
 
 
 # ── System Maintenance Controls ──────────────────────────────────────────────

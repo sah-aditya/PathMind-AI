@@ -7,9 +7,11 @@ import {
   AlertTriangle, RefreshCw, X, Megaphone, Send,
   Cpu, Database, Lock, Sparkles, Server, CheckSquare,
   Pencil, LifeBuoy, MessageSquare, CornerDownRight,
-  Filter, UserCheck, Inbox
+  Filter, UserCheck, Inbox, ArrowRight, ShieldAlert,
+  ChevronRight, Clock, MapPin, Layers, AlertCircle
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
+import useThemeStore from '../store/themeStore'
 
 // 6 Selectable Professional Maintenance Modes (Short, Professional, No Emojis)
 export const MAINTENANCE_MODES = [
@@ -59,7 +61,13 @@ export const MAINTENANCE_MODES = [
 
 export default function Admin() {
   const { user } = useAuthStore()
+  const { theme } = useThemeStore()
   const queryClient = useQueryClient()
+  
+  // Navigation tab state: 'all' | 'users' | 'support' | 'maintenance' | 'broadcasts'
+  const [activeTab, setActiveTab] = useState('all')
+
+  // Search and filter states
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
   
@@ -75,6 +83,20 @@ export default function Admin() {
   const [selectedUserForPwd, setSelectedUserForPwd] = useState(null)
   const [newPasswordInput, setNewPasswordInput] = useState('')
   const [pwdSuccessMsg, setPwdSuccessMsg] = useState('')
+
+  // Delete User Confirmation Modal state
+  const [userToDelete, setUserToDelete] = useState(null)
+  const [deleteError, setDeleteError] = useState('')
+
+  // Global Notification Toast state
+  const [toastMsg, setToastMsg] = useState('')
+  const [toastType, setToastType] = useState('success') // 'success' | 'error'
+
+  const triggerToast = (msg, type = 'success') => {
+    setToastMsg(msg)
+    setToastType(type)
+    setTimeout(() => setToastMsg(''), 4000)
+  }
 
   // Maintenance Selection Modal state
   const [maintModalOpen, setMaintModalOpen] = useState(false)
@@ -95,7 +117,7 @@ export default function Admin() {
   const [notifSuccessMsg, setNotifSuccessMsg] = useState('')
 
   // 1. Fetch Stats
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['adminStats'],
     queryFn: () => adminApi.getStats().then(r => r.data),
     refetchInterval: 15000,
@@ -137,54 +159,83 @@ export default function Admin() {
   // Mutations
   const updateNameMutation = useMutation({
     mutationFn: ({ userId, name }) => adminApi.updateName(userId, name),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       setEditingNameUserId(null)
       setEditingNameInput('')
+      triggerToast(res.data?.message || 'Learner name updated successfully.')
     },
+    onError: (err) => {
+      triggerToast(err.response?.data?.detail || 'Failed to update name.', 'error')
+    }
   })
 
   const maintenanceMutation = useMutation({
     mutationFn: ({ enabled, message }) => adminApi.toggleMaintenance(enabled, message),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['adminSettings'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
       setMaintModalOpen(false)
+      triggerToast(res.data?.message || 'Maintenance setting updated.')
     },
+    onError: (err) => {
+      triggerToast(err.response?.data?.detail || 'Failed to update maintenance mode.', 'error')
+    }
   })
 
   const updatePasswordMutation = useMutation({
     mutationFn: ({ userId, newPassword }) => adminApi.updatePassword(userId, newPassword),
     onSuccess: (res) => {
-      setPwdSuccessMsg(res.data.message)
+      setPwdSuccessMsg(res.data?.message || 'Password updated.')
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       setTimeout(() => {
         setSelectedUserForPwd(null)
         setNewPasswordInput('')
         setPwdSuccessMsg('')
-      }, 1500)
+        triggerToast('Password updated successfully.')
+      }, 1200)
     },
+    onError: (err) => {
+      triggerToast(err.response?.data?.detail || 'Failed to update password.', 'error')
+    }
   })
 
   const updateRoleMutation = useMutation({
     mutationFn: ({ userId, role }) => adminApi.updateRole(userId, role),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
+      triggerToast(res.data?.message || 'User role updated.')
     },
+    onError: (err) => {
+      triggerToast(err.response?.data?.detail || 'Failed to update role.', 'error')
+    }
   })
 
   const toggleStatusMutation = useMutation({
     mutationFn: (userId) => adminApi.toggleStatus(userId),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
+      triggerToast(res.data?.message || 'Account status updated.')
     },
+    onError: (err) => {
+      triggerToast(err.response?.data?.detail || 'Failed to toggle account status.', 'error')
+    }
   })
 
+  // Delete User Mutation
   const deleteUserMutation = useMutation({
     mutationFn: (userId) => adminApi.deleteUser(userId),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      setUserToDelete(null)
+      setDeleteError('')
+      triggerToast(res.data?.message || 'User account and all related records deleted permanently.')
+    },
+    onError: (err) => {
+      const errorMsg = err.response?.data?.detail || 'Failed to delete user.'
+      setDeleteError(errorMsg)
+      triggerToast(errorMsg, 'error')
     },
   })
 
@@ -196,8 +247,12 @@ export default function Admin() {
       setNotifTitle('')
       setNotifMsg('')
       setNotifSuccessMsg('Announcement broadcasted successfully.')
+      triggerToast('Announcement broadcasted to all active learner bells.')
       setTimeout(() => setNotifSuccessMsg(''), 3000)
     },
+    onError: (err) => {
+      triggerToast(err.response?.data?.detail || 'Failed to dispatch broadcast.', 'error')
+    }
   })
 
   const deleteNotifMutation = useMutation({
@@ -205,6 +260,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminNotifications'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      triggerToast('Broadcast announcement removed.')
     },
   })
 
@@ -217,6 +273,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
       setAdminReplyInput('')
       setSupportSuccessToast('Reply dispatched directly to user window.')
+      triggerToast('Support reply sent to learner.')
       setTimeout(() => setSupportSuccessToast(''), 3000)
     },
   })
@@ -227,6 +284,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['adminSupportTicketDetail', selectedTicketForAdmin?.id] })
       queryClient.invalidateQueries({ queryKey: ['adminSupportTickets'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      triggerToast('Ticket status updated.')
     },
   })
 
@@ -236,6 +294,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['adminSupportTickets'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
       setSelectedTicketForAdmin(null)
+      triggerToast('Support ticket disposed.')
     },
   })
 
@@ -277,738 +336,972 @@ export default function Admin() {
     const matchesSearch =
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.goal_title.toLowerCase().includes(searchTerm.toLowerCase())
+      (u.goal_title && u.goal_title.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesRole = roleFilter === 'ALL' || u.role === roleFilter
     return matchesSearch && matchesRole
   })
 
   const activeLearnersCount = users.filter(u => u.is_active).length
+  const firstName = user?.name?.split(' ')[0] || 'Admin'
 
   return (
-    <div className="max-w-6xl mx-auto py-2 sm:py-6 space-y-8">
+    <div className="max-w-6xl mx-auto py-2 sm:py-6 space-y-8 animate-in fade-in">
 
-      {/* ── Page Title Header ────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-darkBg-border pb-6">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-bold uppercase tracking-wider mb-2">
-            <Shield className="w-3.5 h-3.5" /> Superadmin Command Portal
+      {/* ── Global Toast Message Banner ── */}
+      {toastMsg && (
+        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-elevated border flex items-center gap-3 animate-slide-up text-sm font-semibold ${
+          toastType === 'error'
+            ? 'bg-rose-50 dark:bg-rose-950 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200'
+            : 'bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+        }`}>
+          {toastType === 'error' ? <AlertCircle className="w-5 h-5 text-rose-500" /> : <CheckCircle className="w-5 h-5 text-emerald-500" />}
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* ── Friendly Hero Greeting (Same theme as Dashboard) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-bold uppercase tracking-wider mb-1">
+            <Shield className="w-3.5 h-3.5" /> Superadmin Command Console
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            System Control & User Management
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            Hi {firstName},
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Logged in as <span className="font-semibold text-brand-600 dark:text-brand-400">{user?.email}</span> • Built with ❤️ in Bharat 🇮🇳
+          <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 font-medium">
+            Supervise platform learners, handle queries, and orchestrate system security.
           </p>
         </div>
 
         <button
-          onClick={() => {
-            queryClient.invalidateQueries()
-          }}
-          className="btn-secondary self-start sm:self-auto rounded-2xl text-xs py-2 px-3.5 flex items-center gap-1.5"
+          onClick={() => queryClient.invalidateQueries()}
+          className="btn-secondary self-start sm:self-auto rounded-2xl text-xs py-2.5 px-4 flex items-center gap-2 shadow-subtle hover:shadow-card transition-all"
         >
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh Data
+          <RefreshCw className="w-4 h-4 text-brand-600 dark:text-brand-400" /> Refresh Data
         </button>
       </div>
 
-      {/* ── Top Metric Tiles ─────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        
-        {/* Total Users */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card flex flex-col justify-between h-32">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500">Registered Users</span>
-            <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center shadow-subtle">
-              <Users className="w-4 h-4" />
+      {/* ── 4 Big Pastel Touch Tiles (Same Design as Dashboard Quick Actions) ── */}
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-1">
+          Platform Overview & Control Tiles
+        </p>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          
+          {/* Tile 1: Registered Learners (Sky Blue) */}
+          <div
+            onClick={() => setActiveTab('users')}
+            className={`p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
+              activeTab === 'users'
+                ? 'bg-sky-100/80 dark:bg-sky-950/60 border-sky-400 dark:border-sky-600 ring-2 ring-sky-400/40 shadow-card'
+                : 'bg-sky-50 dark:bg-sky-950/30 border-sky-200/80 dark:border-sky-800/50 hover:border-sky-400 dark:hover:border-sky-600 hover:shadow-card'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-sky-600 dark:text-sky-400 shadow-subtle">
+                <Users className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-mono font-bold uppercase text-sky-700 dark:text-sky-300 bg-sky-200/60 dark:bg-sky-900/60 px-2 py-0.5 rounded-lg">
+                Directory
+              </span>
             </div>
-          </div>
-          <div>
-            <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
-              {stats?.total_users ?? '…'}
-            </p>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
-              {activeLearnersCount} active accounts
-            </p>
-          </div>
-        </div>
-
-        {/* Support Tickets Queue */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card flex flex-col justify-between h-32">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500">Support Desk</span>
-            <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-subtle">
-              <LifeBuoy className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
-              {stats?.open_tickets ?? 0}
-            </p>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-              Active open queries
-            </p>
-          </div>
-        </div>
-
-        {/* Active Paths */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card flex flex-col justify-between h-32">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500">Active Roadmaps</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-subtle">
-              <Activity className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <p className="text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
-              {stats?.active_paths ?? '…'}
-            </p>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-              Topological DAGs running
-            </p>
-          </div>
-        </div>
-
-        {/* Maintenance Status */}
-        <div className={`p-5 rounded-3xl border shadow-card flex flex-col justify-between h-32 transition-colors ${
-          settings?.maintenance_mode
-            ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700'
-            : 'bg-white dark:bg-darkBg-card border-slate-200/80 dark:border-darkBg-border'
-        }`}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500">System Mode</span>
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-              settings?.maintenance_mode ? 'bg-amber-500 text-white' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600'
-            }`}>
-              <Wrench className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${settings?.maintenance_mode ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-            <p className="text-sm font-bold text-slate-900 dark:text-white">
-              {settings?.maintenance_mode ? 'Maintenance Active' : 'All Systems Live'}
-            </p>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ── Global Maintenance Mode Lockdown Card ──────── */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Wrench className="w-5 h-5 text-amber-500" />
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Global Maintenance Mode Lockdown</h2>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
-              Select from 6 professional maintenance presets to display to visitors. Superadmins retain full access to this portal.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 self-start sm:self-auto">
-            {settings?.maintenance_mode && (
-              <button
-                onClick={() => setMaintModalOpen(true)}
-                className="btn-secondary text-xs px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300"
-              >
-                Change Mode
-              </button>
-            )}
-
-            <span className="text-xs font-bold font-mono text-slate-600 dark:text-slate-300">
-              {settings?.maintenance_mode ? 'ON' : 'OFF'}
-            </span>
-
-            <button
-              onClick={handleMaintenanceToggle}
-              disabled={maintenanceMutation.isPending}
-              className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${
-                settings?.maintenance_mode ? 'bg-amber-500' : 'bg-slate-300 dark:bg-darkBg-cardSub'
-              }`}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
-                  settings?.maintenance_mode ? 'translate-x-8' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-
-        {settings?.maintenance_mode && (
-          <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold">Active Maintenance Announcement Broadcasted to Users:</p>
-              <p className="mt-0.5 leading-relaxed font-mono text-[11px] text-amber-800 dark:text-amber-300">
-                "{settings?.maintenance_message}"
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
+                  {usersLoading ? '…' : users.length}
+                </span>
+                <span className="text-xs text-sky-700 dark:text-sky-300 font-semibold">Learners</span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                {activeLearnersCount} active accounts
               </p>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* ── Support Helpdesk Command Section ──────────── */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <LifeBuoy className="w-5 h-5 text-rose-500" />
-              Learner Support Desk & Queries
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Handle queries raised by learners, reply directly to their window, and resolve issues
-            </p>
+          {/* Tile 2: Support Desk Queries (Rose) */}
+          <div
+            onClick={() => setActiveTab('support')}
+            className={`p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
+              activeTab === 'support'
+                ? 'bg-rose-100/80 dark:bg-rose-950/60 border-rose-400 dark:border-rose-600 ring-2 ring-rose-400/40 shadow-card'
+                : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-800/50 hover:border-rose-400 dark:hover:border-rose-600 hover:shadow-card'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-rose-600 dark:text-rose-400 shadow-subtle">
+                <LifeBuoy className="w-5 h-5" />
+              </div>
+              {stats?.open_tickets > 0 && (
+                <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-rose-700 dark:text-rose-300 bg-rose-200/60 dark:bg-rose-900/60 px-2 py-0.5 rounded-lg">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> Urgent
+                </span>
+              )}
+            </div>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
+                  {stats?.open_tickets ?? 0}
+                </span>
+                <span className="text-xs text-rose-700 dark:text-rose-300 font-semibold">Open Queries</span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                {supportTickets.length} total tickets
+              </p>
+            </div>
           </div>
 
-          {/* Ticket Status Filter Tabs */}
-          <div className="flex rounded-2xl border border-slate-200 dark:border-darkBg-border p-1 bg-slate-100 dark:bg-darkBg-canvas text-xs font-semibold">
-            {['ALL', 'open', 'in_progress', 'resolved'].map((st) => (
-              <button
-                key={st}
-                onClick={() => setTicketStatusFilter(st)}
-                className={`px-3 py-1 rounded-xl transition-colors capitalize ${
-                  ticketStatusFilter === st
-                    ? 'bg-white dark:bg-darkBg-card text-slate-900 dark:text-white shadow-sm'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
-                }`}
-              >
-                {st.replace('_', ' ')}
-              </button>
-            ))}
+          {/* Tile 3: Active Roadmaps (Emerald / Mint) */}
+          <div
+            onClick={() => setActiveTab('users')}
+            className="p-5 rounded-3xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-card cursor-pointer transition-all duration-150 flex flex-col justify-between h-36"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-subtle">
+                <Activity className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-mono font-bold uppercase text-emerald-700 dark:text-emerald-300 bg-emerald-200/60 dark:bg-emerald-900/60 px-2 py-0.5 rounded-lg">
+                Adaptive DAG
+              </span>
+            </div>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
+                  {stats?.active_paths ?? '…'}
+                </span>
+                <span className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold">Active Paths</span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Personalized curricula running
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Tickets Table */}
-        <div className="rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-darkBg-cardSub/60 border-b border-slate-200/80 dark:border-darkBg-border text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
-                <tr>
-                  <th className="px-5 py-3.5">Learner</th>
-                  <th className="px-5 py-3.5">Subject & Preview</th>
-                  <th className="px-5 py-3.5">Category</th>
-                  <th className="px-5 py-3.5">Status</th>
-                  <th className="px-5 py-3.5">Date</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-darkBg-border">
-                {ticketsLoading ? (
-                  <tr>
-                    <td colSpan="6" className="p-8 text-center text-slate-400">Loading support tickets…</td>
-                  </tr>
-                ) : supportTickets.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="p-8 text-center text-slate-400">
-                      No support tickets found in this queue.
-                    </td>
-                  </tr>
-                ) : (
-                  supportTickets.map((t) => {
-                    const isResolved = t.status === 'resolved' || t.status === 'closed'
-                    const isUserLast = t.last_sender_role === 'user'
-
-                    return (
-                      <tr key={t.id} className="hover:bg-slate-50/70 dark:hover:bg-darkBg-cardSub/40 transition-colors">
-                        
-                        {/* Learner Info */}
-                        <td className="px-5 py-4">
-                          <p className="font-bold text-slate-900 dark:text-white">{t.user_name}</p>
-                          <p className="text-slate-400 dark:text-slate-500 font-mono text-[11px]">{t.user_email}</p>
-                          <p className="text-[10px] text-slate-400">{t.user_goal}</p>
-                        </td>
-
-                        {/* Subject & Latest Message */}
-                        <td className="px-5 py-4 max-w-xs">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="font-bold text-slate-900 dark:text-white line-clamp-1">{t.subject}</span>
-                            {isUserLast && !isResolved && (
-                              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-shrink-0" title="Awaiting Admin Reply" />
-                            )}
-                          </div>
-                          <p className="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">
-                            {t.latest_message}
-                          </p>
-                        </td>
-
-                        {/* Category & Priority */}
-                        <td className="px-5 py-4">
-                          <span className="font-semibold text-slate-700 dark:text-slate-300 capitalize text-xs block">
-                            {t.category.replace('_', ' ')}
-                          </span>
-                          <span className="text-[10px] text-slate-400 uppercase font-mono">
-                            {t.priority}
-                          </span>
-                        </td>
-
-                        {/* Status */}
-                        <td className="px-5 py-4">
-                          <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-xl inline-block border ${
-                            isResolved
-                              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
-                              : t.status === 'in_progress'
-                              ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
-                              : 'bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300'
-                          }`}>
-                            {t.status.replace('_', ' ')}
-                          </span>
-                        </td>
-
-                        {/* Date */}
-                        <td className="px-5 py-4 text-[11px] text-slate-400">
-                          {t.updated_at ? new Date(t.updated_at).toLocaleDateString() : ''}
-                        </td>
-
-                        {/* Actions */}
-                        <td className="px-5 py-4 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            
-                            {/* Open / Reply Thread */}
-                            <button
-                              onClick={() => setSelectedTicketForAdmin(t)}
-                              className="btn-primary text-xs py-1.5 px-3 rounded-xl flex items-center gap-1"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5" /> Reply
-                            </button>
-
-                            {/* Mark Resolved directly */}
-                            {!isResolved && (
-                              <button
-                                onClick={() => updateTicketStatusMutation.mutate({ ticketId: t.id, status: 'resolved' })}
-                                className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800"
-                                title="Mark as Resolved"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-
-                            {/* Delete Ticket */}
-                            <button
-                              onClick={() => {
-                                if (confirm(`Dispose and delete support ticket "${t.subject}"?`)) {
-                                  deleteTicketMutation.mutate(t.id)
-                                }
-                              }}
-                              className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50"
-                              title="Delete Ticket"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-
-                          </div>
-                        </td>
-
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
+          {/* Tile 4: System Lockdown / Maintenance (Amber / Purple) */}
+          <div
+            onClick={() => setActiveTab('maintenance')}
+            className={`p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
+              settings?.maintenance_mode
+                ? 'bg-amber-100/90 dark:bg-amber-950/60 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/40 shadow-card'
+                : 'bg-purple-50 dark:bg-purple-950/30 border-purple-200/80 dark:border-purple-800/50 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-card'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-subtle ${
+                settings?.maintenance_mode
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-white dark:bg-darkBg-card text-purple-600 dark:text-purple-400'
+              }`}>
+                <Wrench className="w-5 h-5" />
+              </div>
+              <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-lg ${
+                settings?.maintenance_mode
+                  ? 'bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200'
+                  : 'bg-purple-200/60 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'
+              }`}>
+                {settings?.maintenance_mode ? 'Locked' : 'Live'}
+              </span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${settings?.maintenance_mode ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
+                  {settings?.maintenance_mode ? 'Maintenance On' : 'Systems Operational'}
+                </h3>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                {settings?.maintenance_mode ? 'Displaying maintenance screen' : 'Full student access'}
+              </p>
+            </div>
           </div>
+
         </div>
       </div>
 
-      {/* ── User Management Section ──────────────────── */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Registered Users & Passwords</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Edit learner names, reveal plain passwords, update passwords manually, or suspend accounts
-            </p>
-          </div>
+      {/* ── Segmented Tab Selector ── */}
+      <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-darkBg-border pb-4 overflow-x-auto gap-2">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-200/60 dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border text-xs font-bold">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === 'all'
+                ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" /> All Modules
+          </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === 'users'
+                ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" /> Learners & Passwords ({users.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('support')}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === 'support'
+                ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <LifeBuoy className="w-3.5 h-3.5" /> Support Queries ({stats?.open_tickets ?? 0})
+          </button>
+          <button
+            onClick={() => setActiveTab('maintenance')}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === 'maintenance'
+                ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Wrench className="w-3.5 h-3.5" /> Maintenance Mode
+          </button>
+          <button
+            onClick={() => setActiveTab('broadcasts')}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === 'broadcasts'
+                ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Megaphone className="w-3.5 h-3.5" /> Broadcasts ({notifications.length})
+          </button>
+        </div>
+      </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search user, email, goal..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-56 pl-9 pr-4 py-2 text-xs rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-              />
+      {/* ── SECTION 1: GLOBAL MAINTENANCE LOCKDOWN ── */}
+      {(activeTab === 'all' || activeTab === 'maintenance') && (
+        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-darkBg-border pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-subtle">
+                  <Wrench className="w-4 h-4" />
+                </div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Global Maintenance Lockdown</h2>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                When enabled, visitors will see the dedicated maintenance page while superadmins keep access.
+              </p>
             </div>
 
-            {/* Role Filter Tabs */}
-            <div className="flex rounded-2xl border border-slate-200 dark:border-darkBg-border p-1 bg-slate-100 dark:bg-darkBg-canvas text-xs font-semibold">
-              {['ALL', 'user', 'admin'].map((r) => (
+            <div className="flex items-center gap-3 self-start sm:self-auto font-mono text-xs">
+              {settings?.maintenance_mode && (
                 <button
-                  key={r}
-                  onClick={() => setRoleFilter(r)}
-                  className={`px-3 py-1 rounded-xl transition-colors capitalize ${
-                    roleFilter === r
+                  onClick={() => setMaintModalOpen(true)}
+                  className="btn-secondary text-xs px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300"
+                >
+                  Change Preset
+                </button>
+              )}
+
+              <span className={`px-2.5 py-1 rounded-xl font-bold ${
+                settings?.maintenance_mode
+                  ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300'
+                  : 'bg-slate-100 dark:bg-darkBg-cardSub text-slate-600 dark:text-slate-400'
+              }`}>
+                {settings?.maintenance_mode ? 'STATUS: ACTIVE' : 'STATUS: DISABLED'}
+              </span>
+
+              <button
+                onClick={handleMaintenanceToggle}
+                disabled={maintenanceMutation.isPending}
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${
+                  settings?.maintenance_mode ? 'bg-amber-500' : 'bg-slate-300 dark:bg-darkBg-cardSub'
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
+                    settings?.maintenance_mode ? 'translate-x-8' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {settings?.maintenance_mode ? (
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold text-sm">Active Maintenance Announcement Broadcasted to Users:</p>
+                <p className="leading-relaxed font-mono text-xs text-amber-800 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-900/30 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/60">
+                  "{settings?.maintenance_message}"
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub/50 border border-slate-200/80 dark:border-darkBg-border text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
+              <span>Platform is fully live and all student endpoints are processing requests smoothly.</span>
+              <button
+                onClick={() => setMaintModalOpen(true)}
+                className="text-brand-600 dark:text-brand-400 font-bold hover:underline"
+              >
+                Preview 6 maintenance presets →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── SECTION 2: USER DIRECTORY & PASSWORDS ── */}
+      {(activeTab === 'all' || activeTab === 'users') && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Users className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+                Learner Directory & Passwords
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Click a user's name to edit inline, reveal plain passwords, update passwords manually, or delete accounts safely.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search user, email, goal..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-56 sm:w-64 pl-9 pr-4 py-2 text-xs rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-subtle"
+                />
+              </div>
+
+              {/* Role Filter Tabs */}
+              <div className="flex rounded-2xl border border-slate-200 dark:border-darkBg-border p-1 bg-slate-100 dark:bg-darkBg-canvas text-xs font-semibold">
+                {['ALL', 'user', 'admin'].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRoleFilter(r)}
+                    className={`px-3 py-1 rounded-xl transition-colors capitalize ${
+                      roleFilter === r
+                        ? 'bg-white dark:bg-darkBg-card text-slate-900 dark:text-white shadow-sm'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Users Table */}
+          <div className="rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 dark:bg-darkBg-cardSub/60 border-b border-slate-200/80 dark:border-darkBg-border text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                  <tr>
+                    <th className="px-5 py-3.5">Learner (Click Name to Edit)</th>
+                    <th className="px-5 py-3.5">Password</th>
+                    <th className="px-5 py-3.5">Role</th>
+                    <th className="px-5 py-3.5">Status</th>
+                    <th className="px-5 py-3.5">Career Goal</th>
+                    <th className="px-5 py-3.5">Progress</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-darkBg-border">
+                  {usersLoading ? (
+                    <tr>
+                      <td colSpan="7" className="p-8 text-center text-slate-400 font-medium">Loading user directory…</td>
+                    </tr>
+                  ) : filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="p-8 text-center text-slate-400 font-medium">
+                        No learners found matching query "{searchTerm}".
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map((u) => {
+                      const isSuperadmin = u.email === 'er.adityasah@gmail.com'
+                      const progressPct = Math.round((u.overall_progress || 0) * 100)
+                      const isRevealed = revealedPasswords[u.id]
+                      const rawPwdValue = u.raw_password || u.password || 'User@123'
+                      const isEditingName = editingNameUserId === u.id
+
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-50/70 dark:hover:bg-darkBg-cardSub/40 transition-colors">
+                          
+                          {/* User Avatar + Editable Name */}
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-subtle ${
+                                u.role === 'admin'
+                                  ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300'
+                                  : 'bg-brand-50 dark:bg-brand-950/80 text-brand-600 dark:text-brand-400'
+                              }`}>
+                                {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                              </div>
+                              <div>
+                                {isEditingName ? (
+                                  <div className="flex items-center gap-1.5 py-0.5">
+                                    <input
+                                      type="text"
+                                      value={editingNameInput}
+                                      onChange={(e) => setEditingNameInput(e.target.value)}
+                                      className="px-2.5 py-1 text-xs rounded-xl bg-white dark:bg-darkBg-card border-2 border-brand-500 text-slate-900 dark:text-white font-bold w-40 focus:outline-none shadow-subtle"
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          if (editingNameInput.trim()) {
+                                            updateNameMutation.mutate({ userId: u.id, name: editingNameInput.trim() })
+                                          }
+                                        } else if (e.key === 'Escape') {
+                                          setEditingNameUserId(null)
+                                        }
+                                      }}
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        if (editingNameInput.trim()) {
+                                          updateNameMutation.mutate({ userId: u.id, name: editingNameInput.trim() })
+                                        }
+                                      }}
+                                      disabled={updateNameMutation.isPending}
+                                      className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                                      title="Save name"
+                                    >
+                                      <Check className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingNameUserId(null)}
+                                      className="p-1.5 rounded-lg bg-slate-200 dark:bg-darkBg-border text-slate-600 dark:text-slate-300"
+                                      title="Cancel"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 group">
+                                    <span
+                                      onClick={() => {
+                                        setEditingNameUserId(u.id)
+                                        setEditingNameInput(u.name)
+                                      }}
+                                      className="font-bold text-slate-900 dark:text-white cursor-pointer hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+                                      title="Click to edit name"
+                                    >
+                                      {u.name}
+                                    </span>
+                                    <button
+                                      onClick={() => {
+                                        setEditingNameUserId(u.id)
+                                        setEditingNameInput(u.name)
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-brand-600 transition-opacity"
+                                      title="Edit Name"
+                                    >
+                                      <Pencil className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                )}
+                                <p className="text-slate-400 dark:text-slate-500 font-mono text-[11px]">{u.email}</p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Password Column with Reveal Toggle */}
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-xs text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-darkBg-cardSub px-2.5 py-1 rounded-xl border border-slate-200 dark:border-darkBg-border">
+                                {isRevealed ? rawPwdValue : '••••••••'}
+                              </span>
+                              <button
+                                onClick={() => togglePasswordVisibility(u.id)}
+                                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-darkBg-cardSub transition-colors"
+                                title={isRevealed ? "Hide Password" : "Show Password"}
+                              >
+                                {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />}
+                              </button>
+                              {isRevealed && rawPwdValue !== '—' && (
+                                <button
+                                  onClick={() => copyToClipboard(rawPwdValue, u.id)}
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-darkBg-cardSub transition-colors"
+                                  title="Copy Password"
+                                >
+                                  {copiedUserId === u.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Role Dropdown */}
+                          <td className="px-5 py-4">
+                            <select
+                              value={u.role}
+                              disabled={isSuperadmin}
+                              onChange={(e) => updateRoleMutation.mutate({ userId: u.id, role: e.target.value })}
+                              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold font-mono border focus:outline-none transition-colors ${
+                                u.role === 'admin'
+                                  ? 'bg-purple-50 dark:bg-purple-950/50 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300'
+                                  : 'bg-slate-50 dark:bg-darkBg-cardSub border-slate-200 dark:border-darkBg-border text-slate-700 dark:text-slate-300'
+                              } ${isSuperadmin ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+                            >
+                              <option value="user" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white">User</option>
+                              <option value="admin" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white">Admin</option>
+                            </select>
+                          </td>
+
+                          {/* Status (Active / Suspended) */}
+                          <td className="px-5 py-4">
+                            <button
+                              disabled={isSuperadmin}
+                              onClick={() => toggleStatusMutation.mutate(u.id)}
+                              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5 border transition-colors ${
+                                u.is_active
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                                  : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                              }`}
+                              title={isSuperadmin ? "Superadmin is always active" : (u.is_active ? "Click to suspend account" : "Click to activate account")}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                              {u.is_active ? 'Active' : 'Suspended'}
+                            </button>
+                          </td>
+
+                          {/* Goal */}
+                          <td className="px-5 py-4">
+                            <p className="font-semibold text-slate-800 dark:text-slate-200">{u.goal_title || 'No Goal Set'}</p>
+                            <p className="text-[10px] text-slate-400 capitalize">{u.experience_level} • {u.skills_count} skills</p>
+                          </td>
+
+                          {/* Progress */}
+                          <td className="px-5 py-4">
+                            <div className="w-28 space-y-1">
+                              <div className="flex justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                                <span>{progressPct}% Done</span>
+                              </div>
+                              <div className="h-1.5 bg-slate-100 dark:bg-darkBg-border rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-brand-600 dark:bg-brand-500 rounded-full transition-all"
+                                  style={{ width: `${progressPct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-5 py-4 text-right">
+                            <div className="inline-flex items-center gap-2">
+                              
+                              {/* Reset Password Button */}
+                              <button
+                                onClick={() => {
+                                  setSelectedUserForPwd(u)
+                                  setNewPasswordInput('')
+                                  setPwdSuccessMsg('')
+                                }}
+                                className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkBg-cardSub hover:text-brand-600 border border-slate-200 dark:border-darkBg-border transition-colors shadow-subtle"
+                                title="Update Password Manually"
+                              >
+                                <KeyRound className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Delete User Button (Fixed with Modal Confirmation) */}
+                              {!isSuperadmin && (
+                                <button
+                                  onClick={() => {
+                                    setUserToDelete(u)
+                                    setDeleteError('')
+                                  }}
+                                  className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 transition-colors shadow-subtle hover:border-rose-400"
+                                  title="Delete User Permanently"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SECTION 3: SUPPORT HELPDESK ── */}
+      {(activeTab === 'all' || activeTab === 'support') && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <LifeBuoy className="w-6 h-6 text-rose-500" />
+                Learner Support Desk & Queries
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Review student tickets, reply directly to their window in real-time, and mark resolved.
+              </p>
+            </div>
+
+            {/* Ticket Status Filter Tabs */}
+            <div className="flex rounded-2xl border border-slate-200 dark:border-darkBg-border p-1 bg-slate-100 dark:bg-darkBg-canvas text-xs font-semibold">
+              {['ALL', 'open', 'in_progress', 'resolved'].map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setTicketStatusFilter(st)}
+                  className={`px-3.5 py-1.5 rounded-xl transition-colors capitalize ${
+                    ticketStatusFilter === st
                       ? 'bg-white dark:bg-darkBg-card text-slate-900 dark:text-white shadow-sm'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
-                  {r}
+                  {st.replace('_', ' ')}
                 </button>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Users Table */}
-        <div className="rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-darkBg-cardSub/60 border-b border-slate-200/80 dark:border-darkBg-border text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
-                <tr>
-                  <th className="px-5 py-3.5">User (Click Name to Edit)</th>
-                  <th className="px-5 py-3.5">Password</th>
-                  <th className="px-5 py-3.5">Role</th>
-                  <th className="px-5 py-3.5">Status</th>
-                  <th className="px-5 py-3.5">Career Goal</th>
-                  <th className="px-5 py-3.5">Progress</th>
-                  <th className="px-5 py-3.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-darkBg-border">
-                {usersLoading ? (
+          {/* Tickets Table */}
+          <div className="rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 dark:bg-darkBg-cardSub/60 border-b border-slate-200/80 dark:border-darkBg-border text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
                   <tr>
-                    <td colSpan="7" className="p-8 text-center text-slate-400">Loading user directory…</td>
+                    <th className="px-5 py-3.5">Learner</th>
+                    <th className="px-5 py-3.5">Subject & Preview</th>
+                    <th className="px-5 py-3.5">Category</th>
+                    <th className="px-5 py-3.5">Status</th>
+                    <th className="px-5 py-3.5">Date</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
                   </tr>
-                ) : filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="p-8 text-center text-slate-400">No users found matching query.</td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((u) => {
-                    const isSuperadmin = u.email === 'er.adityasah@gmail.com'
-                    const progressPct = Math.round((u.overall_progress || 0) * 100)
-                    const isRevealed = revealedPasswords[u.id]
-                    const rawPwdValue = u.raw_password || u.password || 'User@123'
-                    const isEditingName = editingNameUserId === u.id
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-darkBg-border">
+                  {ticketsLoading ? (
+                    <tr>
+                      <td colSpan="6" className="p-8 text-center text-slate-400 font-medium">Loading support queries…</td>
+                    </tr>
+                  ) : supportTickets.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="p-8 text-center text-slate-400 font-medium">
+                        No support tickets found in this queue.
+                      </td>
+                    </tr>
+                  ) : (
+                    supportTickets.map((t) => {
+                      const isResolved = t.status === 'resolved' || t.status === 'closed'
+                      const isUserLast = t.last_sender_role === 'user'
 
-                    return (
-                      <tr key={u.id} className="hover:bg-slate-50/70 dark:hover:bg-darkBg-cardSub/40 transition-colors">
-                        
-                        {/* User Profile & Editable Name */}
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs flex-shrink-0 ${
-                              u.role === 'admin'
-                                ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
-                                : 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400'
-                            }`}>
-                              {u.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              {isEditingName ? (
-                                <div className="flex items-center gap-1.5 py-0.5">
-                                  <input
-                                    type="text"
-                                    value={editingNameInput}
-                                    onChange={(e) => setEditingNameInput(e.target.value)}
-                                    className="px-2 py-1 text-xs rounded-lg bg-white dark:bg-darkBg-card border border-brand-500 text-slate-900 dark:text-white font-bold w-36 focus:outline-none"
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        if (editingNameInput.trim()) {
-                                          updateNameMutation.mutate({ userId: u.id, name: editingNameInput.trim() })
-                                        }
-                                      } else if (e.key === 'Escape') {
-                                        setEditingNameUserId(null)
-                                      }
-                                    }}
-                                  />
-                                  <button
-                                    onClick={() => {
-                                      if (editingNameInput.trim()) {
-                                        updateNameMutation.mutate({ userId: u.id, name: editingNameInput.trim() })
-                                      }
-                                    }}
-                                    disabled={updateNameMutation.isPending}
-                                    className="p-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-700"
-                                    title="Save name"
-                                  >
-                                    <Check className="w-3 h-3" />
-                                  </button>
-                                  <button
-                                    onClick={() => setEditingNameUserId(null)}
-                                    className="p-1 rounded-md bg-slate-200 dark:bg-darkBg-border text-slate-600 dark:text-slate-300"
-                                    title="Cancel"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 group">
-                                  <p className="font-bold text-slate-900 dark:text-white">{u.name}</p>
-                                  <button
-                                    onClick={() => {
-                                      setEditingNameUserId(u.id)
-                                      setEditingNameInput(u.name)
-                                    }}
-                                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-brand-600 transition-opacity"
-                                    title="Edit User Name"
-                                  >
-                                    <Pencil className="w-3 h-3" />
-                                  </button>
-                                </div>
+                      return (
+                        <tr key={t.id} className="hover:bg-slate-50/70 dark:hover:bg-darkBg-cardSub/40 transition-colors">
+                          
+                          {/* Learner Info */}
+                          <td className="px-5 py-4">
+                            <p className="font-bold text-slate-900 dark:text-white">{t.user_name}</p>
+                            <p className="text-slate-400 dark:text-slate-500 font-mono text-[11px]">{t.user_email}</p>
+                            <p className="text-[10px] text-slate-400">{t.user_goal}</p>
+                          </td>
+
+                          {/* Subject & Latest Message */}
+                          <td className="px-5 py-4 max-w-xs">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="font-bold text-slate-900 dark:text-white line-clamp-1">{t.subject}</span>
+                              {isUserLast && !isResolved && (
+                                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-shrink-0" title="Awaiting Admin Reply" />
                               )}
-                              <p className="text-slate-400 dark:text-slate-500 font-mono text-[11px]">{u.email}</p>
                             </div>
-                          </div>
-                        </td>
+                            <p className="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">
+                              {t.latest_message}
+                            </p>
+                          </td>
 
-                        {/* Password Column with Reveal Toggle */}
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono text-xs text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-darkBg-cardSub px-2 py-1 rounded-lg">
-                              {isRevealed ? rawPwdValue : '••••••••'}
+                          {/* Category & Priority */}
+                          <td className="px-5 py-4">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300 capitalize text-xs block">
+                              {t.category.replace('_', ' ')}
                             </span>
-                            <button
-                              onClick={() => togglePasswordVisibility(u.id)}
-                              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                              title={isRevealed ? "Hide Password" : "Show Password"}
-                            >
-                              {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </button>
-                            {isRevealed && rawPwdValue !== '—' && (
-                              <button
-                                onClick={() => copyToClipboard(rawPwdValue, u.id)}
-                                className="p-1 rounded-lg text-slate-400 hover:text-brand-600"
-                                title="Copy Password"
-                              >
-                                {copiedUserId === u.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                              </button>
-                            )}
-                          </div>
-                        </td>
+                            <span className="text-[10px] text-slate-400 uppercase font-mono">
+                              {t.priority}
+                            </span>
+                          </td>
 
-                        {/* Role */}
-                        <td className="px-5 py-4">
-                          <select
-                            value={u.role}
-                            disabled={isSuperadmin}
-                            onChange={(e) => updateRoleMutation.mutate({ userId: u.id, role: e.target.value })}
-                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold font-mono border focus:outline-none transition-colors ${
-                              u.role === 'admin'
-                                ? 'bg-purple-50 dark:bg-purple-950/50 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300'
-                                : 'bg-slate-50 dark:bg-darkBg-cardSub border-slate-200 dark:border-darkBg-border text-slate-700 dark:text-slate-300'
-                            } ${isSuperadmin ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
-                          >
-                            <option value="user" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white">User</option>
-                            <option value="admin" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white">Admin</option>
-                          </select>
-                        </td>
-
-                        {/* Status (Active / Suspended) */}
-                        <td className="px-5 py-4">
-                          <button
-                            disabled={isSuperadmin}
-                            onClick={() => toggleStatusMutation.mutate(u.id)}
-                            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold inline-flex items-center gap-1 border transition-colors ${
-                              u.is_active
+                          {/* Status */}
+                          <td className="px-5 py-4">
+                            <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-xl inline-block border ${
+                              isResolved
                                 ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
-                                : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
-                            }`}
-                            title={isSuperadmin ? "Superadmin is always active" : (u.is_active ? "Click to suspend account" : "Click to activate account")}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                            {u.is_active ? 'Active' : 'Suspended'}
-                          </button>
-                        </td>
+                                : t.status === 'in_progress'
+                                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
+                                : 'bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300'
+                            }`}>
+                              {t.status.replace('_', ' ')}
+                            </span>
+                          </td>
 
-                        {/* Goal */}
-                        <td className="px-5 py-4">
-                          <p className="font-medium text-slate-800 dark:text-slate-200">{u.goal_title}</p>
-                          <p className="text-[10px] text-slate-400 capitalize">{u.experience_level} • {u.skills_count} skills</p>
-                        </td>
+                          {/* Date */}
+                          <td className="px-5 py-4 text-[11px] text-slate-400">
+                            {t.updated_at ? new Date(t.updated_at).toLocaleDateString() : ''}
+                          </td>
 
-                        {/* Progress */}
-                        <td className="px-5 py-4">
-                          <div className="w-28 space-y-1">
-                            <div className="flex justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                              <span>{progressPct}%</span>
-                            </div>
-                            <div className="h-1.5 bg-slate-100 dark:bg-darkBg-border rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-brand-600 dark:bg-brand-500 rounded-full"
-                                style={{ width: `${progressPct}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
+                          {/* Actions */}
+                          <td className="px-5 py-4 text-right">
+                            <div className="inline-flex items-center gap-1.5">
+                              
+                              {/* Open / Reply Thread */}
+                              <button
+                                onClick={() => setSelectedTicketForAdmin(t)}
+                                className="btn-primary text-xs py-1.5 px-3 rounded-xl flex items-center gap-1 shadow-subtle"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" /> Reply
+                              </button>
 
-                        {/* Actions */}
-                        <td className="px-5 py-4 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            
-                            {/* Reset Password Button */}
-                            <button
-                              onClick={() => {
-                                setSelectedUserForPwd(u)
-                                setNewPasswordInput('')
-                                setPwdSuccessMsg('')
-                              }}
-                              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkBg-cardSub hover:text-brand-600 border border-slate-200 dark:border-darkBg-border transition-colors"
-                              title="Update Password Manually"
-                            >
-                              <KeyRound className="w-3.5 h-3.5" />
-                            </button>
+                              {/* Mark Resolved directly */}
+                              {!isResolved && (
+                                <button
+                                  onClick={() => updateTicketStatusMutation.mutate({ ticketId: t.id, status: 'resolved' })}
+                                  className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 transition-colors"
+                                  title="Mark as Resolved"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                </button>
+                              )}
 
-                            {/* Delete User */}
-                            {!isSuperadmin && (
+                              {/* Delete Ticket */}
                               <button
                                 onClick={() => {
-                                  if (confirm(`Are you sure you want to permanently delete user "${u.email}"?`)) {
-                                    deleteUserMutation.mutate(u.id)
+                                  if (confirm(`Dispose and delete support ticket "${t.subject}"?`)) {
+                                    deleteTicketMutation.mutate(t.id)
                                   }
                                 }}
                                 className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 transition-colors"
-                                title="Delete User"
+                                title="Delete Ticket"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            )}
-                          </div>
-                        </td>
 
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
+                            </div>
+                          </td>
+
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* ── Broadcast Announcements Section ─────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Create Broadcast Form */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-4">
-          <div className="flex items-center gap-2">
-            <Megaphone className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            <h3 className="font-bold text-slate-900 dark:text-white text-base">Broadcast Announcement</h3>
-          </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Send a global alert that immediately renders in all learners' notification bells.
-          </p>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (!notifTitle.trim() || !notifMsg.trim()) return
-              createNotifMutation.mutate({
-                title: notifTitle.trim(),
-                message: notifMsg.trim(),
-                type: notifType,
-              })
-            }}
-            className="space-y-4 pt-2"
-          >
-            <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
-                Announcement Title
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. New Distributed Systems Track Available"
-                value={notifTitle}
-                onChange={(e) => setNotifTitle(e.target.value)}
-                required
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
-                Notification Type
-              </label>
-              <select
-                value={notifType}
-                onChange={(e) => setNotifType(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
-              >
-                <option value="info" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white py-1">Information (Blue)</option>
-                <option value="success" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white py-1">Success (Green)</option>
-                <option value="warning" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white py-1">Alert (Yellow)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
-                Announcement Message
-              </label>
-              <textarea
-                rows="3"
-                placeholder="Write your announcement details..."
-                value={notifMsg}
-                onChange={(e) => setNotifMsg(e.target.value)}
-                required
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
-              />
-            </div>
-
-            {notifSuccessMsg && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">{notifSuccessMsg}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={createNotifMutation.isPending}
-              className="btn-primary w-full py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1.5"
-            >
-              <Send className="w-3.5 h-3.5" /> Send Broadcast
-            </button>
-          </form>
-        </div>
-
-        {/* Existing Announcements List */}
-        <div className="lg:col-span-2 p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-4">
-          <h3 className="font-bold text-slate-900 dark:text-white text-base">Active Broadcast History</h3>
+      {/* ── SECTION 4: BROADCAST ANNOUNCEMENTS ── */}
+      {(activeTab === 'all' || activeTab === 'broadcasts') && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          <div className="divide-y divide-slate-100 dark:divide-darkBg-border max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <p className="text-xs text-slate-400 py-6 text-center">No active broadcasts published.</p>
-            ) : (
-              notifications.map((n) => (
-                <div key={n.id} className="py-3 flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${
-                        n.type === 'warning'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                          : n.type === 'success'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                          : 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
-                      }`}>
-                        {n.type}
-                      </span>
-                      <h4 className="font-bold text-xs text-slate-900 dark:text-white">{n.title}</h4>
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">{n.message}</p>
-                    <p className="text-[10px] text-slate-400">
-                      By {n.created_by} • {new Date(n.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
+          {/* Create Broadcast Form */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-subtle">
+                <Megaphone className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">Broadcast Announcement</h3>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Send a real-time notification that renders across all learner dashboard notification bells.
+            </p>
 
-                  <button
-                    onClick={() => deleteNotifMutation.mutate(n.id)}
-                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                    title="Delete Announcement"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!notifTitle.trim() || !notifMsg.trim()) return
+                createNotifMutation.mutate({
+                  title: notifTitle.trim(),
+                  message: notifMsg.trim(),
+                  type: notifType,
+                })
+              }}
+              className="space-y-4 pt-2"
+            >
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
+                  Announcement Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. New Distributed Systems Track Available"
+                  value={notifTitle}
+                  onChange={(e) => setNotifTitle(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
+                  Notification Type
+                </label>
+                <select
+                  value={notifType}
+                  onChange={(e) => setNotifType(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold"
+                >
+                  <option value="info" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white py-1">Information (Blue)</option>
+                  <option value="success" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white py-1">Success (Green)</option>
+                  <option value="warning" className="bg-white dark:bg-darkBg-card text-slate-900 dark:text-white py-1">Alert (Yellow)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
+                  Announcement Message
+                </label>
+                <textarea
+                  rows="3"
+                  placeholder="Write your broadcast details..."
+                  value={notifMsg}
+                  onChange={(e) => setNotifMsg(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              {notifSuccessMsg && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">{notifSuccessMsg}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={createNotifMutation.isPending}
+                className="btn-primary w-full py-3 rounded-2xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-card"
+              >
+                <Send className="w-3.5 h-3.5" /> Broadcast Now
+              </button>
+            </form>
+          </div>
+
+          {/* Active Broadcasts History */}
+          <div className="lg:col-span-2 p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-4">
+            <h3 className="font-bold text-slate-900 dark:text-white text-base">Active Broadcast History</h3>
+            
+            <div className="divide-y divide-slate-100 dark:divide-darkBg-border max-h-96 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <p className="text-xs text-slate-400 py-8 text-center font-medium">No active broadcasts published.</p>
+              ) : (
+                notifications.map((n) => (
+                  <div key={n.id} className="py-3.5 flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${
+                          n.type === 'warning'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                            : n.type === 'success'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                            : 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
+                        }`}>
+                          {n.type}
+                        </span>
+                        <h4 className="font-bold text-xs text-slate-900 dark:text-white">{n.title}</h4>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">{n.message}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">
+                        By {n.created_by} • {new Date(n.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => deleteNotifMutation.mutate(n.id)}
+                      className="p-1.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                      title="Delete Announcement"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* ── MODAL 1: DELETE USER CONFIRMATION MODAL (THEMED & BULLETPROOF) ── */}
+      {userToDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-3">
+              <div className="flex items-center gap-2.5 text-rose-600 dark:text-rose-400">
+                <div className="w-9 h-9 rounded-2xl bg-rose-50 dark:bg-rose-950/80 flex items-center justify-center">
+                  <ShieldAlert className="w-5 h-5" />
                 </div>
-              ))
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Delete User Account</h3>
+              </div>
+              <button
+                onClick={() => setUserToDelete(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub/60 border border-slate-200/80 dark:border-darkBg-border space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-brand-50 dark:bg-brand-950/80 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-sm">
+                  {userToDelete.name ? userToDelete.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900 dark:text-white text-sm">{userToDelete.name}</p>
+                  <p className="text-slate-500 dark:text-slate-400 font-mono text-xs">{userToDelete.email}</p>
+                </div>
+              </div>
+              <div className="pt-2 border-t border-slate-200/60 dark:border-darkBg-border text-xs text-slate-600 dark:text-slate-300 flex justify-between font-mono">
+                <span>Role: <strong className="capitalize">{userToDelete.role}</strong></span>
+                <span>ID: #{userToDelete.id}</span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-800 dark:text-rose-200 space-y-1">
+              <p className="font-bold">⚠️ Warning: Permanent Action</p>
+              <p className="text-[11px] leading-relaxed">
+                This will permanently remove the user, all active learning roadmaps, skills assessments, chat history, and support tickets from the database.
+              </p>
+            </div>
+
+            {deleteError && (
+              <p className="text-xs text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-950 p-2.5 rounded-xl border border-rose-200 dark:border-rose-900">
+                {deleteError}
+              </p>
             )}
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setUserToDelete(null)}
+                className="btn-secondary text-xs px-4 py-2.5 rounded-2xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteUserMutation.mutate(userToDelete.id)}
+                disabled={deleteUserMutation.isPending}
+                className="btn-primary text-xs px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 dark:bg-rose-600 text-white font-semibold flex items-center gap-1.5 shadow-card"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {deleteUserMutation.isPending ? 'Deleting…' : 'Delete Permanently'}
+              </button>
+            </div>
+
           </div>
         </div>
+      )}
 
-      </div>
-
-      {/* ── Admin Support Ticket Thread & Reply Modal ── */}
+      {/* ── MODAL 2: ADMIN SUPPORT TICKET THREAD & REPLY MODAL ── */}
       {selectedTicketForAdmin && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 sm:p-7 space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
             
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-4">
@@ -1021,7 +1314,7 @@ export default function Admin() {
                   }`}>
                     {selectedTicketForAdmin.status.replace('_', ' ')}
                   </span>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-400 font-mono">
                     Ticket #{selectedTicketForAdmin.id} • {selectedTicketForAdmin.category}
                   </span>
                 </div>
@@ -1044,7 +1337,7 @@ export default function Admin() {
             {/* Conversation Thread Messages */}
             <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-72">
               {detailLoading ? (
-                <p className="text-xs text-slate-400 text-center py-6">Loading conversation…</p>
+                <p className="text-xs text-slate-400 text-center py-6 font-medium">Loading conversation…</p>
               ) : adminTicketDetail?.messages?.map((m) => {
                 const isAdmin = m.sender_role === 'admin'
 
@@ -1052,7 +1345,7 @@ export default function Admin() {
                   <div key={m.id} className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}>
                     <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 px-1">
                       <span className="font-semibold text-slate-700 dark:text-slate-300">
-                        {m.sender_name} {isAdmin ? '(Support)' : ''}
+                        {m.sender_name} {isAdmin ? '(Superadmin Support)' : ''}
                       </span>
                       <span>•</span>
                       <span>{m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
@@ -1060,7 +1353,7 @@ export default function Admin() {
 
                     <div className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
                       isAdmin
-                        ? 'bg-purple-600 text-white rounded-tr-sm shadow-subtle'
+                        ? 'bg-brand-600 text-white rounded-tr-sm shadow-subtle'
                         : 'bg-slate-100 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-slate-100 rounded-tl-sm shadow-subtle'
                     }`}>
                       <p className="whitespace-pre-wrap">{m.message}</p>
@@ -1097,13 +1390,13 @@ export default function Admin() {
                   placeholder="Type your response to the user..."
                   value={adminReplyInput}
                   onChange={(e) => setAdminReplyInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">After replying set status to:</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">After replying set status:</span>
                   <select
                     value={adminReplyStatus}
                     onChange={(e) => setAdminReplyStatus(e.target.value)}
@@ -1126,7 +1419,7 @@ export default function Admin() {
                   <button
                     type="submit"
                     disabled={adminReplyTicketMutation.isPending || !adminReplyInput.trim()}
-                    className="btn-primary text-xs px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold flex items-center gap-1.5"
+                    className="btn-primary text-xs px-5 py-2 rounded-xl text-white font-semibold flex items-center gap-1.5 shadow-card"
                   >
                     <Send className="w-3.5 h-3.5" /> Send Reply
                   </button>
@@ -1138,20 +1431,22 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── 6 Selectable Professional Maintenance Modes Modal ── */}
+      {/* ── MODAL 3: 6 SELECTABLE PROFESSIONAL MAINTENANCE MODES ── */}
       {maintModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-4">
               <div className="flex items-center gap-2.5 text-amber-600 dark:text-amber-400">
-                <Wrench className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-2xl bg-amber-50 dark:bg-amber-950/80 flex items-center justify-center">
+                  <Wrench className="w-5 h-5" />
+                </div>
                 <div>
                   <h3 className="font-bold text-lg text-slate-900 dark:text-white leading-tight">
-                    Select Maintenance Mode Message
+                    Select Maintenance Mode Preset
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Choose one of 6 professional, emoji-free announcements for the website
+                    Choose one of 6 professional announcements for the platform
                   </p>
                 </div>
               </div>
@@ -1178,13 +1473,13 @@ export default function Admin() {
                     }}
                     className={`p-4 rounded-2xl border transition-all duration-150 cursor-pointer flex flex-col justify-between space-y-2 ${
                       isSelected
-                        ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/40'
+                        ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/40 shadow-subtle'
                         : 'bg-slate-50 dark:bg-darkBg-cardSub/60 border-slate-200 dark:border-darkBg-border hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${
                           isSelected ? 'bg-amber-500 text-white' : 'bg-slate-200 dark:bg-darkBg-border text-slate-600 dark:text-slate-400'
                         }`}>
                           <IconComponent className="w-3.5 h-3.5" />
@@ -1219,7 +1514,7 @@ export default function Admin() {
                 rows="2"
                 value={customMaintText || (MAINTENANCE_MODES.find(m => m.id === selectedMaintMode)?.description || '')}
                 onChange={(e) => setCustomMaintText(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
               />
             </div>
 
@@ -1236,7 +1531,7 @@ export default function Admin() {
                 type="button"
                 onClick={handleConfirmMaintenanceMode}
                 disabled={maintenanceMutation.isPending}
-                className="btn-primary text-xs px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 text-white font-semibold"
+                className="btn-primary text-xs px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 text-white font-semibold shadow-card"
               >
                 {maintenanceMutation.isPending ? 'Activating…' : 'Activate Maintenance Mode'}
               </button>
@@ -1246,12 +1541,12 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── Password Reset Modal ─────────────────────── */}
+      {/* ── MODAL 4: PASSWORD RESET MODAL ── */}
       {selectedUserForPwd && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95">
             
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-3">
               <div className="flex items-center gap-2 text-brand-600 dark:text-brand-400">
                 <KeyRound className="w-5 h-5" />
                 <h3 className="font-bold text-base text-slate-900 dark:text-white">Update Password Manually</h3>
@@ -1265,7 +1560,7 @@ export default function Admin() {
             </div>
 
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Setting a new password for <strong>{selectedUserForPwd.email}</strong>.
+              Setting a new raw password for <strong>{selectedUserForPwd.email}</strong>.
             </p>
 
             <form
@@ -1288,7 +1583,7 @@ export default function Admin() {
                   onChange={(e) => setNewPasswordInput(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
@@ -1310,7 +1605,7 @@ export default function Admin() {
                 <button
                   type="submit"
                   disabled={updatePasswordMutation.isPending}
-                  className="btn-primary text-xs px-4 py-2 rounded-xl"
+                  className="btn-primary text-xs px-5 py-2 rounded-xl shadow-card"
                 >
                   Save New Password
                 </button>

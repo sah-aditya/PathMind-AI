@@ -18,9 +18,9 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
-    profile = relationship("LearnerProfile", back_populates="user", uselist=False)
-    learner_skills = relationship("LearnerSkill", back_populates="user")
-    learning_paths = relationship("LearningPath", back_populates="user")
-    assessment_results = relationship("AssessmentResult", back_populates="user")
-    chat_messages = relationship("ChatMessage", back_populates="user")
+    # Relationships with cascading deletes
+    profile = relationship("LearnerProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    learner_skills = relationship("LearnerSkill", back_populates="user", cascade="all, delete-orphan")
+    learning_paths = relationship("LearningPath", back_populates="user", cascade="all, delete-orphan")
+    assessment_results = relationship("AssessmentResult", back_populates="user", cascade="all, delete-orphan")
+    chat_messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
