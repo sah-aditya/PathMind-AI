@@ -8,7 +8,7 @@ from app.db.database import get_db
 from app.models.user import User
 from app.models.learning import LearningPath, PathStatus
 from app.models.certificate import Certificate, generate_certificate_code
-from app.api.deps import get_current_user, get_current_admin
+from app.core.security import get_current_user, get_current_admin_user
 
 router = APIRouter(tags=["certificates"])
 
@@ -150,7 +150,7 @@ def verify_certificate_code(code: str, db: Session = Depends(get_db)):
 def admin_list_certificates(
     status_filter: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_admin: User = Depends(get_current_admin)
+    current_admin: User = Depends(get_current_admin_user)
 ):
     """Admin retrieves all certificate requests with user details and progress."""
     query = db.query(Certificate)
@@ -187,7 +187,7 @@ def admin_list_certificates(
 def admin_approve_certificate(
     cert_id: int,
     db: Session = Depends(get_db),
-    current_admin: User = Depends(get_current_admin)
+    current_admin: User = Depends(get_current_admin_user)
 ):
     """Admin approves a certificate request and generates its unique 5-char code."""
     cert = db.query(Certificate).filter(Certificate.id == cert_id).first()
@@ -236,7 +236,7 @@ def admin_reject_certificate(
     cert_id: int,
     payload: CertificateRejectIn,
     db: Session = Depends(get_db),
-    current_admin: User = Depends(get_current_admin)
+    current_admin: User = Depends(get_current_admin_user)
 ):
     """Admin rejects a certificate request with feedback."""
     cert = db.query(Certificate).filter(Certificate.id == cert_id).first()
