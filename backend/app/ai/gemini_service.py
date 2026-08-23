@@ -24,11 +24,11 @@ genai.configure(api_key=settings.GEMINI_API_KEY)
 
 # Cascade of available Gemini models (verified from API list)
 CANDIDATE_MODELS = [
-    "gemini-3.5-flash-lite",  # Fastest, lowest latency
-    "gemini-3.6-flash",       # Stronger reasoning
+    "gemini-3.6-flash",          # Fastest and reliable primary
+    "gemini-3.5-flash-lite",     # Lowest latency fallback
     "gemini-flash-lite-latest",  # Latest lite alias
-    "gemini-2.5-flash-lite",  # Fallback
-    "gemini-2.5-flash",       # Heavy fallback
+    "gemini-3.7-flash",          # Heavy reasoning fallback
+    "gemini-flash-latest",       # General fallback
 ]
 
 # ─────────────────────────────────────────────

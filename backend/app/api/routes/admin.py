@@ -664,12 +664,12 @@ def get_ai_telemetry(
         "status": "online" if has_key else "missing_key",
         "api_key_configured": has_key,
         "masked_key": masked_key,
-        "primary_model": "gemini-3.5-flash-lite",
+        "primary_model": "gemini-3.6-flash",
         "fallback_models": [
-            "gemini-3.6-flash",
+            "gemini-3.5-flash-lite",
             "gemini-flash-lite-latest",
-            "gemini-2.5-flash-lite",
-            "gemini-2.5-flash",
+            "gemini-3.7-flash",
+            "gemini-flash-latest",
         ],
         "temperature": 0.35,
         "safety_guardrails": "Strict Non-repetitive Charismatic Persona v3.1",
@@ -682,27 +682,34 @@ def ping_ai_service(
     admin: User = Depends(get_current_admin_user),
 ):
     start_time = time.time()
-    try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content("Ping test: respond with 'PathMind AI Engine Online' in under 5 words.")
-        latency_ms = round((time.time() - start_time) * 1000, 1)
+    candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.7-flash"]
+    last_err = None
+    
+    for model_name in candidate_models:
+        try:
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content("Ping test: respond with 'PathMind AI Engine Online' in under 5 words.")
+            latency_ms = round((time.time() - start_time) * 1000, 1)
 
-        return {
-            "status": "success",
-            "latency_ms": latency_ms,
-            "model_used": "gemini-2.5-flash",
-            "response": response.text.strip() if hasattr(response, "text") else "Engine Response OK",
-            "timestamp": datetime.utcnow().isoformat(),
-        }
-    except Exception as e:
-        latency_ms = round((time.time() - start_time) * 1000, 1)
-        return {
-            "status": "error",
-            "latency_ms": latency_ms,
-            "error_detail": str(e),
-            "timestamp": datetime.utcnow().isoformat(),
-        }
+            return {
+                "status": "success",
+                "latency_ms": latency_ms,
+                "model_used": model_name,
+                "response": response.text.strip() if hasattr(response, "text") else "Engine Response OK",
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        except Exception as e:
+            last_err = str(e)
+            continue
+            
+    latency_ms = round((time.time() - start_time) * 1000, 1)
+    return {
+        "status": "error",
+        "latency_ms": latency_ms,
+        "error_detail": last_err or "Unknown Gemini error",
+        "timestamp": datetime.utcnow().isoformat(),
+    }
 
 
 # ── 3. Resource & Curriculum Manager ──────────────────────────────────────────
