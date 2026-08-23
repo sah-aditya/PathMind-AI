@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { X, Send, Brain, Loader2, Bot, MessageSquare } from 'lucide-react'
+import { X, Send, Brain, Loader2, Bot, MessageSquare, AlertTriangle } from 'lucide-react'
 import { chatApi } from '../services/api'
 import toast from 'react-hot-toast'
 import MarkdownMessage from './MarkdownMessage'
@@ -15,11 +15,13 @@ function formatTime(date) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-export default function ChatOverlay({ onClose }) {
+export default function ChatOverlay({ onClose, isPaused = false }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "Hello! I'm your **PathMind AI** learning advisor. Ask me anything about your curriculum, prerequisite dependencies, or personalized recommendations.",
+      content: isPaused 
+        ? "⚠️ **AI Advisor is Offline**: The conversational advisor service is temporarily paused for scheduled maintenance by administration. Please check back shortly."
+        : "Hello! I'm your **PathMind AI** learning advisor. Ask me anything about your curriculum, prerequisite dependencies, or personalized recommendations.",
       time: new Date(),
     },
   ])
@@ -162,34 +164,41 @@ export default function ChatOverlay({ onClose }) {
 
         {/* ── Input bar ──────────────────────────── */}
         <div className="p-3 border-t border-slate-200/80 dark:border-darkBg-border bg-white dark:bg-darkBg-card">
-          <div className="flex gap-2 items-end">
-            <textarea
-              ref={inputRef}
-              rows={1}
-              value={input}
-              onChange={e => {
-                setInput(e.target.value)
-                e.target.style.height = 'auto'
-                e.target.style.height = Math.min(e.target.scrollHeight, 90) + 'px'
-              }}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
-              }}
-              placeholder="Ask about your learning path…"
-              className="flex-1 resize-none input text-xs py-2 leading-relaxed"
-              style={{ minHeight: '38px', maxHeight: '90px' }}
-            />
-            <button
-              onClick={() => sendMessage()}
-              disabled={!input.trim() || loading}
-              className="btn-primary px-3 py-2 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-              aria-label="Send message"
-            >
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          {isPaused ? (
+            <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <span>AI Advisor responses are temporarily paused for maintenance.</span>
+            </div>
+          ) : (
+            <div className="flex gap-2 items-end">
+              <textarea
+                ref={inputRef}
+                rows={1}
+                value={input}
+                onChange={e => {
+                  setInput(e.target.value)
+                  e.target.style.height = 'auto'
+                  e.target.style.height = Math.min(e.target.scrollHeight, 90) + 'px'
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
+                }}
+                placeholder="Ask about your learning path…"
+                className="flex-1 resize-none input text-xs py-2 leading-relaxed"
+                style={{ minHeight: '38px', maxHeight: '90px' }}
+              />
+              <button
+                onClick={() => sendMessage()}
+                disabled={!input.trim() || loading}
+                className="btn-primary px-3 py-2 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Send message"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
           <p className="text-[10px] text-slate-400 mt-1 text-center font-mono">
-            Enter to send · Shift+Enter for new line
+            {isPaused ? 'Service Under Maintenance' : 'Enter to send · Shift+Enter for new line'}
           </p>
         </div>
       </div>

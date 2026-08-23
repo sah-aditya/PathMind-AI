@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import {
   LayoutDashboard, Map, GitBranch, LogOut, Brain,
@@ -9,7 +9,9 @@ import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
 import ChatOverlay from './ChatOverlay'
 import NotificationBell from './NotificationBell'
+import ServicePausedScreen from './ServicePausedScreen'
 import { chatApi, profileApi, systemApi } from '../services/api'
+import toast from 'react-hot-toast'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', service: 'dashboard' },
@@ -114,8 +116,10 @@ export default function AppLayout() {
 
   const handleReOnboard = async () => {
     setMobileMenuOpen(false)
-    if (serviceFlags.re_onboard === false && user?.role !== 'admin') {
-      alert('Re-onboarding is temporarily paused by the administration.')
+    if (serviceFlags.re_onboard === false && !isMasterAdmin) {
+      toast.error('Goal Re-Onboarding is temporarily paused by the administration.', {
+        icon: '⏸️',
+      })
       return
     }
     try {
@@ -194,6 +198,25 @@ export default function AppLayout() {
   const canEditName = user?.can_change_name !== false
   const canEditPassword = user?.can_change_password !== false
   const isMasterAdmin = user?.role === 'admin' || user?.email === 'er.adityasah@gmail.com'
+
+  // Route-level service mapping & active guard check
+  const location = useLocation()
+  const pathname = location.pathname
+
+  let currentRouteService = null
+  if (pathname === '/dashboard' || pathname.startsWith('/resource/')) {
+    currentRouteService = 'dashboard'
+  } else if (pathname.startsWith('/skill-gap')) {
+    currentRouteService = 'skill_gap'
+  } else if (pathname.startsWith('/roadmap')) {
+    currentRouteService = 'roadmap'
+  } else if (pathname.startsWith('/help')) {
+    currentRouteService = 'support_page'
+  } else if (pathname.startsWith('/onboarding')) {
+    currentRouteService = 'onboarding'
+  }
+
+  const isCurrentServicePaused = currentRouteService && serviceFlags[currentRouteService] === false && !isMasterAdmin
 
   return (
     <div className="flex min-h-screen bg-slate-100/80 dark:bg-darkBg-canvas text-slate-900 dark:text-slate-100 selection:bg-brand-500 selection:text-white pb-16 lg:pb-0">
@@ -410,13 +433,24 @@ export default function AppLayout() {
                 if (serviceFlags.ai_chatbot !== false || isMasterAdmin) {
                   setChatOpen(true)
                 } else {
-                  alert('AI Advisor service is temporarily paused by the administration.')
+                  toast.error('AI Advisor service is temporarily paused by the administration.', {
+                    icon: '⏸️',
+                  })
                 }
               }}
-              className="btn-primary text-xs py-2 px-3.5 hidden sm:inline-flex"
+              className={`text-xs py-2 px-3.5 hidden sm:inline-flex items-center gap-1.5 rounded-2xl font-bold transition-all shadow-subtle ${
+                serviceFlags.ai_chatbot === false && !isMasterAdmin
+                  ? 'bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300'
+                  : 'btn-primary'
+              }`}
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              AI Advisor
+              <span>AI Advisor</span>
+              {serviceFlags.ai_chatbot === false && !isMasterAdmin && (
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200 uppercase font-mono font-bold">
+                  Paused
+                </span>
+              )}
             </button>
 
             {/* ── Top-Right Interactive Profile Avatar Dropdown ── */}
@@ -461,11 +495,8 @@ export default function AppLayout() {
                     <button
                       onClick={() => {
                         if (canEditName) {
-                          setNewName(user?.name || '')
-                          setNameError('')
-                          setNameSuccess('')
-                          setNameModalOpen(true)
                           setProfileMenuOpen(false)
+                          setNameModalOpen(true)
                         }
                       }}
                       disabled={!canEditName}
@@ -490,13 +521,8 @@ export default function AppLayout() {
                     <button
                       onClick={() => {
                         if (canEditPassword) {
-                          setCurrentPassword('')
-                          setNewPassword('')
-                          setConfirmPassword('')
-                          setPasswordError('')
-                          setPasswordSuccess('')
-                          setPasswordModalOpen(true)
                           setProfileMenuOpen(false)
+                          setPasswordModalOpen(true)
                         }
                       }}
                       disabled={!canEditPassword}
@@ -536,7 +562,11 @@ export default function AppLayout() {
 
         {/* Page Content View */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-          <Outlet />
+          {isCurrentServicePaused ? (
+            <ServicePausedScreen serviceKey={currentRouteService} serviceFlags={serviceFlags} />
+          ) : (
+            <Outlet />
+          )}
         </main>
       </div>
 
@@ -561,7 +591,9 @@ export default function AppLayout() {
             if (serviceFlags.ai_chatbot !== false || isMasterAdmin) {
               setChatOpen(true)
             } else {
-              alert('AI Advisor service is temporarily paused by the administration.')
+              toast.error('AI Advisor service is temporarily paused by the administration.', {
+                icon: '⏸️',
+              })
             }
           }}
           className="flex flex-col items-center gap-1 text-[10px] font-semibold py-1 px-2.5 rounded-xl text-slate-500 dark:text-slate-400"
@@ -744,7 +776,12 @@ export default function AppLayout() {
       )}
 
       {/* Chat Overlay */}
-      {chatOpen && <ChatOverlay onClose={() => setChatOpen(false)} />}
+      {chatOpen && (
+        <ChatOverlay
+          onClose={() => setChatOpen(false)}
+          isPaused={serviceFlags.ai_chatbot === false && !isMasterAdmin}
+        />
+      )}
     </div>
   )
 }
