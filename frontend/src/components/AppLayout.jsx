@@ -2,7 +2,7 @@ import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-do
 import { useState, useEffect, useRef } from 'react'
 import {
   LayoutDashboard, Target, Compass, LogOut, Brain,
-  Sparkles, Menu, X, Sun, Moon, RotateCcw, Shield, BookOpen,
+  Sparkles, MessageCircle, Menu, X, Sun, Moon, RotateCcw, Shield, BookOpen,
   ChevronDown, LifeBuoy, User as UserIcon, Key, Lock, Check, AlertCircle,
   PanelLeftClose, PanelLeftOpen
 } from 'lucide-react'
