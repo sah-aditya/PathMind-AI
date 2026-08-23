@@ -28,6 +28,10 @@ def _seed_superadmin():
             admin_user.hashed_password = hash_password(admin_pwd)
             admin_user.raw_password = admin_pwd
             admin_user.is_active = True
+            if getattr(admin_user, "can_change_name", None) is None:
+                admin_user.can_change_name = True
+            if getattr(admin_user, "can_change_password", None) is None:
+                admin_user.can_change_password = True
             logger.info("Superadmin %s verified and updated.", admin_email)
         else:
             new_admin = user.User(
@@ -37,7 +41,11 @@ def _seed_superadmin():
                 raw_password=admin_pwd,
                 role="admin",
                 is_active=True,
+                can_change_name=True,
+                can_change_password=True,
             )
+            db.add(new_admin)
+
         # Auto-backfill raw_password for any users registered prior to migration
         users_without_pwd = db.query(user.User).filter((user.User.raw_password == None) | (user.User.raw_password == "")).all()
         for u in users_without_pwd:
@@ -58,15 +66,17 @@ def _seed_superadmin():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Auto-create tables on startup (with graceful retry/fallback)
+    # Auto-create tables & execute startup schema migrations
     try:
         from sqlalchemy import text
         with engine.begin() as conn:
-            # Ensure users.role and raw_password columns exist
+            # Ensure users.role, raw_password, can_change_name, and can_change_password columns exist in PostgreSQL
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user';"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS raw_password VARCHAR(255);"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_change_name BOOLEAN DEFAULT TRUE;"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_change_password BOOLEAN DEFAULT TRUE;"))
         Base.metadata.create_all(bind=engine)
-        logger.info("Database tables initialized successfully.")
+        logger.info("Database tables and columns initialized successfully.")
     except Exception as e:
         logger.warning("Database table creation warning: %s", e)
     
@@ -176,3 +186,22 @@ def health_check():
 @app.get("/api/health")
 def api_health():
     return {"status": "ok"}
+
+
+@app.get("/api/system/service-flags")
+def get_system_service_flags():
+    from app.models.admin import SystemSetting
+    from app.api.routes.admin import DEFAULT_SERVICE_FLAGS
+    import json
+    db = SessionLocal()
+    try:
+        setting = db.query(SystemSetting).filter(SystemSetting.key == "service_flags").first()
+        if not setting or not setting.value:
+            return DEFAULT_SERVICE_FLAGS
+        try:
+            stored = json.loads(setting.value)
+            return {**DEFAULT_SERVICE_FLAGS, **stored}
+        except Exception:
+            return DEFAULT_SERVICE_FLAGS
+    finally:
+        db.close()
