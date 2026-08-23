@@ -8,7 +8,10 @@ import {
   Cpu, Database, Lock, Sparkles, Server, CheckSquare,
   Pencil, LifeBuoy, MessageSquare, CornerDownRight,
   Filter, UserCheck, Inbox, ArrowRight, ShieldAlert,
-  ChevronRight, Clock, MapPin, Layers, AlertCircle
+  ChevronRight, Clock, MapPin, Layers, AlertCircle,
+  Download, FileSpreadsheet, FileJson, BarChart3,
+  BookOpen, Plus, ExternalLink, Zap, Compass, HelpCircle,
+  Award, Flame, TrendingUp, History, Radio, Gauge
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
@@ -64,10 +67,10 @@ export default function Admin() {
   const { theme } = useThemeStore()
   const queryClient = useQueryClient()
   
-  // Navigation tab state: 'all' | 'users' | 'support' | 'maintenance' | 'broadcasts'
+  // Navigation tab state: 'all' | 'users' | 'analytics' | 'resources' | 'ai' | 'support' | 'activity' | 'maintenance' | 'broadcasts'
   const [activeTab, setActiveTab] = useState('all')
 
-  // Search and filter states
+  // Search and filter states for users
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
   
@@ -87,6 +90,30 @@ export default function Admin() {
   // Delete User Confirmation Modal state
   const [userToDelete, setUserToDelete] = useState(null)
   const [deleteError, setDeleteError] = useState('')
+
+  // Inspect User Roadmap Modal state
+  const [inspectedUserId, setInspectedUserId] = useState(null)
+
+  // Resource Management states
+  const [resourceSearch, setResourceSearch] = useState('')
+  const [resourceDiffFilter, setResourceDiffFilter] = useState('ALL')
+  const [resourceTypeFilter, setResourceTypeFilter] = useState('ALL')
+  const [addResourceModalOpen, setAddResourceModalOpen] = useState(false)
+  const [newResourceForm, setNewResourceForm] = useState({
+    title: '',
+    description: '',
+    provider: 'PathMind Academy',
+    type: 'course',
+    difficulty: 'beginner',
+    duration_hours: 8,
+    url: 'https://learn.pathmind.ai',
+    skills_taught: '',
+    tags: '',
+  })
+
+  // AI Ping Test State
+  const [pingResult, setPingResult] = useState(null)
+  const [pingLoading, setPingLoading] = useState(false)
 
   // Global Notification Toast state
   const [toastMsg, setToastMsg] = useState('')
@@ -154,6 +181,43 @@ export default function Admin() {
     queryFn: () => adminApi.getSupportTicketDetail(selectedTicketForAdmin.id).then(r => r.data),
     enabled: !!selectedTicketForAdmin,
     refetchInterval: 4000,
+  })
+
+  // 7. Fetch Inspected User Roadmap
+  const { data: inspectedRoadmapData, isLoading: inspectedRoadmapLoading } = useQuery({
+    queryKey: ['adminUserRoadmap', inspectedUserId],
+    queryFn: () => adminApi.getUserRoadmap(inspectedUserId).then(r => r.data),
+    enabled: !!inspectedUserId,
+  })
+
+  // 8. Fetch AI Telemetry
+  const { data: aiTelemetry } = useQuery({
+    queryKey: ['adminAiTelemetry'],
+    queryFn: () => adminApi.getAiTelemetry().then(r => r.data),
+    refetchInterval: 30000,
+  })
+
+  // 9. Fetch Analytics
+  const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
+    queryKey: ['adminAnalytics'],
+    queryFn: () => adminApi.getAnalytics().then(r => r.data),
+  })
+
+  // 10. Fetch Resources
+  const { data: resourcesData, isLoading: resourcesLoading } = useQuery({
+    queryKey: ['adminResources', resourceSearch, resourceDiffFilter, resourceTypeFilter],
+    queryFn: () => adminApi.getResources({
+      query: resourceSearch || undefined,
+      difficulty: resourceDiffFilter !== 'ALL' ? resourceDiffFilter : undefined,
+      type_filter: resourceTypeFilter !== 'ALL' ? resourceTypeFilter : undefined,
+    }).then(r => r.data),
+  })
+
+  // 11. Fetch Activity Stream
+  const { data: activityStream = [], isLoading: activityLoading } = useQuery({
+    queryKey: ['adminActivityStream'],
+    queryFn: () => adminApi.getActivityStream().then(r => r.data),
+    refetchInterval: 15000,
   })
 
   // Mutations
@@ -228,6 +292,7 @@ export default function Admin() {
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      queryClient.invalidateQueries({ queryKey: ['adminActivityStream'] })
       setUserToDelete(null)
       setDeleteError('')
       triggerToast(res.data?.message || 'User account and all related records deleted permanently.')
@@ -239,11 +304,48 @@ export default function Admin() {
     },
   })
 
+  // Create Resource Mutation
+  const createResourceMutation = useMutation({
+    mutationFn: (payload) => adminApi.createResource(payload),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['adminResources'] })
+      setAddResourceModalOpen(false)
+      setNewResourceForm({
+        title: '',
+        description: '',
+        provider: 'PathMind Academy',
+        type: 'course',
+        difficulty: 'beginner',
+        duration_hours: 8,
+        url: 'https://learn.pathmind.ai',
+        skills_taught: '',
+        tags: '',
+      })
+      triggerToast(res.data?.message || 'New learning unit added to curriculum catalog.')
+    },
+    onError: (err) => {
+      triggerToast(err.response?.data?.detail || 'Failed to create resource.', 'error')
+    }
+  })
+
+  // Delete Resource Mutation
+  const deleteResourceMutation = useMutation({
+    mutationFn: (id) => adminApi.deleteResource(id),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['adminResources'] })
+      triggerToast(res.data?.message || 'Resource deleted from catalog.')
+    },
+    onError: (err) => {
+      triggerToast(err.response?.data?.detail || 'Failed to delete resource.', 'error')
+    }
+  })
+
   const createNotifMutation = useMutation({
     mutationFn: (data) => adminApi.createNotification(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminNotifications'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      queryClient.invalidateQueries({ queryKey: ['adminActivityStream'] })
       setNotifTitle('')
       setNotifMsg('')
       setNotifSuccessMsg('Announcement broadcasted successfully.')
@@ -271,6 +373,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['adminSupportTicketDetail', selectedTicketForAdmin?.id] })
       queryClient.invalidateQueries({ queryKey: ['adminSupportTickets'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      queryClient.invalidateQueries({ queryKey: ['adminActivityStream'] })
       setAdminReplyInput('')
       setSupportSuccessToast('Reply dispatched directly to user window.')
       triggerToast('Support reply sent to learner.')
@@ -331,6 +434,62 @@ export default function Admin() {
     })
   }
 
+  // Handle Live AI Ping
+  const handleTestAiPing = async () => {
+    setPingLoading(true)
+    try {
+      const res = await adminApi.pingAi()
+      setPingResult(res.data)
+      triggerToast(`AI Ping returned in ${res.data.latency_ms}ms`)
+    } catch (err) {
+      setPingResult({ status: 'error', error_detail: err.message })
+      triggerToast('AI Ping failed to connect.', 'error')
+    } finally {
+      setPingLoading(false)
+    }
+  }
+
+  // 1-Click Export CSV
+  const handleExportCSV = () => {
+    if (!users.length) return
+    const headers = ["ID", "Name", "Email", "Role", "Status", "Goal", "ExperienceLevel", "SkillsCount", "ProgressPct", "CreatedDate"]
+    const rows = users.map(u => [
+      u.id,
+      `"${(u.name || '').replace(/"/g, '""')}"`,
+      `"${(u.email || '').replace(/"/g, '""')}"`,
+      u.role || 'user',
+      u.is_active ? 'Active' : 'Suspended',
+      `"${(u.goal_title || 'No Goal').replace(/"/g, '""')}"`,
+      u.experience_level || 'beginner',
+      u.skills_count || 0,
+      `${Math.round((u.overall_progress || 0) * 100)}%`,
+      u.created_at ? new Date(u.created_at).toISOString().split('T')[0] : ''
+    ])
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `pathmind_learners_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    triggerToast("Learner records exported to CSV successfully.")
+  }
+
+  // 1-Click Export JSON
+  const handleExportJSON = () => {
+    if (!users.length) return
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(users, null, 2))
+    const link = document.createElement('a')
+    link.setAttribute("href", dataStr)
+    link.setAttribute("download", `pathmind_learners_${new Date().toISOString().split('T')[0]}.json`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    triggerToast("Learner records exported to JSON successfully.")
+  }
+
   // Filtered users
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
@@ -359,8 +518,8 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── Friendly Hero Greeting (Same theme as Dashboard) ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* ── Friendly Hero Greeting (Dashboard Theme) ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-bold uppercase tracking-wider mb-1">
             <Shield className="w-3.5 h-3.5" /> Superadmin Command Console
@@ -369,51 +528,68 @@ export default function Admin() {
             Hi {firstName},
           </h1>
           <p className="text-base sm:text-lg text-slate-500 dark:text-slate-400 font-medium">
-            Supervise platform learners, handle queries, and orchestrate system security.
+            Supervise platform learners, monitor AI telemetry, and orchestrate curriculum assets.
           </p>
         </div>
 
-        <button
-          onClick={() => queryClient.invalidateQueries()}
-          className="btn-secondary self-start sm:self-auto rounded-2xl text-xs py-2.5 px-4 flex items-center gap-2 shadow-subtle hover:shadow-card transition-all"
-        >
-          <RefreshCw className="w-4 h-4 text-brand-600 dark:text-brand-400" /> Refresh Data
-        </button>
+        {/* Action Buttons: Export CSV / JSON & Refresh */}
+        <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto">
+          <button
+            onClick={handleExportCSV}
+            className="btn-secondary rounded-2xl text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-subtle hover:border-emerald-400 transition-all text-emerald-700 dark:text-emerald-300"
+            title="Download formatted CSV spreadsheet of all registered learners"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" /> Export CSV
+          </button>
+          <button
+            onClick={handleExportJSON}
+            className="btn-secondary rounded-2xl text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-subtle hover:border-sky-400 transition-all text-sky-700 dark:text-sky-300"
+            title="Download JSON export"
+          >
+            <FileJson className="w-3.5 h-3.5" /> Export JSON
+          </button>
+          <button
+            onClick={() => queryClient.invalidateQueries()}
+            className="btn-secondary rounded-2xl text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-subtle hover:shadow-card transition-all"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" /> Refresh
+          </button>
+        </div>
       </div>
 
-      {/* ── 4 Big Pastel Touch Tiles (Same Design as Dashboard Quick Actions) ── */}
+      {/* ── 5 Big Pastel Touch Tiles ── */}
       <div className="space-y-3">
         <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-1">
           Platform Overview & Control Tiles
         </p>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           
           {/* Tile 1: Registered Learners (Sky Blue) */}
           <div
             onClick={() => setActiveTab('users')}
-            className={`p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
+            className={`p-4 sm:p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
               activeTab === 'users'
                 ? 'bg-sky-100/80 dark:bg-sky-950/60 border-sky-400 dark:border-sky-600 ring-2 ring-sky-400/40 shadow-card'
                 : 'bg-sky-50 dark:bg-sky-950/30 border-sky-200/80 dark:border-sky-800/50 hover:border-sky-400 dark:hover:border-sky-600 hover:shadow-card'
             }`}
           >
             <div className="flex items-center justify-between">
-              <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-sky-600 dark:text-sky-400 shadow-subtle">
-                <Users className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-sky-600 dark:text-sky-400 shadow-subtle">
+                <Users className="w-4 h-4" />
               </div>
               <span className="text-[10px] font-mono font-bold uppercase text-sky-700 dark:text-sky-300 bg-sky-200/60 dark:bg-sky-900/60 px-2 py-0.5 rounded-lg">
                 Directory
               </span>
             </div>
             <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-extrabold font-mono text-slate-900 dark:text-white">
                   {usersLoading ? '…' : users.length}
                 </span>
                 <span className="text-xs text-sky-700 dark:text-sky-300 font-semibold">Learners</span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                 {activeLearnersCount} active accounts
               </p>
             </div>
@@ -422,95 +598,127 @@ export default function Admin() {
           {/* Tile 2: Support Desk Queries (Rose) */}
           <div
             onClick={() => setActiveTab('support')}
-            className={`p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
+            className={`p-4 sm:p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
               activeTab === 'support'
                 ? 'bg-rose-100/80 dark:bg-rose-950/60 border-rose-400 dark:border-rose-600 ring-2 ring-rose-400/40 shadow-card'
                 : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-800/50 hover:border-rose-400 dark:hover:border-rose-600 hover:shadow-card'
             }`}
           >
             <div className="flex items-center justify-between">
-              <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-rose-600 dark:text-rose-400 shadow-subtle">
-                <LifeBuoy className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-rose-600 dark:text-rose-400 shadow-subtle">
+                <LifeBuoy className="w-4 h-4" />
               </div>
               {stats?.open_tickets > 0 && (
-                <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-rose-700 dark:text-rose-300 bg-rose-200/60 dark:bg-rose-900/60 px-2 py-0.5 rounded-lg">
+                <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-rose-700 dark:text-rose-300 bg-rose-200/60 dark:bg-rose-900/60 px-1.5 py-0.5 rounded-lg">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> Urgent
                 </span>
               )}
             </div>
             <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-extrabold font-mono text-slate-900 dark:text-white">
                   {stats?.open_tickets ?? 0}
                 </span>
                 <span className="text-xs text-rose-700 dark:text-rose-300 font-semibold">Open Queries</span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                 {supportTickets.length} total tickets
               </p>
             </div>
           </div>
 
-          {/* Tile 3: Active Roadmaps (Emerald / Mint) */}
+          {/* Tile 3: Platform Analytics (Emerald) */}
           <div
-            onClick={() => setActiveTab('users')}
-            className="p-5 rounded-3xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-card cursor-pointer transition-all duration-150 flex flex-col justify-between h-36"
+            onClick={() => setActiveTab('analytics')}
+            className={`p-4 sm:p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
+              activeTab === 'analytics'
+                ? 'bg-emerald-100/80 dark:bg-emerald-950/60 border-emerald-400 dark:border-emerald-600 ring-2 ring-emerald-400/40 shadow-card'
+                : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-card'
+            }`}
           >
             <div className="flex items-center justify-between">
-              <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-subtle">
-                <Activity className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-subtle">
+                <BarChart3 className="w-4 h-4" />
               </div>
               <span className="text-[10px] font-mono font-bold uppercase text-emerald-700 dark:text-emerald-300 bg-emerald-200/60 dark:bg-emerald-900/60 px-2 py-0.5 rounded-lg">
-                Adaptive DAG
+                Insights
               </span>
             </div>
             <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-white">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-extrabold font-mono text-slate-900 dark:text-white">
                   {stats?.active_paths ?? '…'}
                 </span>
                 <span className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold">Active Paths</span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Personalized curricula running
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Goal & Skill breakdown
               </p>
             </div>
           </div>
 
-          {/* Tile 4: System Lockdown / Maintenance (Amber / Purple) */}
+          {/* Tile 4: AI Telemetry & Engine (Violet) */}
           <div
-            onClick={() => setActiveTab('maintenance')}
-            className={`p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
-              settings?.maintenance_mode
-                ? 'bg-amber-100/90 dark:bg-amber-950/60 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/40 shadow-card'
+            onClick={() => setActiveTab('ai')}
+            className={`p-4 sm:p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
+              activeTab === 'ai'
+                ? 'bg-purple-100/80 dark:bg-purple-950/60 border-purple-400 dark:border-purple-600 ring-2 ring-purple-400/40 shadow-card'
                 : 'bg-purple-50 dark:bg-purple-950/30 border-purple-200/80 dark:border-purple-800/50 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-card'
             }`}
           >
             <div className="flex items-center justify-between">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-subtle ${
+              <div className="w-9 h-9 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-purple-600 dark:text-purple-400 shadow-subtle">
+                <Zap className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-mono font-bold uppercase text-purple-700 dark:text-purple-300 bg-purple-200/60 dark:bg-purple-900/60 px-2 py-0.5 rounded-lg">
+                Gemini
+              </span>
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-bold text-slate-900 dark:text-white text-sm">AI Engine Live</span>
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Test latency & telemetry
+              </p>
+            </div>
+          </div>
+
+          {/* Tile 5: Maintenance Lockdown (Amber) */}
+          <div
+            onClick={() => setActiveTab('maintenance')}
+            className={`p-4 sm:p-5 rounded-3xl border cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 ${
+              settings?.maintenance_mode
+                ? 'bg-amber-100/90 dark:bg-amber-950/60 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/40 shadow-card'
+                : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200/80 dark:border-amber-800/50 hover:border-amber-400 dark:hover:border-amber-600 hover:shadow-card'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shadow-subtle ${
                 settings?.maintenance_mode
                   ? 'bg-amber-500 text-white'
-                  : 'bg-white dark:bg-darkBg-card text-purple-600 dark:text-purple-400'
+                  : 'bg-white dark:bg-darkBg-card text-amber-600 dark:text-amber-400'
               }`}>
-                <Wrench className="w-5 h-5" />
+                <Wrench className="w-4 h-4" />
               </div>
               <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-lg ${
                 settings?.maintenance_mode
                   ? 'bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200'
-                  : 'bg-purple-200/60 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'
+                  : 'bg-amber-200/60 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300'
               }`}>
                 {settings?.maintenance_mode ? 'Locked' : 'Live'}
               </span>
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${settings?.maintenance_mode ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
-                  {settings?.maintenance_mode ? 'Maintenance On' : 'Systems Operational'}
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${settings?.maintenance_mode ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+                  {settings?.maintenance_mode ? 'Maintenance On' : 'Systems Ready'}
                 </h3>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {settings?.maintenance_mode ? 'Displaying maintenance screen' : 'Full student access'}
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                {settings?.maintenance_mode ? 'Lockdown screen active' : 'Full student access'}
               </p>
             </div>
           </div>
@@ -518,137 +726,103 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* ── Segmented Tab Selector ── */}
+      {/* ── Segmented Tab Selector Bar ── */}
       <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-darkBg-border pb-4 overflow-x-auto gap-2">
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-200/60 dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border text-xs font-bold">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-200/60 dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border text-xs font-bold flex-wrap sm:flex-nowrap">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
               activeTab === 'all'
                 ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" /> All Modules
+            <Layers className="w-3.5 h-3.5" /> All
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
               activeTab === 'users'
                 ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Users className="w-3.5 h-3.5" /> Learners & Passwords ({users.length})
+            <Users className="w-3.5 h-3.5" /> Learners ({users.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === 'analytics'
+                ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5" /> Analytics
+          </button>
+          <button
+            onClick={() => setActiveTab('resources')}
+            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === 'resources'
+                ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" /> Resources ({resourcesData?.total ?? 0})
+          </button>
+          <button
+            onClick={() => setActiveTab('ai')}
+            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === 'ai'
+                ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5" /> AI Telemetry
           </button>
           <button
             onClick={() => setActiveTab('support')}
-            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
               activeTab === 'support'
                 ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <LifeBuoy className="w-3.5 h-3.5" /> Support Queries ({stats?.open_tickets ?? 0})
+            <LifeBuoy className="w-3.5 h-3.5" /> Support ({stats?.open_tickets ?? 0})
+          </button>
+          <button
+            onClick={() => setActiveTab('activity')}
+            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+              activeTab === 'activity'
+                ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <History className="w-3.5 h-3.5" /> Live Stream
           </button>
           <button
             onClick={() => setActiveTab('maintenance')}
-            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
               activeTab === 'maintenance'
                 ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Wrench className="w-3.5 h-3.5" /> Maintenance Mode
+            <Wrench className="w-3.5 h-3.5" /> Maintenance
           </button>
           <button
             onClick={() => setActiveTab('broadcasts')}
-            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
               activeTab === 'broadcasts'
                 ? 'bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Megaphone className="w-3.5 h-3.5" /> Broadcasts ({notifications.length})
+            <Megaphone className="w-3.5 h-3.5" /> Broadcasts
           </button>
         </div>
       </div>
 
-      {/* ── SECTION 1: GLOBAL MAINTENANCE LOCKDOWN ── */}
-      {(activeTab === 'all' || activeTab === 'maintenance') && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-darkBg-border pb-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-subtle">
-                  <Wrench className="w-4 h-4" />
-                </div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Global Maintenance Lockdown</h2>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                When enabled, visitors will see the dedicated maintenance page while superadmins keep access.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3 self-start sm:self-auto font-mono text-xs">
-              {settings?.maintenance_mode && (
-                <button
-                  onClick={() => setMaintModalOpen(true)}
-                  className="btn-secondary text-xs px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300"
-                >
-                  Change Preset
-                </button>
-              )}
-
-              <span className={`px-2.5 py-1 rounded-xl font-bold ${
-                settings?.maintenance_mode
-                  ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300'
-                  : 'bg-slate-100 dark:bg-darkBg-cardSub text-slate-600 dark:text-slate-400'
-              }`}>
-                {settings?.maintenance_mode ? 'STATUS: ACTIVE' : 'STATUS: DISABLED'}
-              </span>
-
-              <button
-                onClick={handleMaintenanceToggle}
-                disabled={maintenanceMutation.isPending}
-                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${
-                  settings?.maintenance_mode ? 'bg-amber-500' : 'bg-slate-300 dark:bg-darkBg-cardSub'
-                }`}
-              >
-                <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
-                    settings?.maintenance_mode ? 'translate-x-8' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-
-          {settings?.maintenance_mode ? (
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-bold text-sm">Active Maintenance Announcement Broadcasted to Users:</p>
-                <p className="leading-relaxed font-mono text-xs text-amber-800 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-900/30 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/60">
-                  "{settings?.maintenance_message}"
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub/50 border border-slate-200/80 dark:border-darkBg-border text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
-              <span>Platform is fully live and all student endpoints are processing requests smoothly.</span>
-              <button
-                onClick={() => setMaintModalOpen(true)}
-                className="text-brand-600 dark:text-brand-400 font-bold hover:underline"
-              >
-                Preview 6 maintenance presets →
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── SECTION 2: USER DIRECTORY & PASSWORDS ── */}
+      {/* ── TAB CONTENT: 1. LEARNER DIRECTORY & PASSWORDS ── */}
       {(activeTab === 'all' || activeTab === 'users') && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -658,7 +832,7 @@ export default function Admin() {
                 Learner Directory & Passwords
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                Click a user's name to edit inline, reveal plain passwords, update passwords manually, or delete accounts safely.
+                Inspect live student curriculums, edit names, reveal passwords, or delete accounts safely.
               </p>
             </div>
 
@@ -891,8 +1065,17 @@ export default function Admin() {
 
                           {/* Actions */}
                           <td className="px-5 py-4 text-right">
-                            <div className="inline-flex items-center gap-2">
+                            <div className="inline-flex items-center gap-1.5">
                               
+                              {/* Inspect Student Roadmap Button */}
+                              <button
+                                onClick={() => setInspectedUserId(u.id)}
+                                className="p-2 rounded-xl text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/50 border border-sky-200 dark:border-sky-800/80 transition-colors shadow-subtle"
+                                title="Inspect Student Roadmap & Skills"
+                              >
+                                <Compass className="w-3.5 h-3.5" />
+                              </button>
+
                               {/* Reset Password Button */}
                               <button
                                 onClick={() => {
@@ -933,7 +1116,420 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── SECTION 3: SUPPORT HELPDESK ── */}
+      {/* ── TAB CONTENT: 2. PLATFORM ANALYTICS ── */}
+      {(activeTab === 'all' || activeTab === 'analytics') && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <BarChart3 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              Platform Analytics & Skill Insights
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              Aggregate distributions across career goals, experience tiers, skill competencies, and completion metrics.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            
+            {/* Goal Popularity Card */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-3">
+                <div className="flex items-center gap-2">
+                  <Compass className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">Career Goal Distribution</h3>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">Popularity</span>
+              </div>
+              <div className="space-y-3">
+                {analyticsData?.goals_distribution?.length ? (
+                  analyticsData.goals_distribution.map((g, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 line-clamp-1">{g.goal}</span>
+                        <span className="font-mono text-slate-500 dark:text-slate-400">{g.count} learners</span>
+                      </div>
+                      <div className="h-1.5 bg-slate-100 dark:bg-darkBg-border rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-brand-600 dark:bg-brand-500 rounded-full"
+                          style={{ width: `${Math.min(100, (g.count / (users.length || 1)) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 py-4 text-center">No career goals set yet.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Experience & Style Splits */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-5">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">Experience Level Tiers</h3>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {analyticsData?.experience_distribution?.map((e, i) => (
+                    <div key={i} className="p-3 rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub/50 text-center space-y-0.5 border border-slate-200/60 dark:border-darkBg-border">
+                      <p className="text-lg font-bold font-mono text-slate-900 dark:text-white">{e.count}</p>
+                      <p className="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">{e.level}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                  Learning Style Preferences
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {analyticsData?.styles_distribution?.map((s, i) => (
+                    <span key={i} className="px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-bold border border-purple-200 dark:border-purple-800">
+                      {s.style}: {s.count}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Buckets & Ticket Resolution */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-3">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">Curriculum Progress Buckets</h3>
+                </div>
+              </div>
+              <div className="space-y-2.5">
+                {analyticsData?.progress_distribution?.map((b, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs p-2 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub/40">
+                    <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{b.bucket} Finished</span>
+                    <span className="px-2 py-0.5 rounded-lg bg-white dark:bg-darkBg-card text-brand-600 dark:text-brand-400 font-bold border border-slate-200 dark:border-darkBg-border">
+                      {b.count} paths
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="pt-2 border-t border-slate-100 dark:border-darkBg-border flex items-center justify-between text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold">Support Resolution Rate</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                  {analyticsData?.tickets_metrics?.resolution_rate_pct ?? 100}%
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Top 10 Tracked Skills Chips */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-3">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <Flame className="w-4 h-4 text-amber-500" /> Most Tracked Learner Skills Across System
+            </h3>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {analyticsData?.top_skills?.map((sk, i) => (
+                <div key={i} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-darkBg-cardSub text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-darkBg-border text-xs font-semibold">
+                  <span>{sk.skill}</span>
+                  <span className="w-5 h-5 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center text-[10px] font-bold">
+                    {sk.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB CONTENT: 3. RESOURCE & CURRICULUM MANAGER ── */}
+      {(activeTab === 'all' || activeTab === 'resources') && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                Curriculum Catalog & Learning Resources
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Browse, search, and add custom tutorials, video courses, and hands-on projects directly to the AI generator catalog.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setAddResourceModalOpen(true)}
+              className="btn-primary self-start sm:self-auto rounded-2xl text-xs py-2 px-4 flex items-center gap-1.5 shadow-card"
+            >
+              <Plus className="w-4 h-4" /> Add Learning Unit
+            </button>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search tutorials, skills, tags..."
+                value={resourceSearch}
+                onChange={(e) => setResourceSearch(e.target.value)}
+                className="w-64 pl-9 pr-4 py-2 text-xs rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-subtle"
+              />
+            </div>
+
+            <select
+              value={resourceDiffFilter}
+              onChange={(e) => setResourceDiffFilter(e.target.value)}
+              className="px-3 py-2 rounded-2xl text-xs font-semibold bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white focus:outline-none"
+            >
+              <option value="ALL">All Difficulties</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+
+            <select
+              value={resourceTypeFilter}
+              onChange={(e) => setResourceTypeFilter(e.target.value)}
+              className="px-3 py-2 rounded-2xl text-xs font-semibold bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white focus:outline-none"
+            >
+              <option value="ALL">All Types</option>
+              <option value="course">Course</option>
+              <option value="project">Project</option>
+              <option value="assessment">Assessment</option>
+            </select>
+          </div>
+
+          {/* Resources Table */}
+          <div className="rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card overflow-hidden">
+            <div className="overflow-x-auto max-h-[520px]">
+              <table className="w-full text-left text-xs">
+                <thead className="sticky top-0 bg-slate-50 dark:bg-darkBg-cardSub border-b border-slate-200/80 dark:border-darkBg-border text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider z-10">
+                  <tr>
+                    <th className="px-5 py-3.5">ID & Title</th>
+                    <th className="px-5 py-3.5">Type & Level</th>
+                    <th className="px-5 py-3.5">Duration</th>
+                    <th className="px-5 py-3.5">Skills Taught</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-darkBg-border">
+                  {resourcesLoading ? (
+                    <tr>
+                      <td colSpan="5" className="p-8 text-center text-slate-400 font-medium">Loading curriculum catalog…</td>
+                    </tr>
+                  ) : resourcesData?.resources?.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="p-8 text-center text-slate-400 font-medium">
+                        No resources matched your filter.
+                      </td>
+                    </tr>
+                  ) : (
+                    resourcesData?.resources?.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50/70 dark:hover:bg-darkBg-cardSub/40 transition-colors">
+                        <td className="px-5 py-3.5 max-w-sm">
+                          <span className="font-mono text-[10px] text-slate-400 block">{r.id} • {r.provider}</span>
+                          <p className="font-bold text-slate-900 dark:text-white line-clamp-1">{r.title}</p>
+                          <p className="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1 mt-0.5">{r.description}</p>
+                        </td>
+                        <td className="px-5 py-3.5 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase mr-1.5 ${
+                            r.type === 'project' ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300' : 'bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400'
+                          }`}>
+                            {r.type}
+                          </span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 capitalize">{r.difficulty}</span>
+                        </td>
+                        <td className="px-5 py-3.5 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                          {r.duration_hours}h
+                        </td>
+                        <td className="px-5 py-3.5 max-w-xs">
+                          <div className="flex flex-wrap gap-1">
+                            {r.skills_taught?.slice(0, 3).map((sk, idx) => (
+                              <span key={idx} className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-darkBg-cardSub text-slate-700 dark:text-slate-300 text-[10px] font-mono">
+                                {sk}
+                              </span>
+                            ))}
+                            {r.skills_taught?.length > 3 && (
+                              <span className="text-[10px] text-slate-400 font-mono">+{r.skills_taught.length - 3}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5">
+                            {r.url && (
+                              <a
+                                href={r.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 rounded-xl text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-darkBg-cardSub"
+                                title="Open Resource URL"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => {
+                                if (confirm(`Remove resource "${r.title}" from platform catalog?`)) {
+                                  deleteResourceMutation.mutate(r.id)
+                                }
+                              }}
+                              className="p-1.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                              title="Delete from Catalog"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB CONTENT: 4. AI ENGINE HEALTH & TELEMETRY ── */}
+      {(activeTab === 'all' || activeTab === 'ai') && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Zap className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                AI Recommendation Engine & Gemini Telemetry
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Real-time connection monitor, cascade fallback models, safety directives, and live latency benchmark ping.
+              </p>
+            </div>
+
+            <button
+              onClick={handleTestAiPing}
+              disabled={pingLoading}
+              className="btn-primary self-start sm:self-auto rounded-2xl text-xs py-2 px-4 flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white shadow-card"
+            >
+              <Radio className={`w-4 h-4 ${pingLoading ? 'animate-spin' : ''}`} />
+              {pingLoading ? 'Testing AI Latency…' : 'Ping Gemini AI Engine'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* Model & Key Card */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-slate-400">Primary Generative Model</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+              <p className="text-lg font-bold font-mono text-purple-600 dark:text-purple-400">
+                {aiTelemetry?.primary_model || 'gemini-3.5-flash-lite'}
+              </p>
+              <div className="pt-2 border-t border-slate-100 dark:border-darkBg-border text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                <p>API Key: <strong className="font-mono text-slate-700 dark:text-slate-300">{aiTelemetry?.masked_key}</strong></p>
+                <p>Status: <strong className="text-emerald-600 dark:text-emerald-400">{aiTelemetry?.system_status}</strong></p>
+              </div>
+            </div>
+
+            {/* Fallback Cascades Card */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-3">
+              <span className="text-xs font-bold uppercase text-slate-400">Resilient Model Cascade</span>
+              <div className="space-y-1.5">
+                {aiTelemetry?.fallback_models?.map((m, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs font-mono text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-darkBg-cardSub px-2.5 py-1 rounded-xl">
+                    <span>{m}</span>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Ready</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Live Ping Benchmark Result */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-3">
+              <span className="text-xs font-bold uppercase text-slate-400">Live Health Benchmark</span>
+              {pingResult ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
+                      {pingResult.latency_ms} ms
+                    </span>
+                    <span className="px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
+                      {pingResult.latency_ms < 900 ? '⚡ Ultra Fast' : '🟢 Normal'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-mono text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-darkBg-cardSub p-2.5 rounded-xl border border-slate-200/60 dark:border-darkBg-border">
+                    "{pingResult.response || pingResult.error_detail}"
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    Last pinged: {new Date(pingResult.timestamp).toLocaleTimeString()}
+                  </p>
+                </div>
+              ) : (
+                <div className="py-4 text-center text-xs text-slate-400 space-y-2">
+                  <Gauge className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
+                  <p>Click "Ping Gemini AI Engine" to test live latency benchmark.</p>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB CONTENT: 5. REAL-TIME SYSTEM ACTIVITY STREAM ── */}
+      {(activeTab === 'all' || activeTab === 'activity') && (
+        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-4">
+            <div className="flex items-center gap-2">
+              <History className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">Real-Time System Audit Stream</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Live feed of student registrations, AI synthesis runs, and ticket interactions</p>
+              </div>
+            </div>
+            <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live Polling
+            </span>
+          </div>
+
+          <div className="divide-y divide-slate-100 dark:divide-darkBg-border max-h-96 overflow-y-auto">
+            {activityLoading ? (
+              <p className="text-xs text-slate-400 py-8 text-center font-medium">Loading live activity feed…</p>
+            ) : activityStream.length === 0 ? (
+              <p className="text-xs text-slate-400 py-8 text-center font-medium">No recorded events in log yet.</p>
+            ) : (
+              activityStream.map((evt) => (
+                <div key={evt.id} className="py-3 flex items-start gap-3 hover:bg-slate-50/50 dark:hover:bg-darkBg-cardSub/30 px-2 rounded-xl transition-colors">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    evt.type === 'signup' ? 'bg-sky-100 dark:bg-sky-950 text-sky-600' :
+                    evt.type === 'path_generated' ? 'bg-purple-100 dark:bg-purple-950 text-purple-600' :
+                    evt.type === 'assessment' ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600' :
+                    'bg-rose-100 dark:bg-rose-950 text-rose-600'
+                  }`}>
+                    {evt.type === 'signup' ? <Users className="w-4 h-4" /> :
+                     evt.type === 'path_generated' ? <Compass className="w-4 h-4" /> :
+                     evt.type === 'assessment' ? <CheckCircle className="w-4 h-4" /> :
+                     <LifeBuoy className="w-4 h-4" />}
+                  </div>
+                  <div className="flex-1 space-y-0.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-xs text-slate-900 dark:text-white">{evt.title}</h4>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(evt.timestamp).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300">{evt.description}</p>
+                    <span className="text-[10px] text-slate-400 font-mono block">Actor: {evt.actor}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB CONTENT: 6. SUPPORT HELPDESK ── */}
       {(activeTab === 'all' || activeTab === 'support') && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1049,8 +1645,6 @@ export default function Admin() {
                           {/* Actions */}
                           <td className="px-5 py-4 text-right">
                             <div className="inline-flex items-center gap-1.5">
-                              
-                              {/* Open / Reply Thread */}
                               <button
                                 onClick={() => setSelectedTicketForAdmin(t)}
                                 className="btn-primary text-xs py-1.5 px-3 rounded-xl flex items-center gap-1 shadow-subtle"
@@ -1058,7 +1652,6 @@ export default function Admin() {
                                 <MessageSquare className="w-3.5 h-3.5" /> Reply
                               </button>
 
-                              {/* Mark Resolved directly */}
                               {!isResolved && (
                                 <button
                                   onClick={() => updateTicketStatusMutation.mutate({ ticketId: t.id, status: 'resolved' })}
@@ -1069,7 +1662,6 @@ export default function Admin() {
                                 </button>
                               )}
 
-                              {/* Delete Ticket */}
                               <button
                                 onClick={() => {
                                   if (confirm(`Dispose and delete support ticket "${t.subject}"?`)) {
@@ -1081,7 +1673,6 @@ export default function Admin() {
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
-
                             </div>
                           </td>
 
@@ -1096,7 +1687,81 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── SECTION 4: BROADCAST ANNOUNCEMENTS ── */}
+      {/* ── TAB CONTENT: 7. MAINTENANCE LOCKDOWN ── */}
+      {(activeTab === 'all' || activeTab === 'maintenance') && (
+        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border shadow-card space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-darkBg-border pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-subtle">
+                  <Wrench className="w-4 h-4" />
+                </div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Global Maintenance Lockdown</h2>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                When enabled, visitors will see the dedicated maintenance page while superadmins keep access.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 self-start sm:self-auto font-mono text-xs">
+              {settings?.maintenance_mode && (
+                <button
+                  onClick={() => setMaintModalOpen(true)}
+                  className="btn-secondary text-xs px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300"
+                >
+                  Change Preset
+                </button>
+              )}
+
+              <span className={`px-2.5 py-1 rounded-xl font-bold ${
+                settings?.maintenance_mode
+                  ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300'
+                  : 'bg-slate-100 dark:bg-darkBg-cardSub text-slate-600 dark:text-slate-400'
+              }`}>
+                {settings?.maintenance_mode ? 'STATUS: ACTIVE' : 'STATUS: DISABLED'}
+              </span>
+
+              <button
+                onClick={handleMaintenanceToggle}
+                disabled={maintenanceMutation.isPending}
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${
+                  settings?.maintenance_mode ? 'bg-amber-500' : 'bg-slate-300 dark:bg-darkBg-cardSub'
+                }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-md ${
+                    settings?.maintenance_mode ? 'translate-x-8' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {settings?.maintenance_mode ? (
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold text-sm">Active Maintenance Announcement Broadcasted to Users:</p>
+                <p className="leading-relaxed font-mono text-xs text-amber-800 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-900/30 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/60">
+                  "{settings?.maintenance_message}"
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub/50 border border-slate-200/80 dark:border-darkBg-border text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
+              <span>Platform is fully live and all student endpoints are processing requests smoothly.</span>
+              <button
+                onClick={() => setMaintModalOpen(true)}
+                className="text-brand-600 dark:text-brand-400 font-bold hover:underline"
+              >
+                Preview 6 maintenance presets →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB CONTENT: 8. BROADCAST ANNOUNCEMENTS ── */}
       {(activeTab === 'all' || activeTab === 'broadcasts') && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
@@ -1226,7 +1891,279 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── MODAL 1: DELETE USER CONFIRMATION MODAL (THEMED & BULLETPROOF) ── */}
+      {/* ── MODAL: INSPECT LEARNER ROADMAP MODAL ── */}
+      {inspectedUserId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                  <Compass className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-slate-900 dark:text-white">
+                    Learner Roadmap Inspector
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    {inspectedRoadmapData?.user?.name} ({inspectedRoadmapData?.user?.email})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setInspectedUserId(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {inspectedRoadmapLoading ? (
+              <p className="text-xs text-slate-400 py-12 text-center font-medium">Loading learner curriculum graph…</p>
+            ) : inspectedRoadmapData?.roadmap ? (
+              <div className="space-y-6">
+                
+                {/* Path Overview Strip */}
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub/50 border border-slate-200/80 dark:border-darkBg-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase text-brand-600 dark:text-brand-400">Target Goal</span>
+                    <h4 className="font-bold text-base text-slate-900 dark:text-white mt-0.5">
+                      {inspectedRoadmapData.profile?.goal_title}
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
+                      {inspectedRoadmapData.profile?.experience_level} • {inspectedRoadmapData.profile?.hours_per_week}h/week • {inspectedRoadmapData.profile?.learning_style} style
+                    </p>
+                  </div>
+                  <div className="text-right font-mono self-start sm:self-auto">
+                    <span className="text-xs text-slate-400">Overall Completion</span>
+                    <p className="text-xl font-bold text-brand-600 dark:text-brand-400">
+                      {Math.round((inspectedRoadmapData.roadmap.overall_progress || 0) * 100)}%
+                    </p>
+                  </div>
+                </div>
+
+                {/* Skills Assessed */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Assessed Skills ({inspectedRoadmapData.skills?.length})</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {inspectedRoadmapData.skills?.map((sk, i) => (
+                      <span key={i} className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-darkBg-cardSub text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-darkBg-border text-xs font-mono">
+                        {sk.skill_id}: <strong>{Math.round(sk.level * 100)}%</strong>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Weekly Curriculum Phases */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Curriculum Phases & Milestones</h4>
+                  {inspectedRoadmapData.roadmap.phases?.map((p) => (
+                    <div key={p.id} className="p-4 rounded-2xl bg-white dark:bg-darkBg-cardSub/40 border border-slate-200/80 dark:border-darkBg-border space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 text-[10px] font-bold font-mono">
+                            Phase #{p.phase_number} (Weeks {p.week_start}-{p.week_end})
+                          </span>
+                          <h5 className="font-bold text-sm text-slate-900 dark:text-white">{p.title}</h5>
+                        </div>
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-slate-100 dark:bg-darkBg-border text-slate-600 dark:text-slate-300">
+                          {p.status}
+                        </span>
+                      </div>
+
+                      {/* Items */}
+                      <div className="space-y-1.5 pl-2 border-l-2 border-slate-200 dark:border-darkBg-border">
+                        {p.items?.map((it) => (
+                          <div key={it.id} className="flex items-center justify-between text-xs py-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${it.status === 'completed' ? 'bg-emerald-500' : it.status === 'in_progress' ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`} />
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">{it.title}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">({it.duration_hours}h)</span>
+                            </div>
+                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${
+                              it.status === 'completed' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-darkBg-cardSub dark:text-slate-400'
+                            }`}>
+                              {it.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            ) : (
+              <div className="p-8 text-center text-slate-400 space-y-2">
+                <Compass className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
+                <p className="text-sm font-semibold">This learner has not generated an active learning path yet.</p>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-darkBg-border">
+              <button
+                onClick={() => setInspectedUserId(null)}
+                className="btn-secondary text-xs px-5 py-2.5 rounded-2xl"
+              >
+                Close Inspector
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: ADD RESOURCE MODAL ── */}
+      {addResourceModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-xl rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 sm:p-7 space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-3">
+              <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                <BookOpen className="w-5 h-5" />
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">Add Curriculum Learning Unit</h3>
+              </div>
+              <button
+                onClick={() => setAddResourceModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                createResourceMutation.mutate({
+                  ...newResourceForm,
+                  duration_hours: Number(newResourceForm.duration_hours) || 8,
+                  skills_taught: newResourceForm.skills_taught.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
+                  tags: newResourceForm.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean),
+                })
+              }}
+              className="space-y-3.5"
+            >
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Unit Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Distributed Systems & Raft Consensus in Go"
+                  value={newResourceForm.title}
+                  onChange={(e) => setNewResourceForm({ ...newResourceForm, title: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Description</label>
+                <textarea
+                  rows="2"
+                  required
+                  placeholder="Summary of concepts, architecture, and takeaways..."
+                  value={newResourceForm.description}
+                  onChange={(e) => setNewResourceForm({ ...newResourceForm, description: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Type</label>
+                  <select
+                    value={newResourceForm.type}
+                    onChange={(e) => setNewResourceForm({ ...newResourceForm, type: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs"
+                  >
+                    <option value="course">Course</option>
+                    <option value="project">Project</option>
+                    <option value="assessment">Assessment</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Difficulty</label>
+                  <select
+                    value={newResourceForm.difficulty}
+                    onChange={(e) => setNewResourceForm({ ...newResourceForm, difficulty: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs"
+                  >
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Duration (Hours)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newResourceForm.duration_hours}
+                    onChange={(e) => setNewResourceForm({ ...newResourceForm, duration_hours: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Provider / Platform</label>
+                  <input
+                    type="text"
+                    value={newResourceForm.provider}
+                    onChange={(e) => setNewResourceForm({ ...newResourceForm, provider: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Resource URL</label>
+                <input
+                  type="url"
+                  required
+                  placeholder="https://..."
+                  value={newResourceForm.url}
+                  onChange={(e) => setNewResourceForm({ ...newResourceForm, url: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                  Skills Taught (Comma-separated)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. distributed-systems, golang, consensus"
+                  value={newResourceForm.skills_taught}
+                  onChange={(e) => setNewResourceForm({ ...newResourceForm, skills_taught: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200 dark:border-darkBg-border text-slate-900 dark:text-white text-xs font-mono"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setAddResourceModalOpen(false)}
+                  className="btn-secondary text-xs px-4 py-2.5 rounded-2xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createResourceMutation.isPending}
+                  className="btn-primary text-xs px-5 py-2.5 rounded-2xl shadow-card"
+                >
+                  Save & Publish to AI Engine
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: DELETE USER CONFIRMATION MODAL ── */}
       {userToDelete && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95">
@@ -1298,12 +2235,11 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── MODAL 2: ADMIN SUPPORT TICKET THREAD & REPLY MODAL ── */}
+      {/* ── MODAL: SUPPORT TICKET REPLY MODAL ── */}
       {selectedTicketForAdmin && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 sm:p-7 space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
             
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-darkBg-border pb-4">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
@@ -1334,7 +2270,6 @@ export default function Admin() {
               </button>
             </div>
 
-            {/* Conversation Thread Messages */}
             <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-72">
               {detailLoading ? (
                 <p className="text-xs text-slate-400 text-center py-6 font-medium">Loading conversation…</p>
@@ -1363,12 +2298,10 @@ export default function Admin() {
               })}
             </div>
 
-            {/* Support Success Toast */}
             {supportSuccessToast && (
               <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">{supportSuccessToast}</p>
             )}
 
-            {/* Admin Reply Composer */}
             <form
               onSubmit={(e) => {
                 e.preventDefault()
@@ -1431,7 +2364,7 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── MODAL 3: 6 SELECTABLE PROFESSIONAL MAINTENANCE MODES ── */}
+      {/* ── MODAL: 6 SELECTABLE MAINTENANCE MODES ── */}
       {maintModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
@@ -1458,7 +2391,6 @@ export default function Admin() {
               </button>
             </div>
 
-            {/* 6 Selectable Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {MAINTENANCE_MODES.map((mode) => {
                 const isSelected = selectedMaintMode === mode.id
@@ -1505,7 +2437,6 @@ export default function Admin() {
               })}
             </div>
 
-            {/* Custom Edit Box */}
             <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-darkBg-border">
               <label className="block text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
                 Selected Message Preview (or Customize):
@@ -1518,7 +2449,6 @@ export default function Admin() {
               />
             </div>
 
-            {/* Modal Actions */}
             <div className="flex items-center justify-end gap-3 pt-3">
               <button
                 type="button"
@@ -1541,7 +2471,7 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── MODAL 4: PASSWORD RESET MODAL ── */}
+      {/* ── MODAL: PASSWORD RESET MODAL ── */}
       {selectedUserForPwd && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-darkBg-card border border-slate-200 dark:border-darkBg-border shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95">

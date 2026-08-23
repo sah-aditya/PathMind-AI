@@ -110,6 +110,22 @@ export const adminApi = {
     api.put(`/admin/support/tickets/${id}/status`, { status }),
   deleteSupportTicket: (id) =>
     api.delete(`/admin/support/tickets/${id}`),
+  getUserRoadmap: (userId) =>
+    api.get(`/admin/users/${userId}/roadmap`),
+  getAiTelemetry: () =>
+    api.get('/admin/ai/telemetry'),
+  pingAi: () =>
+    api.post('/admin/ai/ping'),
+  getResources: (params) =>
+    api.get('/admin/resources', { params }),
+  createResource: (data) =>
+    api.post('/admin/resources', data),
+  deleteResource: (id) =>
+    api.delete(`/admin/resources/${id}`),
+  getAnalytics: () =>
+    api.get('/admin/analytics'),
+  getActivityStream: () =>
+    api.get('/admin/activity-stream'),
 }
 
 // ── Support Tickets (Learner) ──────────────────────────────────────────────────

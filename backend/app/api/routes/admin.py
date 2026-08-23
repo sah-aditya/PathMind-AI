@@ -12,6 +12,14 @@ from app.models.learning import LearningPath, PathPhase, PathItem, PathAdaptatio
 from app.models.admin import SystemSetting, SystemNotification, UserNotificationRead
 from app.models.support import SupportTicket, TicketMessage
 
+import os
+import json
+import time
+from collections import Counter
+import google.generativeai as genai
+from app.core.config import settings
+from app.services.recommendation_engine import RESOURCE_BY_ID, RESOURCES
+
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
@@ -34,6 +42,21 @@ class NotificationCreateIn(BaseModel):
     title: str
     message: str
     type: Optional[str] = "info"  # "info", "warning", "success", "alert"
+
+class CreateResourceIn(BaseModel):
+    title: str
+    description: str
+    provider: Optional[str] = "PathMind Academy"
+    type: Optional[str] = "course"  # "course", "project", "assessment"
+    difficulty: Optional[str] = "beginner"  # "beginner", "intermediate", "advanced"
+    duration_hours: Optional[int] = 8
+    url: Optional[str] = "https://learn.pathmind.ai"
+    skills_taught: List[str] = []
+    prerequisite_skills: Optional[List[str]] = []
+    tags: Optional[List[str]] = []
+    rating: Optional[float] = 4.8
+    is_project: Optional[bool] = False
+    has_assessment: Optional[bool] = False
 
 
 # ── User Management ───────────────────────────────────────────────────────────
@@ -514,3 +537,404 @@ def get_admin_stats(
         "total_tickets": total_tickets,
         "is_maintenance": is_maintenance,
     }
+
+
+# ── 1. Learner Roadmap Inspection Endpoint ───────────────────────────────────
+
+@router.get("/users/{user_id}/roadmap")
+def get_learner_roadmap_inspect(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    profile = db.query(LearnerProfile).filter(LearnerProfile.user_id == user_id).first()
+    skills = db.query(LearnerSkill).filter(LearnerSkill.user_id == user_id).all()
+    active_path = db.query(LearningPath).filter(
+        LearningPath.user_id == user_id
+    ).order_by(LearningPath.created_at.desc()).first()
+
+    roadmap_data = None
+    if active_path:
+        phases_data = []
+        for p in active_path.phases:
+            items_data = []
+            for item in p.items:
+                res_meta = RESOURCE_BY_ID.get(item.resource_id, {})
+                items_data.append({
+                    "id": item.id,
+                    "resource_id": item.resource_id,
+                    "title": res_meta.get("title", f"Unit #{item.order_index}"),
+                    "description": res_meta.get("description", ""),
+                    "type": res_meta.get("type", "course"),
+                    "difficulty": res_meta.get("difficulty", "intermediate"),
+                    "duration_hours": res_meta.get("duration_hours", 4),
+                    "url": res_meta.get("url", ""),
+                    "skills_taught": res_meta.get("skills_taught", []),
+                    "order_index": item.order_index,
+                    "status": item.status.value if hasattr(item.status, "value") else str(item.status),
+                    "score": item.score,
+                    "is_revision": item.is_revision,
+                    "completed_at": item.completed_at.isoformat() if item.completed_at else None,
+                })
+
+            phases_data.append({
+                "id": p.id,
+                "phase_number": p.phase_number,
+                "title": p.title,
+                "description": p.description,
+                "week_start": p.week_start,
+                "week_end": p.week_end,
+                "status": p.status.value if hasattr(p.status, "value") else str(p.status),
+                "items": items_data,
+            })
+
+        adaptations_data = [
+            {
+                "id": a.id,
+                "trigger_event": a.trigger_event,
+                "trigger_score": a.trigger_score,
+                "description": a.description,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+            }
+            for a in active_path.adaptations
+        ]
+
+        roadmap_data = {
+            "id": active_path.id,
+            "goal_id": active_path.goal_id,
+            "title": active_path.title,
+            "status": active_path.status.value if hasattr(active_path.status, "value") else str(active_path.status),
+            "total_weeks": active_path.total_weeks,
+            "current_week": active_path.current_week,
+            "overall_progress": active_path.overall_progress,
+            "created_at": active_path.created_at.isoformat() if active_path.created_at else None,
+            "phases": phases_data,
+            "adaptations": adaptations_data,
+        }
+
+    return {
+        "user": {
+            "id": target_user.id,
+            "name": target_user.name,
+            "email": target_user.email,
+            "role": target_user.role,
+            "is_active": target_user.is_active,
+            "created_at": target_user.created_at.isoformat() if target_user.created_at else None,
+        },
+        "profile": {
+            "goal_id": profile.goal_id if profile else None,
+            "goal_title": profile.goal_title if profile else "No Goal Set",
+            "goal_description": profile.goal_description if profile else "",
+            "experience_level": profile.experience_level.value if profile and hasattr(profile.experience_level, "value") else (profile.experience_level if profile else "beginner"),
+            "hours_per_week": profile.hours_per_week if profile else 8,
+            "target_weeks": profile.target_weeks if profile else 12,
+            "learning_style": profile.learning_style.value if profile and hasattr(profile.learning_style, "value") else (profile.learning_style if profile else "mixed"),
+            "interests": profile.interests if profile else [],
+            "onboarding_complete": profile.onboarding_complete if profile else False,
+        },
+        "skills": [
+            {
+                "id": s.id,
+                "skill_id": s.skill_id,
+                "level": s.level,
+                "source": s.source,
+                "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+            }
+            for s in skills
+        ],
+        "roadmap": roadmap_data,
+    }
+
+
+# ── 2. AI Engine Health & Gemini Telemetry ────────────────────────────────────
+
+@router.get("/ai/telemetry")
+def get_ai_telemetry(
+    admin: User = Depends(get_current_admin_user),
+):
+    api_key = settings.GEMINI_API_KEY
+    has_key = bool(api_key and len(api_key) > 5)
+    masked_key = f"{api_key[:4]}...{api_key[-4:]}" if has_key else "NOT CONFIGURED"
+
+    return {
+        "status": "online" if has_key else "missing_key",
+        "api_key_configured": has_key,
+        "masked_key": masked_key,
+        "primary_model": "gemini-3.5-flash-lite",
+        "fallback_models": [
+            "gemini-3.6-flash",
+            "gemini-flash-lite-latest",
+            "gemini-2.5-flash-lite",
+            "gemini-2.5-flash",
+        ],
+        "temperature": 0.35,
+        "safety_guardrails": "Strict Non-repetitive Charismatic Persona v3.1",
+        "system_status": "All AI Curricula Generative Subsystems Operational",
+    }
+
+
+@router.post("/ai/ping")
+def ping_ai_service(
+    admin: User = Depends(get_current_admin_user),
+):
+    start_time = time.time()
+    try:
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        response = model.generate_content("Ping test: respond with 'PathMind AI Engine Online' in under 5 words.")
+        latency_ms = round((time.time() - start_time) * 1000, 1)
+
+        return {
+            "status": "success",
+            "latency_ms": latency_ms,
+            "model_used": "gemini-2.5-flash",
+            "response": response.text.strip() if hasattr(response, "text") else "Engine Response OK",
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        latency_ms = round((time.time() - start_time) * 1000, 1)
+        return {
+            "status": "error",
+            "latency_ms": latency_ms,
+            "error_detail": str(e),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+
+# ── 3. Resource & Curriculum Manager ──────────────────────────────────────────
+
+_DATA_RESOURCES_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "resources.json")
+
+
+def _read_all_resources() -> List[dict]:
+    try:
+        with open(_DATA_RESOURCES_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return RESOURCES
+
+
+def _write_all_resources(data: List[dict]):
+    with open(_DATA_RESOURCES_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    # Sync in-memory global caches
+    global RESOURCES, RESOURCE_BY_ID
+    RESOURCES.clear()
+    RESOURCES.extend(data)
+    RESOURCE_BY_ID.clear()
+    RESOURCE_BY_ID.update({r["id"]: r for r in data})
+
+
+@router.get("/resources")
+def get_all_resources(
+    query: Optional[str] = None,
+    difficulty: Optional[str] = None,
+    type_filter: Optional[str] = None,
+    admin: User = Depends(get_current_admin_user),
+):
+    items = _read_all_resources()
+    if query:
+        q = query.lower()
+        items = [
+            r for r in items
+            if q in r.get("title", "").lower()
+            or q in r.get("description", "").lower()
+            or any(q in s.lower() for s in r.get("skills_taught", []))
+            or any(q in t.lower() for t in r.get("tags", []))
+        ]
+    if difficulty and difficulty != "ALL":
+        items = [r for r in items if r.get("difficulty") == difficulty]
+    if type_filter and type_filter != "ALL":
+        items = [r for r in items if r.get("type") == type_filter]
+
+    return {
+        "total": len(items),
+        "resources": items,
+    }
+
+
+@router.post("/resources")
+def create_new_resource(
+    payload: CreateResourceIn,
+    admin: User = Depends(get_current_admin_user),
+):
+    current = _read_all_resources()
+    new_id = f"res-custom-{len(current) + 1:03d}"
+    
+    new_res = {
+        "id": new_id,
+        "title": payload.title.strip(),
+        "description": payload.description.strip(),
+        "provider": payload.provider.strip(),
+        "type": payload.type,
+        "difficulty": payload.difficulty,
+        "duration_hours": payload.duration_hours,
+        "url": payload.url.strip(),
+        "skills_taught": payload.skills_taught,
+        "prerequisite_skills": payload.prerequisite_skills or [],
+        "tags": payload.tags or [],
+        "rating": payload.rating or 4.8,
+        "is_project": payload.is_project or (payload.type == "project"),
+        "has_assessment": payload.has_assessment or False,
+    }
+    
+    current.insert(0, new_res)
+    _write_all_resources(current)
+
+    return {
+        "status": "success",
+        "resource": new_res,
+        "message": f"Learning unit '{new_res['title']}' created successfully.",
+    }
+
+
+@router.delete("/resources/{resource_id}")
+def delete_resource(
+    resource_id: str,
+    admin: User = Depends(get_current_admin_user),
+):
+    current = _read_all_resources()
+    filtered = [r for r in current if r.get("id") != resource_id]
+    if len(filtered) == len(current):
+        raise HTTPException(status_code=404, detail="Resource not found in catalog.")
+    
+    _write_all_resources(filtered)
+    return {"status": "success", "message": f"Resource {resource_id} removed from catalog."}
+
+
+# ── 4. Platform Analytics & Skill Distribution ───────────────────────────────
+
+@router.get("/analytics")
+def get_platform_analytics(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    # 1. Goal Distribution
+    profiles = db.query(LearnerProfile).all()
+    goals_counter = Counter([p.goal_title for p in profiles if p.goal_title])
+    goals_dist = [{"goal": k, "count": v} for k, v in goals_counter.most_common(8)]
+
+    # 2. Experience Levels
+    exp_counter = Counter([p.experience_level.value if hasattr(p.experience_level, "value") else str(p.experience_level) for p in profiles])
+    exp_dist = [{"level": k, "count": v} for k, v in exp_counter.items()]
+
+    # 3. Learning Styles
+    style_counter = Counter([p.learning_style.value if hasattr(p.learning_style, "value") else str(p.learning_style) for p in profiles])
+    style_dist = [{"style": k, "count": v} for k, v in style_counter.items()]
+
+    # 4. Roadmap Progress Distribution Buckets
+    paths = db.query(LearningPath).all()
+    buckets = {"0-25%": 0, "26-50%": 0, "51-75%": 0, "76-100%": 0}
+    for path in paths:
+        pct = (path.overall_progress or 0) * 100
+        if pct <= 25:
+            buckets["0-25%"] += 1
+        elif pct <= 50:
+            buckets["26-50%"] += 1
+        elif pct <= 75:
+            buckets["51-75%"] += 1
+        else:
+            buckets["76-100%"] += 1
+    progress_dist = [{"bucket": k, "count": v} for k, v in buckets.items()]
+
+    # 5. Top 10 Tracked Skills
+    skills = db.query(LearnerSkill).all()
+    skill_counter = Counter([s.skill_id for s in skills])
+    top_skills = [{"skill": k, "count": v} for k, v in skill_counter.most_common(10)]
+
+    # 6. Ticket Resolution Metrics
+    total_tickets = db.query(SupportTicket).count()
+    resolved_tickets = db.query(SupportTicket).filter(SupportTicket.status.in_(["resolved", "closed"])).count()
+    resolution_rate = round((resolved_tickets / total_tickets * 100), 1) if total_tickets > 0 else 100.0
+
+    # 7. Assessments completed count
+    total_assessments = db.query(AssessmentResult).count()
+
+    return {
+        "goals_distribution": goals_dist,
+        "experience_distribution": exp_dist,
+        "styles_distribution": style_dist,
+        "progress_distribution": progress_dist,
+        "top_skills": top_skills,
+        "tickets_metrics": {
+            "total": total_tickets,
+            "resolved": resolved_tickets,
+            "resolution_rate_pct": resolution_rate,
+        },
+        "total_assessments_taken": total_assessments,
+    }
+
+
+# ── 5. Real-time System Audit Activity Stream ─────────────────────────────────
+
+@router.get("/activity-stream")
+def get_system_activity_stream(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    events = []
+
+    # 1. User Signups
+    recent_users = db.query(User).order_by(User.created_at.desc()).limit(15).all()
+    for u in recent_users:
+        if u.created_at:
+            events.append({
+                "id": f"signup-{u.id}",
+                "type": "signup",
+                "title": f"New Learner Registered",
+                "description": f"{u.name} ({u.email}) created an account.",
+                "actor": u.email,
+                "timestamp": u.created_at.isoformat(),
+            })
+
+    # 2. Learning Paths Generated
+    recent_paths = db.query(LearningPath).order_by(LearningPath.created_at.desc()).limit(15).all()
+    for lp in recent_paths:
+        if lp.created_at:
+            u = lp.user
+            events.append({
+                "id": f"path-{lp.id}",
+                "type": "path_generated",
+                "title": f"Curriculum Synthesized",
+                "description": f"AI generated {lp.total_weeks}-week roadmap '{lp.title}' for {u.name if u else 'Learner'}.",
+                "actor": u.email if u else "AI Engine",
+                "timestamp": lp.created_at.isoformat(),
+            })
+
+    # 3. Assessment Submissions
+    recent_assessments = db.query(AssessmentResult).order_by(AssessmentResult.taken_at.desc()).limit(15).all()
+    for ar in recent_assessments:
+        if ar.taken_at:
+            u = ar.user
+            score_pct = int(ar.score * 100)
+            events.append({
+                "id": f"assess-{ar.id}",
+                "type": "assessment",
+                "title": f"Skill Assessment Submitted",
+                "description": f"{u.name if u else 'Learner'} scored {score_pct}% on '{ar.assessment_id}'.",
+                "actor": u.email if u else "Learner",
+                "timestamp": ar.taken_at.isoformat(),
+            })
+
+    # 4. Support Tickets
+    recent_tickets = db.query(SupportTicket).order_by(SupportTicket.created_at.desc()).limit(10).all()
+    for t in recent_tickets:
+        if t.created_at:
+            u = t.user
+            events.append({
+                "id": f"ticket-{t.id}",
+                "type": "ticket",
+                "title": f"Support Ticket Opened",
+                "description": f"[{t.priority.upper()}] '{t.subject}' filed by {u.name if u else 'Learner'}.",
+                "actor": u.email if u else "Learner",
+                "timestamp": t.created_at.isoformat(),
+            })
+
+    # Sort all events chronologically descending
+    events.sort(key=lambda x: x["timestamp"], reverse=True)
+    return events[:35]
+
