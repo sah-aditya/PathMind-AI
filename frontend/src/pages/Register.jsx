@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Brain, Mail, Lock, User, Loader2, ArrowRight, Compass, Cpu, Layers, Sun, Moon } from 'lucide-react'
-import { authApi } from '../services/api'
+import { Brain, Mail, Lock, User, Loader2, ArrowRight, Compass, Cpu, Layers, Sun, Moon, AlertTriangle } from 'lucide-react'
+import { authApi, systemApi } from '../services/api'
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
 import toast from 'react-hot-toast'
@@ -27,12 +27,27 @@ const HIGHLIGHTS = [
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [loading, setLoading] = useState(false)
+  const [signupsEnabled, setSignupsEnabled] = useState(true)
   const { login } = useAuthStore()
   const { theme, toggleTheme } = useThemeStore()
   const navigate = useNavigate()
 
+  useEffect(() => {
+    systemApi.getServiceFlags()
+      .then(res => {
+        if (res.data && res.data.new_signups === false) {
+          setSignupsEnabled(false)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!signupsEnabled) {
+      toast.error('New learner registrations are temporarily paused by administration.')
+      return
+    }
     if (form.password.length < 8) {
       toast.error('Password must be at least 8 characters')
       return
@@ -111,6 +126,18 @@ export default function Register() {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-1.5">Create Account</h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mb-6">Build your personalized learning roadmap.</p>
 
+          {!signupsEnabled && (
+            <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-500 mt-0.5" />
+              <div>
+                <p className="font-bold">New Registrations Paused</p>
+                <p className="mt-0.5 text-amber-700 dark:text-amber-300">
+                  New learner signups are temporarily paused for maintenance. If you already have an account, please sign in.
+                </p>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name */}
             <div>
@@ -120,6 +147,7 @@ export default function Register() {
                 <input
                   id="register-name"
                   type="text" required
+                  disabled={!signupsEnabled}
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                   placeholder="Alex Johnson"
@@ -136,6 +164,7 @@ export default function Register() {
                 <input
                   id="register-email"
                   type="email" required
+                  disabled={!signupsEnabled}
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
                   placeholder="you@example.com"
@@ -152,6 +181,7 @@ export default function Register() {
                 <input
                   id="register-password"
                   type="password" required
+                  disabled={!signupsEnabled}
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                   placeholder="••••••••"
@@ -162,11 +192,13 @@ export default function Register() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="btn-primary w-full justify-center py-2.5 text-sm font-semibold mt-2"
+              disabled={loading || !signupsEnabled}
+              className={`btn-primary w-full justify-center py-2.5 text-sm font-semibold mt-2 ${!signupsEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {loading
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Registering…</>
+                : !signupsEnabled
+                ? 'Signups Temporarily Paused'
                 : <>Create Account <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>

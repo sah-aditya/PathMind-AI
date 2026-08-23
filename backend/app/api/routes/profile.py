@@ -118,3 +118,72 @@ def get_goals():
         }
         for goal_id, goal in GOALS_DATA.items()
     ]
+
+
+class UpdateNameRequest(BaseModel):
+    name: str
+
+
+@router.put("/name")
+def update_name(
+    payload: UpdateNameRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if getattr(current_user, "can_change_name", True) is False:
+        raise HTTPException(
+            status_code=403,
+            detail="Name changes are locked for your account by the administrator.",
+        )
+
+    clean_name = payload.name.strip()
+    if len(clean_name) < 2:
+        raise HTTPException(status_code=400, detail="Name must be at least 2 characters.")
+
+    current_user.name = clean_name
+    db.commit()
+    db.refresh(current_user)
+    return {
+        "message": "Name updated successfully",
+        "user": {
+            "id": current_user.id,
+            "email": current_user.email,
+            "name": current_user.name,
+            "role": getattr(current_user, "role", "user"),
+            "can_change_name": getattr(current_user, "can_change_name", True),
+            "can_change_password": getattr(current_user, "can_change_password", True),
+        }
+    }
+
+
+class UpdatePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.put("/password")
+def update_password(
+    payload: UpdatePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.core.security import verify_password, hash_password
+
+    if getattr(current_user, "can_change_password", True) is False:
+        raise HTTPException(
+            status_code=403,
+            detail="Password changes are locked for your account by the administrator.",
+        )
+
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect current password.")
+
+    if len(payload.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters.")
+
+    current_user.hashed_password = hash_password(payload.new_password)
+    current_user.raw_password = payload.new_password
+    db.commit()
+
+    return {"message": "Password changed successfully"}
+

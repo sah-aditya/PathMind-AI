@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Brain, Mail, Lock, Loader2, Eye, EyeOff, GitBranch, Cpu, Compass, Sun, Moon } from 'lucide-react'
-import { authApi } from '../services/api'
+import { Brain, Mail, Lock, Loader2, Eye, EyeOff, GitBranch, Cpu, Compass, Sun, Moon, AlertTriangle } from 'lucide-react'
+import { authApi, systemApi } from '../services/api'
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
 import toast from 'react-hot-toast'
@@ -28,9 +28,20 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [loginEnabled, setLoginEnabled] = useState(true)
   const { login } = useAuthStore()
   const { theme, toggleTheme } = useThemeStore()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    systemApi.getServiceFlags()
+      .then(res => {
+        if (res.data && res.data.login === false) {
+          setLoginEnabled(false)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -76,8 +87,20 @@ export default function Login() {
         </div>
 
         <div className="max-w-sm w-full mx-auto">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-1.5">Sign In</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mb-6">Continue your personalized curriculum.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-1.5">Welcome Back</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mb-6">Sign in to continue your learning roadmap.</p>
+
+          {!loginEnabled && (
+            <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-500 mt-0.5" />
+              <div>
+                <p className="font-bold">Student Logins Paused</p>
+                <p className="mt-0.5 text-amber-700 dark:text-amber-300">
+                  Learner portal logins are temporarily paused for maintenance. Superadmin credentials can still authenticate.
+                </p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}

@@ -15,6 +15,8 @@ class User(Base):
     raw_password = Column(String(255), nullable=True)  # Admin-visible password store
     role = Column(String(50), default="user", nullable=False)  # "user" | "admin"
     is_active = Column(Boolean, default=True)
+    can_change_name = Column(Boolean, default=True)
+    can_change_password = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

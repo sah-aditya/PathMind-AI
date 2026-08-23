@@ -109,6 +109,7 @@ async def maintenance_middleware(request: Request, call_next):
         or path.startswith("/api/auth")
         or path.startswith("/api/admin")
         or path.startswith("/api/system/status")
+        or path.startswith("/api/system/service-flags")
         or path == "/"
         or request.method == "OPTIONS"
     ):

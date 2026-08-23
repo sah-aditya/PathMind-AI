@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import datetime
 
 from app.db.database import get_db
@@ -33,6 +33,10 @@ class UpdatePasswordIn(BaseModel):
 
 class UpdateRoleIn(BaseModel):
     role: str  # "user" | "admin"
+
+class UpdatePermissionsIn(BaseModel):
+    can_change_name: Optional[bool] = None
+    can_change_password: Optional[bool] = None
 
 class MaintenanceToggleIn(BaseModel):
     enabled: bool
@@ -83,6 +87,8 @@ def get_all_users(
             "role": getattr(u, "role", "user"),
             "raw_password": getattr(u, "raw_password", None) or "—",
             "is_active": u.is_active,
+            "can_change_name": getattr(u, "can_change_name", True) if getattr(u, "can_change_name", None) is not None else True,
+            "can_change_password": getattr(u, "can_change_password", True) if getattr(u, "can_change_password", None) is not None else True,
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "goal_title": profile.goal_title if profile else "No Goal Set",
             "experience_level": profile.experience_level if profile else "beginner",
@@ -175,6 +181,32 @@ def update_user_role(
     target_user.role = payload.role
     db.commit()
     return {"status": "success", "message": f"Role updated to '{payload.role}' for {target_user.email}."}
+
+
+@router.put("/users/{user_id}/permissions")
+def update_user_permissions(
+    user_id: int,
+    payload: UpdatePermissionsIn,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    if payload.can_change_name is not None:
+        target_user.can_change_name = payload.can_change_name
+    if payload.can_change_password is not None:
+        target_user.can_change_password = payload.can_change_password
+    
+    db.commit()
+    db.refresh(target_user)
+    return {
+        "status": "success",
+        "message": f"Permissions updated for {target_user.email}.",
+        "can_change_name": getattr(target_user, "can_change_name", True),
+        "can_change_password": getattr(target_user, "can_change_password", True),
+    }
 
 
 @router.delete("/users/{user_id}")
@@ -278,6 +310,64 @@ def toggle_maintenance_mode(
         "status": "success",
         "maintenance_mode": payload.enabled,
         "message": f"Maintenance mode {'ENABLED' if payload.enabled else 'DISABLED'}.",
+    }
+
+
+# ── Granular Service Switchboard Flags ────────────────────────────────────────
+
+DEFAULT_SERVICE_FLAGS = {
+    "support_page": True,
+    "ai_chatbot": True,
+    "onboarding": True,
+    "dashboard": True,
+    "roadmap": True,
+    "skill_gap": True,
+    "re_onboard": True,
+    "new_signups": True,
+    "login": True,
+}
+
+
+@router.get("/system/service-flags")
+def get_service_flags(
+    db: Session = Depends(get_db),
+):
+    setting = db.query(SystemSetting).filter(SystemSetting.key == "service_flags").first()
+    if not setting or not setting.value:
+        return DEFAULT_SERVICE_FLAGS
+    try:
+        stored = json.loads(setting.value)
+        return {**DEFAULT_SERVICE_FLAGS, **stored}
+    except Exception:
+        return DEFAULT_SERVICE_FLAGS
+
+
+@router.put("/system/service-flags")
+def update_service_flags(
+    payload: Dict[str, bool],
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    setting = db.query(SystemSetting).filter(SystemSetting.key == "service_flags").first()
+    current_flags = DEFAULT_SERVICE_FLAGS.copy()
+    if setting and setting.value:
+        try:
+            current_flags.update(json.loads(setting.value))
+        except Exception:
+            pass
+    current_flags.update(payload)
+
+    if not setting:
+        setting = SystemSetting(key="service_flags", value=json.dumps(current_flags))
+        db.add(setting)
+    else:
+        setting.value = json.dumps(current_flags)
+
+    db.commit()
+    return {
+        "status": "success",
+        "message": "Service switchboard flags updated successfully.",
+        "flags": current_flags,
     }
 
 

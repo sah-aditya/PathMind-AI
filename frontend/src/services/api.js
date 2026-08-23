@@ -39,6 +39,9 @@ export const authApi = {
 export const profileApi = {
   get: () => api.get('/profile/'),
   update: (data) => api.put('/profile/', data),
+  updateName: (name) => api.put('/profile/name', { name }),
+  updatePassword: (current_password, new_password) =>
+    api.put('/profile/password', { current_password, new_password }),
   getGoals: () => api.get('/profile/goals'),
 }
 
@@ -122,6 +125,12 @@ export const adminApi = {
     api.post('/admin/resources', data),
   deleteResource: (id) =>
     api.delete(`/admin/resources/${id}`),
+  updateUserPermissions: (userId, permissions) =>
+    api.put(`/admin/users/${userId}/permissions`, permissions),
+  getServiceFlags: () =>
+    api.get('/admin/system/service-flags'),
+  updateServiceFlags: (flags) =>
+    api.put('/admin/system/service-flags', flags),
   getAnalytics: () =>
     api.get('/admin/analytics'),
   getActivityStream: () =>
@@ -142,6 +151,11 @@ export const notificationApi = {
   getSystemStatus: () => api.get('/system/status'),
   list: () => api.get('/notifications'),
   markRead: (id) => api.post(`/notifications/${id}/read`),
+}
+
+// ── System Public API ─────────────────────────────────────────────────────────
+export const systemApi = {
+  getServiceFlags: () => api.get('/system/service-flags'),
 }
 
 export default api
