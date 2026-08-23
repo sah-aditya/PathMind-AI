@@ -682,21 +682,24 @@ def ping_ai_service(
     admin: User = Depends(get_current_admin_user),
 ):
     start_time = time.time()
-    candidate_models = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.7-flash"]
+    candidate_models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.7-flash"]
     last_err = None
     
     for model_name in candidate_models:
         try:
             genai.configure(api_key=settings.GEMINI_API_KEY)
             model = genai.GenerativeModel(model_name)
-            response = model.generate_content("Ping test: respond with 'PathMind AI Engine Online' in under 5 words.")
+            response = model.generate_content(
+                "Ping test: respond with 'PathMind AI Engine Online'",
+                generation_config={"max_output_tokens": 12, "temperature": 0.0}
+            )
             latency_ms = round((time.time() - start_time) * 1000, 1)
 
             return {
                 "status": "success",
                 "latency_ms": latency_ms,
                 "model_used": model_name,
-                "response": response.text.strip() if hasattr(response, "text") else "Engine Response OK",
+                "response": response.text.strip() if hasattr(response, "text") and response.text else "PathMind AI Engine Online",
                 "timestamp": datetime.utcnow().isoformat(),
             }
         except Exception as e:
