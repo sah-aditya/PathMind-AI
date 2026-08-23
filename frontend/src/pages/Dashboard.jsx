@@ -151,65 +151,64 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           
-          {/* Tile 1: Roadmap (Soft Blue) */}
+          {/* Tile 1: Roadmap */}
           <div
             onClick={() => navigate('/roadmap')}
-            className="p-5 rounded-3xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-800/50 hover:border-sky-400 dark:hover:border-sky-600 hover:shadow-card cursor-pointer transition-all duration-150 flex flex-col justify-between h-36"
+            className="p-5 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-card-md cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-sky-600 dark:text-sky-400 shadow-subtle">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-700 dark:text-zinc-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
               <Map className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">My Roadmap</h3>
-              <p className="text-[11px] text-sky-700 dark:text-sky-300 mt-0.5">Weekly stages</p>
+              <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-sm sm:text-base">My Roadmap</h3>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">Weekly stages</p>
             </div>
           </div>
 
-          {/* Tile 2: Skill Gap (Soft Green) */}
+          {/* Tile 2: Skill Gap */}
           <div
             onClick={() => navigate('/skill-gap')}
-            className="p-5 rounded-3xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-card cursor-pointer transition-all duration-150 flex flex-col justify-between h-36"
+            className="p-5 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-card-md cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-subtle">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-700 dark:text-zinc-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
               <Target className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Skill Gap</h3>
-              <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5">
+              <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-sm sm:text-base">Skill Gap</h3>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
                 {Object.keys(skills_map || {}).length} skills tracked
               </p>
             </div>
           </div>
 
-          {/* Tile 3: AI Advisor (Soft Amber) */}
+          {/* Tile 3: AI Advisor */}
           <div
             onClick={() => {
-              // Dispatch event to open chat overlay
               const event = new CustomEvent('open-advisor-chat')
               window.dispatchEvent(event)
             }}
-            className="p-5 rounded-3xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 hover:border-amber-400 dark:hover:border-amber-600 hover:shadow-card cursor-pointer transition-all duration-150 flex flex-col justify-between h-36"
+            className="p-5 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-card-md cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-amber-600 dark:text-amber-400 shadow-subtle">
-              <MessageCircle className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-700 dark:text-zinc-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Ask AI</h3>
-              <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">Technical mentor</p>
+              <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-sm sm:text-base">Ask AI</h3>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">Technical mentor</p>
             </div>
           </div>
 
-          {/* Tile 4: Re-Onboard (Soft Purple) */}
+          {/* Tile 4: Re-Onboard */}
           <div
             onClick={() => navigate('/onboarding')}
-            className="p-5 rounded-3xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-800/50 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-card cursor-pointer transition-all duration-150 flex flex-col justify-between h-36"
+            className="p-5 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-card-md cursor-pointer transition-all duration-150 flex flex-col justify-between h-36 group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card flex items-center justify-center text-purple-600 dark:text-purple-400 shadow-subtle">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-700 dark:text-zinc-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
               <RefreshCcw className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Change Goal</h3>
-              <p className="text-[11px] text-purple-700 dark:text-purple-300 mt-0.5">Recalibrate path</p>
+              <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-sm sm:text-base">Change Goal</h3>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">Recalibrate path</p>
             </div>
           </div>
 

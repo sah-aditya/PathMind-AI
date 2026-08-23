@@ -13,14 +13,14 @@ import useThemeStore from '../store/themeStore'
 
 /* ── Constants ────────────────────────────────────────── */
 const TYPE_ICON   = { course: BookOpen, project: Wrench, assessment: ClipboardList }
-const TYPE_CLASS  = { course: 'badge-blue', project: 'badge-purple', assessment: 'badge-yellow' }
+const TYPE_CLASS  = { course: 'badge-neutral', project: 'badge-indigo', assessment: 'badge-yellow' }
 const DIFF_CLASS  = { beginner: 'badge-green', intermediate: 'badge-yellow', advanced: 'badge-red' }
 
 const STATUS_CONFIG = {
-  pending:     { label: 'Not started', dot: 'bg-slate-300 dark:bg-slate-600', text: 'text-slate-400 dark:text-slate-500' },
+  pending:     { label: 'Not started', dot: 'bg-slate-300 dark:bg-zinc-600', text: 'text-slate-400 dark:text-zinc-500' },
   in_progress: { label: 'In progress', dot: 'bg-amber-500',                   text: 'text-amber-700 dark:text-amber-300' },
   completed:   { label: 'Completed',   dot: 'bg-emerald-600 dark:bg-emerald-400', text: 'text-emerald-700 dark:text-emerald-300' },
-  skipped:     { label: 'Skipped',     dot: 'bg-slate-300 dark:bg-slate-600', text: 'text-slate-400 dark:text-slate-500' },
+  skipped:     { label: 'Skipped',     dot: 'bg-slate-300 dark:bg-zinc-600', text: 'text-slate-400 dark:text-zinc-500' },
 }
 
 /* ── Skeleton Loading State ───────────────────────────── */

@@ -237,7 +237,7 @@ export default function AppLayout() {
   const isCurrentServicePaused = currentRouteService && serviceFlags[currentRouteService] === false && !isMasterAdmin
 
   return (
-    <div className="flex min-h-screen bg-slate-100/80 dark:bg-darkBg-canvas text-slate-900 dark:text-slate-100 selection:bg-brand-500 selection:text-white pb-16 lg:pb-0">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-darkBg-canvas text-slate-900 dark:text-zinc-100 selection:bg-brand-500 selection:text-white pb-16 lg:pb-0">
 
       {/* ── Mobile Sidebar Backdrop ── */}
       {mobileMenuOpen && (
@@ -250,14 +250,14 @@ export default function AppLayout() {
       {/* ── Studio Left Sidebar ── */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
-        flex flex-col bg-white dark:bg-darkBg-card border-r border-slate-200/80 dark:border-darkBg-border
+        flex flex-col bg-white dark:bg-darkBg-card border-r border-slate-200/80 dark:border-white/[0.08]
         shadow-card-lg lg:shadow-none
         transform transition-all duration-200 ease-out
         ${mobileMenuOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0'}
         ${sidebarCollapsed ? 'lg:w-[70px]' : 'lg:w-60'}
       `}>
         {/* Brand Header */}
-        <div className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-4' : 'justify-between px-4 py-4'} border-b border-slate-200/80 dark:border-darkBg-border`}>
+        <div className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2 py-4' : 'justify-between px-4 py-4'} border-b border-slate-200/80 dark:border-white/[0.08]`}>
           <Link to="/" className="flex items-center gap-2.5 min-w-0" title="PathMind AI Curriculum Studio">
             <div className="w-8 h-8 rounded-xl bg-brand-600 dark:bg-brand-500 flex items-center justify-center text-white shadow-subtle flex-shrink-0">
               <Brain className="w-4 h-4" />

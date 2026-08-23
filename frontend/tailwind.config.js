@@ -23,27 +23,14 @@ export default {
           900: '#312e81',
           950: '#1e1b4b',
         },
-        // Soft Pastel UI Accents (Inspired by SETO & Modern Mobile Tiles)
-        accent: {
-          cyan:    '#e0f2fe',
-          cyanDark:'#0369a1',
-          mint:    '#dcfce7',
-          mintDark:'#15803d',
-          amber:   '#fef3c7',
-          amberDark:'#b45309',
-          purple:  '#f3e8ff',
-          purpleDark:'#7e22ce',
-          rose:    '#ffe4e6',
-          roseDark:'#be123c',
-        },
-        // Dark theme backgrounds and surface elevations (Obsidian & Slate)
+        // Eye-Relaxed True Obsidian / Zinc Dark Mode Surfaces
         darkBg: {
-          canvas: '#0B0F17',
-          card:   '#111827',
-          cardSub:'#172033',
-          cardElevated: '#1E293B',
+          canvas: '#09090B',       // True Obsidian Pitch Black (Zinc-950 base)
+          card:   '#121215',       // Zinc-900 surface (calm, low-glare)
+          cardSub:'#18181B',       // Zinc-900 secondary surface
+          cardElevated: '#202024', // Zinc-800 elevated popup/modal
           border: 'rgba(255, 255, 255, 0.08)',
-          borderSub:'rgba(255, 255, 255, 0.05)',
+          borderSub:'rgba(255, 255, 255, 0.04)',
         },
       },
       borderRadius: {
@@ -51,10 +38,9 @@ export default {
         'DEFAULT': '8px',
         'md': '10px',
         'lg': '12px',
-        'xl': '16px',
-        '2xl': '20px',
-        '3xl': '28px',
-        '4xl': '36px',
+        'xl': '14px',
+        '2xl': '18px',
+        '3xl': '24px',
       },
       boxShadow: {
         'subtle': '0 1px 2px 0 rgba(15, 23, 42, 0.05)',

@@ -74,37 +74,37 @@ export default function SkillGap() {
         </p>
       </div>
 
-      {/* ── Clean Summary Cards (Pastel Tints) ─────────── */}
+      {/* ── Summary Metric Cards ─────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         
         {/* Verified Base */}
-        <div className="p-5 rounded-3xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-1">
-          <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-300">
-            <span className="text-xs font-bold uppercase tracking-wider">Verified Skills</span>
-            <ShieldCheck className="w-4 h-4" />
+        <div className="p-5 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-white/[0.08] shadow-subtle space-y-1">
+          <div className="flex items-center justify-between text-slate-500 dark:text-zinc-400">
+            <span className="text-xs font-bold uppercase tracking-wider font-mono">Verified Skills</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <p className="text-3xl font-bold font-mono text-slate-900 dark:text-white mt-2">{skills_already_met.length}</p>
-          <p className="text-[11px] text-emerald-700 dark:text-emerald-300">Competencies ready</p>
+          <p className="text-3xl font-bold font-mono tabular-nums text-slate-900 dark:text-zinc-100 mt-2">{skills_already_met.length}</p>
+          <p className="text-[11px] text-slate-500 dark:text-zinc-400">Competencies ready</p>
         </div>
 
         {/* Missing Gaps */}
-        <div className="p-5 rounded-3xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 space-y-1">
-          <div className="flex items-center justify-between text-amber-700 dark:text-amber-300">
-            <span className="text-xs font-bold uppercase tracking-wider">Skills to Learn</span>
-            <GitBranch className="w-4 h-4" />
+        <div className="p-5 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-white/[0.08] shadow-subtle space-y-1">
+          <div className="flex items-center justify-between text-slate-500 dark:text-zinc-400">
+            <span className="text-xs font-bold uppercase tracking-wider font-mono">Skills to Learn</span>
+            <GitBranch className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <p className="text-3xl font-bold font-mono text-slate-900 dark:text-white mt-2">{skills_to_learn.length}</p>
-          <p className="text-[11px] text-amber-700 dark:text-amber-300">Target curriculum units</p>
+          <p className="text-3xl font-bold font-mono tabular-nums text-slate-900 dark:text-zinc-100 mt-2">{skills_to_learn.length}</p>
+          <p className="text-[11px] text-slate-500 dark:text-zinc-400">Target curriculum units</p>
         </div>
 
         {/* Timeline */}
-        <div className="p-5 rounded-3xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-800/50 space-y-1">
-          <div className="flex items-center justify-between text-sky-700 dark:text-sky-300">
-            <span className="text-xs font-bold uppercase tracking-wider">Estimated Time</span>
-            <Clock className="w-4 h-4" />
+        <div className="p-5 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-white/[0.08] shadow-subtle space-y-1">
+          <div className="flex items-center justify-between text-slate-500 dark:text-zinc-400">
+            <span className="text-xs font-bold uppercase tracking-wider font-mono">Estimated Time</span>
+            <Clock className="w-4 h-4 text-slate-500 dark:text-zinc-400" />
           </div>
-          <p className="text-3xl font-bold font-mono text-slate-900 dark:text-white mt-2">{estimated_weeks} Weeks</p>
-          <p className="text-[11px] text-sky-700 dark:text-sky-300">Calibrated study pace</p>
+          <p className="text-3xl font-bold font-mono tabular-nums text-slate-900 dark:text-zinc-100 mt-2">{estimated_weeks} Weeks</p>
+          <p className="text-[11px] text-slate-500 dark:text-zinc-400">Calibrated study pace</p>
         </div>
 
       </div>

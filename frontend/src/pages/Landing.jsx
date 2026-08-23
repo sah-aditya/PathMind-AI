@@ -13,7 +13,7 @@ const GOAL_OPTIONS = [
     title: 'Machine Learning Engineer',
     category: 'Artificial Intelligence',
     icon: Brain,
-    bgLight: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800',
+    bgLight: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-zinc-800/80 dark:text-zinc-200 dark:border-white/[0.08]',
     duration: '14 Weeks',
     commitment: '8h / week',
     summary: 'Master NumPy, Scikit-Learn, Deep Learning, and MLOps deployment.',
@@ -24,7 +24,7 @@ const GOAL_OPTIONS = [
     title: 'Full-Stack Cloud Architect',
     category: 'Software Engineering',
     icon: Code,
-    bgLight: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800',
+    bgLight: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-zinc-800/80 dark:text-zinc-200 dark:border-white/[0.08]',
     duration: '12 Weeks',
     commitment: '8h / week',
     summary: 'Build scalable APIs, Postgres databases, Docker containers, and CI/CD pipelines.',
@@ -35,7 +35,7 @@ const GOAL_OPTIONS = [
     title: 'Autonomous Robotics',
     category: 'Robotics & Embedded',
     icon: Cpu,
-    bgLight: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+    bgLight: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-zinc-800/80 dark:text-zinc-200 dark:border-white/[0.08]',
     duration: '16 Weeks',
     commitment: '10h / week',
     summary: 'Bridge C++, ROS2 middleware, SLAM perception, and path planning algorithms.',
@@ -46,7 +46,7 @@ const GOAL_OPTIONS = [
     title: 'Commercial Airline Pilot',
     category: 'Aviation Ground School',
     icon: Plane,
-    bgLight: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
+    bgLight: 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-zinc-800/80 dark:text-zinc-200 dark:border-white/[0.08]',
     duration: '12 Weeks',
     commitment: '6h / week',
     summary: 'Master aerodynamics, aviation weather, navigation, air law, and flight instruments.',
@@ -223,25 +223,22 @@ export default function Landing() {
                 num: '01',
                 title: 'Conversational Profiling',
                 desc: 'Chat with PathMind AI about your target ambition, background, and weekly time budget.',
-                accent: 'text-indigo-600 dark:text-indigo-400'
               },
               {
                 num: '02',
                 title: 'Topological DAG Sort',
                 desc: 'Kahn’s algorithm sequences prerequisite skills so foundations are mastered before complexity.',
-                accent: 'text-emerald-600 dark:text-emerald-400'
               },
               {
                 num: '03',
                 title: 'Bayesian Adaptive Feedback',
                 desc: 'Interactive knowledge checks update your skill model and calibrate upcoming modules in real time.',
-                accent: 'text-amber-600 dark:text-amber-400'
               },
             ].map((step) => (
-              <div key={step.num} className="p-6 rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub/50 border border-slate-200/80 dark:border-darkBg-border space-y-3">
-                <span className={`text-2xl font-black font-mono ${step.accent}`}>{step.num}</span>
-                <h3 className="font-bold text-slate-900 dark:text-white text-base">{step.title}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{step.desc}</p>
+              <div key={step.num} className="p-6 rounded-2xl bg-slate-50 dark:bg-darkBg-cardSub/60 border border-slate-200/80 dark:border-white/[0.08] space-y-3">
+                <span className="text-2xl font-black font-mono text-slate-400 dark:text-zinc-500">{step.num}</span>
+                <h3 className="font-bold text-slate-900 dark:text-zinc-100 text-base">{step.title}</h3>
+                <p className="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
