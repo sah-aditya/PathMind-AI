@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { certificateApi } from '../services/api'
+import { cleanCourseTitle } from './Certificates'
 import {
   ShieldCheck, CheckCircle2, AlertCircle, Search,
   Award, Brain, Calendar, Hash, ArrowRight, Loader2
@@ -136,7 +137,7 @@ export default function VerifyCertificate() {
 
                   <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200/80 dark:border-white/[0.08] space-y-1 sm:col-span-2">
                     <p className="text-[10px] text-slate-400 font-mono uppercase font-bold">Curriculum Path</p>
-                    <p className="text-sm font-bold text-slate-900 dark:text-zinc-100">{result.path_title}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-zinc-100">{cleanCourseTitle(result.path_title)}</p>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-darkBg-cardSub border border-slate-200/80 dark:border-white/[0.08] space-y-1">

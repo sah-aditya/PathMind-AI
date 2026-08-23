@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi, certificateApi } from '../services/api'
+import { cleanCourseTitle } from './Certificates'
 import {
   Shield, Users, Activity, Bell, Wrench, KeyRound,
   Trash2, Search, CheckCircle, Eye, EyeOff, Copy, Check,
@@ -2201,7 +2202,7 @@ export default function Admin() {
                             <p className="text-[11px] text-slate-400 font-mono">{cert.user_email}</p>
                           </td>
                           <td className="p-3.5">
-                            <p className="font-semibold text-slate-800 dark:text-zinc-200">{cert.path_title}</p>
+                            <p className="font-semibold text-slate-800 dark:text-zinc-200">{cleanCourseTitle(cert.path_title)}</p>
                             <p className="text-[10px] text-slate-400 font-mono">Requested: {new Date(cert.created_at).toLocaleDateString()}</p>
                           </td>
                           <td className="p-3.5 font-mono">

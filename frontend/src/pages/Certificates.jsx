@@ -9,6 +9,17 @@ import toast from 'react-hot-toast'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
+export function cleanCourseTitle(title) {
+  if (!title) return 'Software Engineering'
+  let cleaned = title
+    .replace(/^Your\s+/i, '')
+    .replace(/\s+Learning Path$/i, '')
+    .replace(/\s+Roadmap$/i, '')
+    .replace(/\s+Path$/i, '')
+    .trim()
+  return cleaned || 'Software Engineering'
+}
+
 export default function Certificates() {
   const queryClient = useQueryClient()
   const [selectedCert, setSelectedCert] = useState(null)
@@ -158,7 +169,7 @@ export default function Certificates() {
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <h4 className="font-bold text-slate-900 dark:text-zinc-100 text-sm leading-snug truncate">
-                      {cert.path_title}
+                      {cleanCourseTitle(cert.path_title)}
                     </h4>
                     {isApproved && (
                       <span className="badge-green text-[10px] font-mono font-bold uppercase flex items-center gap-1">
@@ -267,8 +278,8 @@ export default function Certificates() {
                       <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed pt-1">
                         has successfully completed all prerequisite milestones, evaluations, and structured units in the academic curriculum of
                       </p>
-                      <p className="text-xl font-bold text-slate-900 tracking-tight">
-                        {approvedCert.path_title}
+                      <p className="text-2xl font-bold text-slate-900 tracking-tight">
+                        {cleanCourseTitle(approvedCert.path_title)}
                       </p>
                     </div>
 
@@ -290,18 +301,18 @@ export default function Certificates() {
                       <div className="text-center space-y-1 px-4">
                         <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
                           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Digitally Verified by PathMind</span>
+                          <span>Digitally Verified & Sealed</span>
                         </div>
                         <p className="text-[9px] text-slate-400 font-mono">
                           Issued on {approvedCert.approved_at ? new Date(approvedCert.approved_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                         </p>
                       </div>
 
-                      {/* Right: Signature Line */}
+                      {/* Right: Institutional Signature Line */}
                       <div className="text-right space-y-1">
-                        <p className="font-mono text-sm font-bold text-slate-900 italic">Aditya Sah</p>
-                        <div className="w-32 h-0.5 bg-slate-300 ml-auto" />
-                        <p className="text-[10px] text-slate-500 font-mono">Director of Curriculum</p>
+                        <p className="font-mono text-xs font-bold text-slate-800 tracking-wider uppercase">PathMind Authority</p>
+                        <div className="w-36 h-0.5 bg-indigo-900/20 ml-auto" />
+                        <p className="text-[9px] text-slate-400 font-mono">Curriculum Intelligence Board</p>
                       </div>
 
                     </div>
