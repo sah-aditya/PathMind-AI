@@ -115,6 +115,10 @@ export const adminApi = {
     api.delete(`/admin/support/tickets/${id}`),
   getUserRoadmap: (userId) =>
     api.get(`/admin/users/${userId}/roadmap`),
+  createUser: (data) =>
+    api.post('/admin/users/create', data),
+  bulkUserAction: (data) =>
+    api.post('/admin/users/bulk-action', data),
   getAiTelemetry: () =>
     api.get('/admin/ai/telemetry'),
   pingAi: () =>
@@ -123,6 +127,8 @@ export const adminApi = {
     api.get('/admin/resources', { params }),
   createResource: (data) =>
     api.post('/admin/resources', data),
+  updateResource: (id, data) =>
+    api.put(`/admin/resources/${id}`, data),
   deleteResource: (id) =>
     api.delete(`/admin/resources/${id}`),
   updateUserPermissions: (userId, permissions) =>
@@ -135,6 +141,8 @@ export const adminApi = {
     api.get('/admin/analytics'),
   getActivityStream: () =>
     api.get('/admin/activity-stream'),
+  getDiagnostics: () =>
+    api.get('/admin/system/diagnostics'),
 }
 
 // ── Support Tickets (Learner) ──────────────────────────────────────────────────

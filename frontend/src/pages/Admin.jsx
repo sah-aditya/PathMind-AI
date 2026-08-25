@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi, certificateApi } from '../services/api'
 import { cleanCourseTitle } from './Certificates'
@@ -14,7 +14,7 @@ import {
   BookOpen, Plus, ExternalLink, Zap, Compass, HelpCircle,
   Award, Flame, TrendingUp, History, Radio, Gauge, Sliders,
   Rocket, UserPlus, RefreshCcw, LayoutDashboard, Map, GitBranch,
-  ToggleLeft, ToggleRight
+  ToggleLeft, ToggleRight, ArrowUpDown, HardDrive, Terminal
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
@@ -87,9 +87,12 @@ export default function Admin() {
   const [activeGroup, setActiveGroup] = useState('learners')
   const [subTab, setSubTab] = useState('directory')
 
-  // Search and filter states for users
+  // Search, filter and sorting states for users
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
+  const [expFilter, setExpFilter] = useState('ALL')
+  const [sortBy, setSortBy] = useState('default') // 'default' | 'progress_desc' | 'skills_desc' | 'name_asc' | 'created_desc'
+  const [selectedUserIds, setSelectedUserIds] = useState([])
   
   // Inline Name Editing state
   const [editingNameUserId, setEditingNameUserId] = useState(null)
@@ -104,6 +107,17 @@ export default function Admin() {
   const [newPasswordInput, setNewPasswordInput] = useState('')
   const [pwdSuccessMsg, setPwdSuccessMsg] = useState('')
 
+  // Create User Modal state
+  const [createUserModalOpen, setCreateUserModalOpen] = useState(false)
+  const [newUserForm, setNewUserForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'user',
+    goal_title: 'Software Engineer',
+    experience_level: 'beginner',
+  })
+
   // Delete User Confirmation Modal state
   const [userToDelete, setUserToDelete] = useState(null)
   const [deleteError, setDeleteError] = useState('')
@@ -116,6 +130,7 @@ export default function Admin() {
   const [resourceDiffFilter, setResourceDiffFilter] = useState('ALL')
   const [resourceTypeFilter, setResourceTypeFilter] = useState('ALL')
   const [addResourceModalOpen, setAddResourceModalOpen] = useState(false)
+  const [editingResource, setEditingResource] = useState(null)
   const [newResourceForm, setNewResourceForm] = useState({
     title: '',
     description: '',
@@ -157,7 +172,6 @@ export default function Admin() {
   const [notifTitle, setNotifTitle] = useState('')
   const [notifMsg, setNotifMsg] = useState('')
   const [notifType, setNotifType] = useState('info')
-  const [notifSuccessMsg, setNotifSuccessMsg] = useState('')
 
   // Certificates for Admin
   const [rejectModalCert, setRejectModalCert] = useState(null)
@@ -252,7 +266,7 @@ export default function Admin() {
     re_onboard: true,
     new_signups: true,
     login: true,
-  }, isLoading: serviceFlagsLoading } = useQuery({
+  } } = useQuery({
     queryKey: ['adminServiceFlags'],
     queryFn: () => adminApi.getServiceFlags().then(r => r.data),
   })
@@ -264,11 +278,19 @@ export default function Admin() {
     refetchInterval: 15000,
   })
 
+  // 14. Fetch System Diagnostics
+  const { data: diagnosticsData, isLoading: diagLoading } = useQuery({
+    queryKey: ['adminDiagnostics'],
+    queryFn: () => adminApi.getDiagnostics().then(r => r.data),
+    enabled: activeGroup === 'system' && subTab === 'diagnostics',
+    refetchInterval: 15000,
+  })
+
   // Certificate Mutations
   const approveCertMutation = useMutation({
     mutationFn: (id) => certificateApi.adminApprove(id),
     onSuccess: (res) => {
-      triggerToast(`Certificate approved! Unique Code: ${res.data?.certificate?.code || 'Assigned'}`)
+      triggerToast(`Certificate approved! Credential: ${res.data?.certificate?.code || 'Assigned'}`)
       queryClient.invalidateQueries({ queryKey: ['adminCertificates'] })
     },
     onError: () => triggerToast('Failed to approve certificate.', 'error'),
@@ -277,7 +299,7 @@ export default function Admin() {
   const rejectCertMutation = useMutation({
     mutationFn: ({ id, reason }) => certificateApi.adminReject(id, reason),
     onSuccess: () => {
-      triggerToast('Certificate request rejected.')
+      triggerToast('Certificate request rejected with feedback note.')
       setRejectModalCert(null)
       setRejectionReasonInput('')
       queryClient.invalidateQueries({ queryKey: ['adminCertificates'] })
@@ -285,16 +307,41 @@ export default function Admin() {
     onError: () => triggerToast('Failed to reject certificate.', 'error'),
   })
 
-  // Mutations
+  // User Mutations
+  const createUserMutation = useMutation({
+    mutationFn: (payload) => adminApi.createUser(payload),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      setCreateUserModalOpen(false)
+      setNewUserForm({ name: '', email: '', password: '', role: 'user', goal_title: 'Software Engineer', experience_level: 'beginner' })
+      triggerToast(res.data?.message || 'Learner account created successfully.')
+    },
+    onError: (err) => {
+      triggerToast(err.response?.data?.detail || 'Failed to create user.', 'error')
+    }
+  })
+
+  const bulkUserActionMutation = useMutation({
+    mutationFn: (payload) => adminApi.bulkUserAction(payload),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
+      queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      setSelectedUserIds([])
+      triggerToast(res.data?.message || 'Bulk action executed.')
+    },
+    onError: (err) => {
+      triggerToast(err.response?.data?.detail || 'Failed to execute bulk action.', 'error')
+    }
+  })
+
   const updateServiceFlagMutation = useMutation({
     mutationFn: (updatedFlags) => adminApi.updateServiceFlags(updatedFlags),
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminServiceFlags'] })
       triggerToast('Service Switchboard updated.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to update service flag.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to update service flag.', 'error')
   })
 
   const updateUserPermissionsMutation = useMutation({
@@ -303,9 +350,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       triggerToast(res.data?.message || 'Learner permissions updated.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to update user permissions.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to update user permissions.', 'error')
   })
 
   const updateNameMutation = useMutation({
@@ -316,9 +361,7 @@ export default function Admin() {
       setEditingNameInput('')
       triggerToast(res.data?.message || 'Learner name updated successfully.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to update name.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to update name.', 'error')
   })
 
   const maintenanceMutation = useMutation({
@@ -329,9 +372,7 @@ export default function Admin() {
       setMaintModalOpen(false)
       triggerToast(res.data?.message || 'Maintenance mode updated.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to update maintenance mode.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to update maintenance mode.', 'error')
   })
 
   const updatePasswordMutation = useMutation({
@@ -344,11 +385,9 @@ export default function Admin() {
         setNewPasswordInput('')
         setPwdSuccessMsg('')
         triggerToast('Password updated successfully.')
-      }, 1200)
+      }, 1000)
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to update password.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to update password.', 'error')
   })
 
   const updateRoleMutation = useMutation({
@@ -357,9 +396,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       triggerToast(res.data?.message || 'User role updated.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to update role.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to update role.', 'error')
   })
 
   const toggleStatusMutation = useMutation({
@@ -368,9 +405,7 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
       triggerToast(res.data?.message || 'Account status updated.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to toggle account status.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to toggle account status.', 'error')
   })
 
   const deleteUserMutation = useMutation({
@@ -390,40 +425,38 @@ export default function Admin() {
     },
   })
 
+  // Resource Mutations
   const createResourceMutation = useMutation({
     mutationFn: (payload) => adminApi.createResource(payload),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['adminResources'] })
       setAddResourceModalOpen(false)
-      setNewResourceForm({
-        title: '',
-        description: '',
-        provider: 'PathMind Academy',
-        type: 'course',
-        difficulty: 'beginner',
-        duration_hours: 8,
-        url: 'https://learn.pathmind.ai',
-        skills_taught: '',
-        tags: '',
-      })
-      triggerToast(res.data?.message || 'New learning unit added to curriculum catalog.')
+      setNewResourceForm({ title: '', description: '', provider: 'PathMind Academy', type: 'course', difficulty: 'beginner', duration_hours: 8, url: 'https://learn.pathmind.ai', skills_taught: '', tags: '' })
+      triggerToast(res.data?.message || 'New learning unit added.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to create resource.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to create resource.', 'error')
+  })
+
+  const updateResourceMutation = useMutation({
+    mutationFn: ({ id, data }) => adminApi.updateResource(id, data),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['adminResources'] })
+      setEditingResource(null)
+      triggerToast(res.data?.message || 'Learning unit updated.')
+    },
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to update resource.', 'error')
   })
 
   const deleteResourceMutation = useMutation({
     mutationFn: (id) => adminApi.deleteResource(id),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['adminResources'] })
-      triggerToast(res.data?.message || 'Resource deleted from catalog.')
+      triggerToast(res.data?.message || 'Resource deleted.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to delete resource.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to delete resource.', 'error')
   })
 
+  // Notification Mutations
   const createNotifMutation = useMutation({
     mutationFn: (data) => adminApi.createNotification(data),
     onSuccess: () => {
@@ -431,13 +464,9 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
       setNotifTitle('')
       setNotifMsg('')
-      setNotifSuccessMsg('Announcement broadcasted successfully.')
-      triggerToast('Announcement broadcasted to all active learner bells.')
-      setTimeout(() => setNotifSuccessMsg(''), 3000)
+      triggerToast('Announcement broadcasted to active learner bells.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to dispatch broadcast.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to dispatch broadcast.', 'error')
   })
 
   const deleteNotifMutation = useMutation({
@@ -450,31 +479,29 @@ export default function Admin() {
     onError: () => triggerToast('Failed to remove notification.', 'error'),
   })
 
+  // Support Mutations
   const adminReplyMutation = useMutation({
-    mutationFn: ({ ticketId, message, status }) => adminApi.replyToSupportTicket(ticketId, message, status),
-    onSuccess: (res) => {
+    mutationFn: ({ ticketId, message, status }) => adminApi.replySupportTicket(ticketId, message, status),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminSupportTickets'] })
       queryClient.invalidateQueries({ queryKey: ['adminSupportTicketDetail'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
       setAdminReplyInput('')
       triggerToast('Reply dispatched to student desk.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to send reply.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to send reply.', 'error')
   })
 
   const closeTicketMutation = useMutation({
-    mutationFn: (ticketId) => adminApi.closeSupportTicket(ticketId),
+    mutationFn: (ticketId) => adminApi.updateSupportTicketStatus(ticketId, 'resolved'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminSupportTickets'] })
       queryClient.invalidateQueries({ queryKey: ['adminSupportTicketDetail'] })
       queryClient.invalidateQueries({ queryKey: ['adminStats'] })
+      setSelectedTicketForAdmin(null)
       triggerToast('Support ticket marked as resolved.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to resolve ticket.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to resolve ticket.', 'error')
   })
 
   // Helpers
@@ -491,10 +518,7 @@ export default function Admin() {
 
   const handleMaintenanceToggle = () => {
     if (settings?.maintenance_mode) {
-      maintenanceMutation.mutate({
-        enabled: false,
-        message: settings?.maintenance_message,
-      })
+      maintenanceMutation.mutate({ enabled: false, message: settings?.maintenance_message })
     } else {
       setMaintModalOpen(true)
     }
@@ -503,11 +527,7 @@ export default function Admin() {
   const handleConfirmMaintenanceMode = () => {
     const chosenMode = MAINTENANCE_MODES.find(m => m.id === selectedMaintMode)
     const finalMessage = customMaintText.trim() || chosenMode?.description || MAINTENANCE_MODES[0].description
-    
-    maintenanceMutation.mutate({
-      enabled: true,
-      message: finalMessage,
-    })
+    maintenanceMutation.mutate({ enabled: true, message: finalMessage })
   }
 
   const handleTestAiPing = async () => {
@@ -525,10 +545,11 @@ export default function Admin() {
   }
 
   // Exports
-  const handleExportCSV = () => {
-    if (!users.length) return
+  const handleExportCSV = (userSubset = null) => {
+    const listToExport = userSubset || users
+    if (!listToExport.length) return
     const headers = ["ID", "Name", "Email", "Role", "Status", "Goal", "ExperienceLevel", "SkillsCount", "ProgressPct", "CreatedDate"]
-    const rows = users.map(u => [
+    const rows = listToExport.map(u => [
       u.id,
       `"${(u.name || '').replace(/"/g, '""')}"`,
       `"${(u.email || '').replace(/"/g, '""')}"`,
@@ -549,7 +570,7 @@ export default function Admin() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    triggerToast("Learner records exported to CSV successfully.")
+    triggerToast(`Exported ${listToExport.length} learner record(s) to CSV.`)
   }
 
   const handleExportJSON = () => {
@@ -564,21 +585,45 @@ export default function Admin() {
     triggerToast("Learner records exported to JSON.")
   }
 
-  // Filtered lists
-  const filteredUsers = users.filter((u) => {
-    const matchesSearch =
-      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (u.goal_title && u.goal_title.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesRole = roleFilter === 'ALL' || u.role === roleFilter
-    return matchesSearch && matchesRole
-  })
+  // Filtered & Sorted Users
+  const processedUsers = useMemo(() => {
+    let result = users.filter((u) => {
+      const matchesSearch =
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (u.goal_title && u.goal_title.toLowerCase().includes(searchTerm.toLowerCase()))
+      const matchesRole = roleFilter === 'ALL' || u.role === roleFilter
+      const matchesExp = expFilter === 'ALL' || u.experience_level === expFilter
+      return matchesSearch && matchesRole && matchesExp
+    })
 
-  const filteredCerts = adminCerts.filter(c => {
-    if (certFilter === 'ALL') return true
-    return c.status === certFilter
-  })
+    if (sortBy === 'progress_desc') {
+      result.sort((a, b) => (b.overall_progress || 0) - (a.overall_progress || 0))
+    } else if (sortBy === 'skills_desc') {
+      result.sort((a, b) => (b.skills_count || 0) - (a.skills_count || 0))
+    } else if (sortBy === 'name_asc') {
+      result.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+    } else if (sortBy === 'created_desc') {
+      result.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    }
 
+    return result
+  }, [users, searchTerm, roleFilter, expFilter, sortBy])
+
+  // Bulk Selection Handlers
+  const handleToggleSelectAll = () => {
+    if (selectedUserIds.length === processedUsers.length) {
+      setSelectedUserIds([])
+    } else {
+      setSelectedUserIds(processedUsers.map(u => u.id))
+    }
+  }
+
+  const handleToggleSelectUser = (id) => {
+    setSelectedUserIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const filteredCerts = adminCerts.filter(c => certFilter === 'ALL' || c.status === certFilter)
   const activeLearnersCount = users.filter(u => u.is_active).length
   const pendingCertsCount = adminCerts.filter(c => c.status === 'pending').length
   const openTicketsCount = stats?.open_tickets ?? 0
@@ -626,7 +671,7 @@ export default function Admin() {
         {/* Action Buttons: Export & Refresh */}
         <div className="flex items-center gap-2 self-start md:self-auto">
           <button
-            onClick={handleExportCSV}
+            onClick={() => handleExportCSV()}
             className="btn-secondary text-xs py-2 px-3 rounded-xl flex items-center gap-1.5"
             title="Download CSV spreadsheet of registered learners"
           >
@@ -748,7 +793,7 @@ export default function Admin() {
             }`}
           >
             <Users className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>Learners & Credentials</span>
+            <span>Learners & Access</span>
             {pendingCertsCount > 0 && (
               <span className="w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold flex items-center justify-center">
                 {pendingCertsCount}
@@ -765,7 +810,7 @@ export default function Admin() {
             }`}
           >
             <BookOpen className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-            <span>Curriculum & Knowledge</span>
+            <span>Curriculum & Catalog</span>
           </button>
 
           <button
@@ -807,66 +852,160 @@ export default function Admin() {
         <div className="space-y-4">
           
           {/* Sub-navigation */}
-          <div className="flex items-center gap-2 pb-1 border-b border-slate-200/60 dark:border-white/[0.04]">
-            <button
-              onClick={() => setSubTab('directory')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                subTab === 'directory'
-                  ? 'bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-white/[0.08]'
-                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
-              }`}
-            >
-              Learner Directory ({users.length})
-            </button>
-            <button
-              onClick={() => setSubTab('certificates')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-                subTab === 'certificates'
-                  ? 'bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-white/[0.08]'
-                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
-              }`}
-            >
-              <Award className="w-3.5 h-3.5" />
-              <span>Certificate Approvals</span>
-              {pendingCertsCount > 0 && (
-                <span className="badge-yellow text-[10px] py-0 px-1.5 font-mono font-bold">
-                  {pendingCertsCount} pending
-                </span>
-              )}
-            </button>
+          <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-white/[0.04]">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSubTab('directory')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  subTab === 'directory'
+                    ? 'bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-white/[0.08]'
+                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+                }`}
+              >
+                Learner Directory ({users.length})
+              </button>
+              <button
+                onClick={() => setSubTab('certificates')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  subTab === 'certificates'
+                    ? 'bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-white/[0.08]'
+                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+                }`}
+              >
+                <Award className="w-3.5 h-3.5" />
+                <span>Certificate Approvals</span>
+                {pendingCertsCount > 0 && (
+                  <span className="badge-yellow text-[10px] py-0 px-1.5 font-mono font-bold">
+                    {pendingCertsCount} pending
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Quick Add User Button */}
+            {subTab === 'directory' && (
+              <button
+                onClick={() => setCreateUserModalOpen(true)}
+                className="btn-primary text-xs py-1.5 px-3 rounded-xl flex items-center gap-1.5 shadow-subtle"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Provision Learner Account</span>
+              </button>
+            )}
           </div>
 
           {/* Sub-view 1A: Learner Directory */}
           {subTab === 'directory' && (
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Search by name, email, or career goal..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="input pl-9 text-xs py-2"
-                  />
-                </div>
+              
+              {/* Filter, Search & Sorting Controls */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2 flex-1">
+                  <div className="relative w-64">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search name, email, goal..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="input pl-9 text-xs py-1.5"
+                    />
+                  </div>
 
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-white/[0.08] text-xs font-semibold">
-                  {['ALL', 'user', 'admin'].map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => setRoleFilter(r)}
-                      className={`px-3 py-1 rounded-lg capitalize transition-colors ${
-                        roleFilter === r
-                          ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-subtle'
-                          : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800/80 p-1 rounded-xl text-xs font-semibold">
+                    {['ALL', 'user', 'admin'].map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setRoleFilter(r)}
+                        className={`px-2.5 py-1 rounded-lg capitalize transition-colors ${
+                          roleFilter === r
+                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-subtle'
+                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+
+                  <select
+                    value={expFilter}
+                    onChange={(e) => setExpFilter(e.target.value)}
+                    className="input text-xs py-1.5 w-32 font-semibold"
+                  >
+                    <option value="ALL">All Tiers</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="input text-xs py-1.5 w-40 font-semibold"
+                  >
+                    <option value="default">Sort: Default ID</option>
+                    <option value="progress_desc">Sort: Highest Progress</option>
+                    <option value="skills_desc">Sort: Most Skills</option>
+                    <option value="name_asc">Sort: Name (A-Z)</option>
+                    <option value="created_desc">Sort: Newest First</option>
+                  </select>
                 </div>
               </div>
+
+              {/* Bulk Actions Floating Bar */}
+              {selectedUserIds.length > 0 && (
+                <div className="p-3 bg-indigo-50 dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 rounded-xl flex items-center justify-between gap-4 animate-scale-in text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-indigo-950 dark:text-indigo-200">
+                      {selectedUserIds.length} user(s) selected
+                    </span>
+                    <button
+                      onClick={() => setSelectedUserIds([])}
+                      className="text-slate-500 hover:text-slate-700 underline text-[11px]"
+                    >
+                      Deselect
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => bulkUserActionMutation.mutate({ user_ids: selectedUserIds, action: 'activate' })}
+                      disabled={bulkUserActionMutation.isPending}
+                      className="btn-secondary text-[11px] py-1 px-2.5 rounded-lg text-emerald-700 dark:text-emerald-400"
+                    >
+                      Activate Selected
+                    </button>
+                    <button
+                      onClick={() => bulkUserActionMutation.mutate({ user_ids: selectedUserIds, action: 'suspend' })}
+                      disabled={bulkUserActionMutation.isPending}
+                      className="btn-secondary text-[11px] py-1 px-2.5 rounded-lg text-amber-700 dark:text-amber-400"
+                    >
+                      Suspend Selected
+                    </button>
+                    <button
+                      onClick={() => {
+                        const subset = users.filter(u => selectedUserIds.includes(u.id))
+                        handleExportCSV(subset)
+                      }}
+                      className="btn-secondary text-[11px] py-1 px-2.5 rounded-lg text-sky-700 dark:text-sky-400"
+                    >
+                      Export CSV
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Permanently delete ${selectedUserIds.length} selected user accounts?`)) {
+                          bulkUserActionMutation.mutate({ user_ids: selectedUserIds, action: 'delete' })
+                        }
+                      }}
+                      disabled={bulkUserActionMutation.isPending}
+                      className="btn-danger text-[11px] py-1 px-2.5 rounded-lg"
+                    >
+                      Delete Selected
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Table */}
               <div className="card p-0 overflow-hidden">
@@ -874,6 +1013,14 @@ export default function Admin() {
                   <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 dark:bg-zinc-900/60 border-b border-slate-200/80 dark:border-white/[0.08] text-slate-500 dark:text-zinc-400 font-mono font-bold uppercase tracking-wider">
                       <tr>
+                        <th className="px-3 py-3 w-8">
+                          <input
+                            type="checkbox"
+                            checked={selectedUserIds.length === processedUsers.length && processedUsers.length > 0}
+                            onChange={handleToggleSelectAll}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                        </th>
                         <th className="px-4 py-3">Learner Profile</th>
                         <th className="px-4 py-3">Password Access</th>
                         <th className="px-4 py-3">Self-Edit Permissions</th>
@@ -887,25 +1034,42 @@ export default function Admin() {
                     <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
                       {usersLoading ? (
                         <tr>
-                          <td colSpan="8" className="p-8 text-center text-slate-400">Loading learner directory…</td>
+                          <td colSpan="9" className="p-8 text-center text-slate-400">Loading learner directory…</td>
                         </tr>
-                      ) : filteredUsers.length === 0 ? (
+                      ) : processedUsers.length === 0 ? (
                         <tr>
-                          <td colSpan="8" className="p-8 text-center text-slate-400">
-                            No learners matched "{searchTerm}".
+                          <td colSpan="9" className="p-8 text-center text-slate-400">
+                            No learners matched your search and filter criteria.
                           </td>
                         </tr>
                       ) : (
-                        filteredUsers.map((u) => {
+                        processedUsers.map((u) => {
                           const isSuperadmin = u.email === 'er.adityasah@gmail.com'
                           const progressPct = Math.round((u.overall_progress || 0) * 100)
                           const isRevealed = revealedPasswords[u.id]
                           const rawPwdValue = u.raw_password || u.password || 'User@123'
                           const isEditingName = editingNameUserId === u.id
+                          const isSelected = selectedUserIds.includes(u.id)
 
                           return (
-                            <tr key={u.id} className="hover:bg-slate-50/70 dark:hover:bg-zinc-800/40 transition-colors">
+                            <tr
+                              key={u.id}
+                              className={`transition-colors ${
+                                isSelected ? 'bg-indigo-50/50 dark:bg-indigo-950/20' : 'hover:bg-slate-50/70 dark:hover:bg-zinc-800/40'
+                              }`}
+                            >
                               
+                              {/* Checkbox */}
+                              <td className="px-3 py-3">
+                                <input
+                                  type="checkbox"
+                                  disabled={isSuperadmin}
+                                  checked={isSelected}
+                                  onChange={() => handleToggleSelectUser(u.id)}
+                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                              </td>
+
                               {/* Name & Avatar */}
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
@@ -1053,7 +1217,7 @@ export default function Admin() {
                               {/* Goal */}
                               <td className="px-4 py-3">
                                 <p className="font-bold text-slate-800 dark:text-zinc-200 line-clamp-1">{u.goal_title || 'No Goal'}</p>
-                                <p className="text-[10px] text-slate-400 capitalize">{u.experience_level || 'beginner'}</p>
+                                <p className="text-[10px] text-slate-400 capitalize">{u.experience_level || 'beginner'} • {u.skills_count} skills</p>
                               </td>
 
                               {/* Progress */}
@@ -1259,14 +1423,14 @@ export default function Admin() {
                       placeholder="Search tutorials, skills, tags..."
                       value={resourceSearch}
                       onChange={(e) => setResourceSearch(e.target.value)}
-                      className="input pl-9 text-xs py-2"
+                      className="input pl-9 text-xs py-1.5"
                     />
                   </div>
 
                   <select
                     value={resourceDiffFilter}
                     onChange={(e) => setResourceDiffFilter(e.target.value)}
-                    className="input text-xs py-2 w-36 font-semibold"
+                    className="input text-xs py-1.5 w-36 font-semibold"
                   >
                     <option value="ALL">All Levels</option>
                     <option value="beginner">Beginner</option>
@@ -1277,7 +1441,7 @@ export default function Admin() {
                   <select
                     value={resourceTypeFilter}
                     onChange={(e) => setResourceTypeFilter(e.target.value)}
-                    className="input text-xs py-2 w-36 font-semibold"
+                    className="input text-xs py-1.5 w-36 font-semibold"
                   >
                     <option value="ALL">All Types</option>
                     <option value="course">Course</option>
@@ -1338,19 +1502,28 @@ export default function Admin() {
                             </td>
                             <td className="px-4 py-3 text-right whitespace-nowrap">
                               <div className="inline-flex items-center gap-1.5">
+                                <button
+                                  onClick={() => setEditingResource(r)}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                                  title="Edit Learning Unit"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
                                 {r.url && (
                                   <a
                                     href={r.url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="p-1 text-slate-400 hover:text-indigo-600"
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600"
+                                    title="Open External Resource"
                                   >
                                     <ExternalLink className="w-3.5 h-3.5" />
                                   </a>
                                 )}
                                 <button
-                                  onClick={() => confirm(`Delete "${r.title}"?`) && deleteResourceMutation.mutate(r.id)}
-                                  className="p-1 text-rose-500 hover:text-rose-700"
+                                  onClick={() => confirm(`Delete "${r.title}" from curriculum catalog?`) && deleteResourceMutation.mutate(r.id)}
+                                  className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-zinc-800"
+                                  title="Remove Resource"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -1556,7 +1729,7 @@ export default function Admin() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. New Generative AI Agent Track Released"
+                      placeholder="e.g. Next.js 15 & AI Agents Track Released"
                       value={notifTitle}
                       onChange={(e) => setNotifTitle(e.target.value)}
                       className="input text-xs"
@@ -1672,6 +1845,16 @@ export default function Admin() {
               }`}
             >
               AI Telemetry & Health
+            </button>
+            <button
+              onClick={() => setSubTab('diagnostics')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                subTab === 'diagnostics'
+                  ? 'bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-white/[0.08]'
+                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+              }`}
+            >
+              Live Diagnostics
             </button>
             <button
               onClick={() => setSubTab('audit_logs')}
@@ -1808,7 +1991,62 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Sub-view 4D: Audit Logs */}
+          {/* Sub-view 4D: Diagnostics */}
+          {subTab === 'diagnostics' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {/* Database Records Breakdown */}
+                <div className="card p-5 space-y-3 md:col-span-2">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.04] pb-3">
+                    <div className="flex items-center gap-2">
+                      <Database className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <h4 className="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-zinc-100">Database Record Volume</h4>
+                    </div>
+                    <span className="badge-green text-[10px] font-mono">Connected</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                    {diagnosticsData?.database?.total_records && Object.entries(diagnosticsData.database.total_records).map(([key, val]) => (
+                      <div key={key} className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200/60 dark:border-white/[0.04]">
+                        <p className="text-lg font-bold font-mono text-slate-900 dark:text-zinc-100">{val}</p>
+                        <p className="text-[10px] text-slate-500 uppercase font-mono mt-0.5">{key.replace('_', ' ')}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Runtime & OS Info */}
+                <div className="card p-5 space-y-3">
+                  <div className="flex items-center gap-2 border-b border-slate-100 dark:border-white/[0.04] pb-3">
+                    <Terminal className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-zinc-100">Server Environment</h4>
+                  </div>
+                  <div className="space-y-2 text-xs font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Python:</span>
+                      <span className="text-slate-800 dark:text-zinc-200 font-bold">{diagnosticsData?.environment?.python_version || '3.11.x'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">OS:</span>
+                      <span className="text-slate-800 dark:text-zinc-200 font-bold">{diagnosticsData?.environment?.os || 'Linux'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Framework:</span>
+                      <span className="text-slate-800 dark:text-zinc-200 font-bold">FastAPI</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">AI Gateway:</span>
+                      <span className="text-emerald-600 font-bold">Gemini Active</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* Sub-view 4E: Audit Logs */}
           {subTab === 'audit_logs' && (
             <div className="card p-0 overflow-hidden">
               <div className="p-4 border-b border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between">
@@ -1849,6 +2087,105 @@ export default function Admin() {
       {/* ───────────────────────────────────────────────────────────── */}
       {/* ── MODALS (CLEAN & INTEGRATED)                            ── */}
       {/* ───────────────────────────────────────────────────────────── */}
+
+      {/* Create New Learner Account Modal */}
+      {createUserModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="card w-full max-w-lg p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/[0.08] pb-3">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100">Provision New Learner Account</h3>
+              <button onClick={() => setCreateUserModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                createUserMutation.mutate(newUserForm)
+              }}
+              className="space-y-3"
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="input-label">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. John Doe"
+                    value={newUserForm.name}
+                    onChange={(e) => setNewUserForm({ ...newUserForm, name: e.target.value })}
+                    className="input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="input-label">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="john@example.com"
+                    value={newUserForm.email}
+                    onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                    className="input text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="input-label">Initial Password</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Min 6 characters"
+                    value={newUserForm.password}
+                    onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                    className="input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="input-label">Account Role</label>
+                  <select
+                    value={newUserForm.role}
+                    onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value })}
+                    className="input text-xs font-semibold"
+                  >
+                    <option value="user">User (Learner)</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="input-label">Initial Career Goal</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Machine Learning Engineer"
+                    value={newUserForm.goal_title}
+                    onChange={(e) => setNewUserForm({ ...newUserForm, goal_title: e.target.value })}
+                    className="input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="input-label">Experience Tier</label>
+                  <select
+                    value={newUserForm.experience_level}
+                    onChange={(e) => setNewUserForm({ ...newUserForm, experience_level: e.target.value })}
+                    className="input text-xs font-semibold"
+                  >
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setCreateUserModalOpen(false)} className="btn-secondary text-xs py-2 px-3 rounded-xl">Cancel</button>
+                <button type="submit" disabled={createUserMutation.isPending} className="btn-primary text-xs py-2 px-4 rounded-xl">Create Account</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Password Reset Modal */}
       {selectedUserForPwd && (
@@ -1904,23 +2241,31 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Add Learning Unit Modal */}
-      {addResourceModalOpen && (
+      {/* Add / Edit Learning Unit Modal */}
+      {(addResourceModalOpen || editingResource) && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="card w-full max-w-lg p-6 space-y-4 animate-scale-in max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/[0.08] pb-3">
-              <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100">Add Learning Unit to Catalog</h3>
-              <button onClick={() => setAddResourceModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100">
+                {editingResource ? `Edit Unit: ${editingResource.title}` : 'Add Learning Unit to Catalog'}
+              </h3>
+              <button onClick={() => { setAddResourceModalOpen(false); setEditingResource(null) }} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
             </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault()
-                createResourceMutation.mutate({
-                  ...newResourceForm,
-                  duration_hours: Number(newResourceForm.duration_hours) || 8,
-                  skills_taught: newResourceForm.skills_taught.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
-                  tags: newResourceForm.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean),
-                })
+                const formObj = editingResource || newResourceForm
+                const payload = {
+                  ...formObj,
+                  duration_hours: Number(formObj.duration_hours) || 8,
+                  skills_taught: Array.isArray(formObj.skills_taught) ? formObj.skills_taught : formObj.skills_taught.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
+                  tags: Array.isArray(formObj.tags) ? formObj.tags : formObj.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean),
+                }
+                if (editingResource) {
+                  updateResourceMutation.mutate({ id: editingResource.id, data: payload })
+                } else {
+                  createResourceMutation.mutate(payload)
+                }
               }}
               className="space-y-3"
             >
@@ -1930,8 +2275,11 @@ export default function Admin() {
                   type="text"
                   required
                   placeholder="e.g. Next.js 15 Full-Stack Mastery"
-                  value={newResourceForm.title}
-                  onChange={(e) => setNewResourceForm({ ...newResourceForm, title: e.target.value })}
+                  value={editingResource ? editingResource.title : newResourceForm.title}
+                  onChange={(e) => {
+                    if (editingResource) setEditingResource({ ...editingResource, title: e.target.value })
+                    else setNewResourceForm({ ...newResourceForm, title: e.target.value })
+                  }}
                   className="input text-xs"
                 />
               </div>
@@ -1941,8 +2289,11 @@ export default function Admin() {
                   rows="2"
                   required
                   placeholder="Summary of skills and practical takeaways..."
-                  value={newResourceForm.description}
-                  onChange={(e) => setNewResourceForm({ ...newResourceForm, description: e.target.value })}
+                  value={editingResource ? editingResource.description : newResourceForm.description}
+                  onChange={(e) => {
+                    if (editingResource) setEditingResource({ ...editingResource, description: e.target.value })
+                    else setNewResourceForm({ ...newResourceForm, description: e.target.value })
+                  }}
                   className="input text-xs"
                 />
               </div>
@@ -1950,8 +2301,11 @@ export default function Admin() {
                 <div>
                   <label className="input-label">Type</label>
                   <select
-                    value={newResourceForm.type}
-                    onChange={(e) => setNewResourceForm({ ...newResourceForm, type: e.target.value })}
+                    value={editingResource ? editingResource.type : newResourceForm.type}
+                    onChange={(e) => {
+                      if (editingResource) setEditingResource({ ...editingResource, type: e.target.value })
+                      else setNewResourceForm({ ...newResourceForm, type: e.target.value })
+                    }}
                     className="input text-xs font-semibold"
                   >
                     <option value="course">Course</option>
@@ -1962,8 +2316,11 @@ export default function Admin() {
                 <div>
                   <label className="input-label">Difficulty</label>
                   <select
-                    value={newResourceForm.difficulty}
-                    onChange={(e) => setNewResourceForm({ ...newResourceForm, difficulty: e.target.value })}
+                    value={editingResource ? editingResource.difficulty : newResourceForm.difficulty}
+                    onChange={(e) => {
+                      if (editingResource) setEditingResource({ ...editingResource, difficulty: e.target.value })
+                      else setNewResourceForm({ ...newResourceForm, difficulty: e.target.value })
+                    }}
                     className="input text-xs font-semibold"
                   >
                     <option value="beginner">Beginner</option>
@@ -1978,8 +2335,11 @@ export default function Admin() {
                   <input
                     type="number"
                     min="1"
-                    value={newResourceForm.duration_hours}
-                    onChange={(e) => setNewResourceForm({ ...newResourceForm, duration_hours: e.target.value })}
+                    value={editingResource ? editingResource.duration_hours : newResourceForm.duration_hours}
+                    onChange={(e) => {
+                      if (editingResource) setEditingResource({ ...editingResource, duration_hours: e.target.value })
+                      else setNewResourceForm({ ...newResourceForm, duration_hours: e.target.value })
+                    }}
                     className="input text-xs"
                   />
                 </div>
@@ -1987,8 +2347,11 @@ export default function Admin() {
                   <label className="input-label">Provider</label>
                   <input
                     type="text"
-                    value={newResourceForm.provider}
-                    onChange={(e) => setNewResourceForm({ ...newResourceForm, provider: e.target.value })}
+                    value={editingResource ? editingResource.provider : newResourceForm.provider}
+                    onChange={(e) => {
+                      if (editingResource) setEditingResource({ ...editingResource, provider: e.target.value })
+                      else setNewResourceForm({ ...newResourceForm, provider: e.target.value })
+                    }}
                     className="input text-xs"
                   />
                 </div>
@@ -1998,8 +2361,11 @@ export default function Admin() {
                 <input
                   type="url"
                   required
-                  value={newResourceForm.url}
-                  onChange={(e) => setNewResourceForm({ ...newResourceForm, url: e.target.value })}
+                  value={editingResource ? editingResource.url : newResourceForm.url}
+                  onChange={(e) => {
+                    if (editingResource) setEditingResource({ ...editingResource, url: e.target.value })
+                    else setNewResourceForm({ ...newResourceForm, url: e.target.value })
+                  }}
                   className="input text-xs"
                 />
               </div>
@@ -2008,14 +2374,19 @@ export default function Admin() {
                 <input
                   type="text"
                   placeholder="e.g. nextjs, typescript, tailwind"
-                  value={newResourceForm.skills_taught}
-                  onChange={(e) => setNewResourceForm({ ...newResourceForm, skills_taught: e.target.value })}
+                  value={editingResource ? (Array.isArray(editingResource.skills_taught) ? editingResource.skills_taught.join(', ') : editingResource.skills_taught) : newResourceForm.skills_taught}
+                  onChange={(e) => {
+                    if (editingResource) setEditingResource({ ...editingResource, skills_taught: e.target.value })
+                    else setNewResourceForm({ ...newResourceForm, skills_taught: e.target.value })
+                  }}
                   className="input text-xs font-mono"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setAddResourceModalOpen(false)} className="btn-secondary text-xs py-2 px-3 rounded-xl">Cancel</button>
-                <button type="submit" disabled={createResourceMutation.isPending} className="btn-primary text-xs py-2 px-4 rounded-xl">Save & Publish</button>
+                <button type="button" onClick={() => { setAddResourceModalOpen(false); setEditingResource(null) }} className="btn-secondary text-xs py-2 px-3 rounded-xl">Cancel</button>
+                <button type="submit" disabled={createResourceMutation.isPending || updateResourceMutation.isPending} className="btn-primary text-xs py-2 px-4 rounded-xl">
+                  {editingResource ? 'Save Changes' : 'Publish Unit'}
+                </button>
               </div>
             </form>
           </div>

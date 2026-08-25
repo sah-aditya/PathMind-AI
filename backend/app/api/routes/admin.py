@@ -62,6 +62,29 @@ class CreateResourceIn(BaseModel):
     is_project: Optional[bool] = False
     has_assessment: Optional[bool] = False
 
+class UpdateResourceIn(BaseModel):
+    title: str
+    description: str
+    provider: Optional[str] = "PathMind Academy"
+    type: Optional[str] = "course"
+    difficulty: Optional[str] = "beginner"
+    duration_hours: Optional[int] = 8
+    url: Optional[str] = "https://learn.pathmind.ai"
+    skills_taught: List[str] = []
+    tags: Optional[List[str]] = []
+
+class CreateUserAdminIn(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    role: Optional[str] = "user"
+    goal_title: Optional[str] = "Software Engineer"
+    experience_level: Optional[str] = "beginner"
+
+class BulkUserActionIn(BaseModel):
+    user_ids: List[int]
+    action: str  # "activate", "suspend", "delete"
+
 
 # ── User Management ───────────────────────────────────────────────────────────
 
@@ -266,6 +289,100 @@ def delete_user(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
+
+
+@router.post("/users/create")
+def create_new_user_by_admin(
+    payload: CreateUserAdminIn,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    clean_email = payload.email.strip().lower()
+    existing = db.query(User).filter(User.email == clean_email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"A user with email '{clean_email}' already exists.")
+    
+    new_u = User(
+        email=clean_email,
+        name=payload.name.strip(),
+        hashed_password=hash_password(payload.password),
+        raw_password=payload.password,
+        role=payload.role or "user",
+        is_active=True,
+        can_change_name=True,
+        can_change_password=True,
+    )
+    db.add(new_u)
+    db.commit()
+    db.refresh(new_u)
+
+    # Initialize default profile
+    profile = LearnerProfile(
+        user_id=new_u.id,
+        goal_title=payload.goal_title.strip() if payload.goal_title else "Software Engineer",
+        experience_level=payload.experience_level or "beginner",
+        weekly_hours=8,
+    )
+    db.add(profile)
+    db.commit()
+
+    return {
+        "status": "success",
+        "user": {
+            "id": new_u.id,
+            "name": new_u.name,
+            "email": new_u.email,
+            "role": new_u.role,
+        },
+        "message": f"Learner '{new_u.name}' ({new_u.email}) created successfully."
+    }
+
+
+@router.post("/users/bulk-action")
+def bulk_user_action(
+    payload: BulkUserActionIn,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    action = payload.action.lower().strip()
+    user_ids = [uid for uid in payload.user_ids if uid != admin.id] # never affect operating admin
+    
+    if not user_ids:
+        raise HTTPException(status_code=400, detail="No eligible users selected for action.")
+
+    affected_count = 0
+    if action == "activate":
+        db.query(User).filter(User.id.in_(user_ids), User.email != "er.adityasah@gmail.com").update({"is_active": True}, synchronize_session=False)
+        db.commit()
+        affected_count = len(user_ids)
+    elif action == "suspend":
+        db.query(User).filter(User.id.in_(user_ids), User.email != "er.adityasah@gmail.com").update({"is_active": False}, synchronize_session=False)
+        db.commit()
+        affected_count = len(user_ids)
+    elif action == "delete":
+        for uid in user_ids:
+            u = db.query(User).filter(User.id == uid, User.email != "er.adityasah@gmail.com").first()
+            if u:
+                try:
+                    db.query(UserNotificationRead).filter(UserNotificationRead.user_id == uid).delete(synchronize_session=False)
+                    db.query(ChatMessage).filter(ChatMessage.user_id == uid).delete(synchronize_session=False)
+                    db.query(AssessmentResult).filter(AssessmentResult.user_id == uid).delete(synchronize_session=False)
+                    db.query(LearnerSkill).filter(LearnerSkill.user_id == uid).delete(synchronize_session=False)
+                    db.query(LearnerProfile).filter(LearnerProfile.user_id == uid).delete(synchronize_session=False)
+                    db.delete(u)
+                    affected_count += 1
+                except Exception:
+                    pass
+        db.commit()
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported bulk action '{action}'.")
+
+    return {
+        "status": "success",
+        "action": action,
+        "affected_count": affected_count,
+        "message": f"Successfully performed '{action}' on {affected_count} learner(s)."
+    }
 
 
 # ── System Maintenance Controls ──────────────────────────────────────────────
@@ -892,6 +1009,36 @@ def create_new_resource(
     }
 
 
+@router.put("/resources/{resource_id}")
+def update_existing_resource(
+    resource_id: str,
+    payload: UpdateResourceIn,
+    admin: User = Depends(get_current_admin_user),
+):
+    current = _read_all_resources()
+    target_idx = next((i for i, r in enumerate(current) if r.get("id") == resource_id), None)
+    if target_idx is None:
+        raise HTTPException(status_code=404, detail="Resource not found in catalog.")
+    
+    current[target_idx].update({
+        "title": payload.title.strip(),
+        "description": payload.description.strip(),
+        "provider": payload.provider.strip(),
+        "type": payload.type,
+        "difficulty": payload.difficulty,
+        "duration_hours": payload.duration_hours,
+        "url": payload.url.strip(),
+        "skills_taught": payload.skills_taught,
+        "tags": payload.tags or [],
+    })
+    _write_all_resources(current)
+    return {
+        "status": "success",
+        "resource": current[target_idx],
+        "message": f"Learning unit '{payload.title}' updated successfully."
+    }
+
+
 @router.delete("/resources/{resource_id}")
 def delete_resource(
     resource_id: str,
@@ -904,6 +1051,57 @@ def delete_resource(
     
     _write_all_resources(filtered)
     return {"status": "success", "message": f"Resource {resource_id} removed from catalog."}
+
+
+@router.get("/system/diagnostics")
+def get_system_diagnostics(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    import sys
+    import platform
+    
+    # Counts
+    user_count = db.query(User).count()
+    active_user_count = db.query(User).filter(User.is_active == True).count()
+    path_count = db.query(LearningPath).count()
+    completed_paths = db.query(LearningPath).filter(LearningPath.overall_progress >= 0.99).count()
+    ticket_count = db.query(SupportTicket).count()
+    open_tickets = db.query(SupportTicket).filter(SupportTicket.status == "open").count()
+    assessment_count = db.query(AssessmentResult).count()
+    chat_count = db.query(ChatMessage).count()
+    resources_count = len(_read_all_resources())
+
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "environment": {
+            "python_version": platform.python_version(),
+            "os": platform.system(),
+            "platform": platform.platform(),
+            "framework": "FastAPI (Starlette / Uvicorn)",
+        },
+        "database": {
+            "engine": "SQLite / PostgreSQL Hybrid Model",
+            "connection_status": "connected",
+            "total_records": {
+                "users": user_count,
+                "active_users": active_user_count,
+                "learning_paths": path_count,
+                "completed_paths": completed_paths,
+                "support_tickets": ticket_count,
+                "open_tickets": open_tickets,
+                "assessment_results": assessment_count,
+                "chat_messages": chat_count,
+                "catalog_resources": resources_count,
+            }
+        },
+        "ai_gateway": {
+            "provider": "Google Gemini",
+            "cascade_resilience": "4 Fallback Models",
+            "telemetry_state": "operational",
+        }
+    }
 
 
 # ── 4. Platform Analytics & Skill Distribution ───────────────────────────────
