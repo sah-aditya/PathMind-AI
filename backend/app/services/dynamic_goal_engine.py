@@ -91,23 +91,23 @@ Return ONLY valid JSON with this exact schema:
     "Phase 4: Capstone Project & Portfolio"
   ],
   "skills": [
-    {
+    {{
       "id": "skill-slug-1",
       "name": "Skill Name",
       "category": "Domain/Category",
       "parent": null,
       "description": "What this skill covers"
-    },
-    {
+    }},
+    {{
       "id": "skill-slug-2",
       "name": "Skill Name 2",
       "category": "Domain/Category",
       "parent": "skill-slug-1",
       "description": "What this skill covers"
-    }
+    }}
   ],
   "resources": [
-    {
+    {{
       "id": "dyn-res-1",
       "title": "Course/Project Title",
       "description": "Comprehensive description of what you learn and build.",
@@ -122,8 +122,8 @@ Return ONLY valid JSON with this exact schema:
       "rating": 4.8,
       "is_project": false,
       "has_assessment": true
-    },
-    {
+    }},
+    {{
       "id": "dyn-res-2",
       "title": "Hands-on Project Title",
       "description": "Real-world project description.",
@@ -138,9 +138,9 @@ Return ONLY valid JSON with this exact schema:
       "rating": 4.9,
       "is_project": true,
       "has_assessment": false
-    }
+    }}
   ]
-}
+}}
 
 PEDAGOGICAL RULES:
 1. typical_path_weeks MUST be between 8 and 12 weeks (realistic student term).
