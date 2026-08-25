@@ -12,6 +12,18 @@ from app.db.database import engine, Base, SessionLocal
 from app.models import user, profile as prof_model, learning, admin as admin_models, support as support_models, certificate as certificate_models
 from app.core.security import hash_password
 
+from app.core.log_buffer import log_buffer
+import time
+
+logging.basicConfig(level=logging.INFO)
+root_logger = logging.getLogger()
+if log_buffer not in root_logger.handlers:
+    root_logger.addHandler(log_buffer)
+
+logging.getLogger("uvicorn.access").addHandler(log_buffer)
+logging.getLogger("uvicorn.error").addHandler(log_buffer)
+logging.getLogger("app").addHandler(log_buffer)
+
 logger = logging.getLogger(__name__)
 
 
@@ -186,6 +198,33 @@ async def maintenance_middleware(request: Request, call_next):
         pass
 
     return await call_next(request)
+
+
+@app.middleware("http")
+async def live_log_http_middleware(request: Request, call_next):
+    path = request.url.path
+    # Avoid logging log polling itself to prevent recursion
+    if path.startswith("/api/admin/logs/live") or path == "/api/health" or path == "/":
+        return await call_next(request)
+    
+    start_time = time.time()
+    response = await call_next(request)
+    duration_ms = round((time.time() - start_time) * 1000, 1)
+
+    log_level = "INFO"
+    if response.status_code >= 500:
+        log_level = "ERROR"
+    elif response.status_code >= 400:
+        log_level = "WARN"
+
+    log_msg = f"{request.method} {path} -> {response.status_code} ({duration_ms}ms)"
+    log_buffer.add_custom_log(
+        level=log_level,
+        category="HTTP",
+        module="fastapi.access",
+        message=log_msg,
+    )
+    return response
 
 
 # Routers

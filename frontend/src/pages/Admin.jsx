@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi, certificateApi } from '../services/api'
 import { cleanCourseTitle } from './Certificates'
@@ -14,7 +14,8 @@ import {
   BookOpen, Plus, ExternalLink, Zap, Compass, HelpCircle,
   Award, Flame, TrendingUp, History, Radio, Gauge, Sliders,
   Rocket, UserPlus, RefreshCcw, LayoutDashboard, Map, GitBranch,
-  ToggleLeft, ToggleRight, ArrowUpDown, HardDrive, Terminal
+  ToggleLeft, ToggleRight, ArrowUpDown, HardDrive, Terminal,
+  Cloud, Play, Pause, FileText, Globe, Link2, RotateCcw
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
@@ -83,7 +84,7 @@ export default function Admin() {
   const { theme } = useThemeStore()
   const queryClient = useQueryClient()
   
-  // Executive Organized Navigation Groups: 'learners' | 'curriculum' | 'support' | 'system'
+  // Executive Organized Navigation Groups: 'learners' | 'curriculum' | 'support' | 'system' | 'logs'
   const [activeGroup, setActiveGroup] = useState('learners')
   const [subTab, setSubTab] = useState('directory')
 
@@ -91,14 +92,14 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
   const [expFilter, setExpFilter] = useState('ALL')
-  const [sortBy, setSortBy] = useState('default') // 'default' | 'progress_desc' | 'skills_desc' | 'name_asc' | 'created_desc'
+  const [sortBy, setSortBy] = useState('default')
   const [selectedUserIds, setSelectedUserIds] = useState([])
   
   // Inline Name Editing state
   const [editingNameUserId, setEditingNameUserId] = useState(null)
   const [editingNameInput, setEditingNameInput] = useState('')
 
-  // Password Visibility state per user { [userId]: boolean }
+  // Password Visibility state per user
   const [revealedPasswords, setRevealedPasswords] = useState({})
   const [copiedUserId, setCopiedUserId] = useState(null)
 
@@ -142,6 +143,22 @@ export default function Admin() {
     skills_taught: '',
     tags: '',
   })
+
+  // Cloud & Live Logs Stream State
+  const [logLevelFilter, setLogLevelFilter] = useState('ALL')
+  const [logSearchInput, setLogSearchInput] = useState('')
+  const [logAutoScroll, setLogAutoScroll] = useState(true)
+  const [logPollingInterval, setLogPollingInterval] = useState(2000) // 2000ms
+  const logTerminalRef = useRef(null)
+
+  // Cloud Credentials Form State
+  const [cloudCredsForm, setCloudCredsForm] = useState({
+    render_api_key: '',
+    render_service_id: '',
+    vercel_api_token: '',
+    vercel_project_id: '',
+  })
+  const [cloudCredsSavedMsg, setCloudCredsSavedMsg] = useState('')
 
   // AI Ping Test State
   const [pingResult, setPingResult] = useState(null)
@@ -210,7 +227,7 @@ export default function Admin() {
     refetchInterval: 10000,
   })
 
-  // 6. Fetch Single Ticket Thread Detail for Modal
+  // 6. Fetch Single Ticket Thread Detail
   const { data: adminTicketDetail, isLoading: detailLoading } = useQuery({
     queryKey: ['adminSupportTicketDetail', selectedTicketForAdmin?.id],
     queryFn: () => adminApi.getSupportTicketDetail(selectedTicketForAdmin.id).then(r => r.data),
@@ -286,7 +303,82 @@ export default function Admin() {
     refetchInterval: 15000,
   })
 
-  // Certificate Mutations
+  // 15. Fetch Live Application Logs
+  const { data: liveLogsData, isLoading: liveLogsLoading } = useQuery({
+    queryKey: ['adminLiveLogs', logLevelFilter, logSearchInput],
+    queryFn: () => adminApi.getLiveLogs({
+      level: logLevelFilter,
+      search: logSearchInput || undefined,
+      limit: 300,
+    }).then(r => r.data),
+    enabled: activeGroup === 'logs' && subTab === 'live',
+    refetchInterval: logPollingInterval > 0 ? logPollingInterval : false,
+  })
+
+  // 16. Fetch Render Cloud Logs
+  const { data: renderLogsData, isLoading: renderLogsLoading } = useQuery({
+    queryKey: ['adminRenderLogs'],
+    queryFn: () => adminApi.getRenderLogs().then(r => r.data),
+    enabled: activeGroup === 'logs' && subTab === 'render',
+    refetchInterval: 10000,
+  })
+
+  // 17. Fetch Vercel Cloud Logs
+  const { data: vercelLogsData, isLoading: vercelLogsLoading } = useQuery({
+    queryKey: ['adminVercelLogs'],
+    queryFn: () => adminApi.getVercelLogs().then(r => r.data),
+    enabled: activeGroup === 'logs' && subTab === 'vercel',
+    refetchInterval: 15000,
+  })
+
+  // 18. Fetch Cloud Log Credentials
+  const { data: cloudCredsData } = useQuery({
+    queryKey: ['adminCloudLogCredentials'],
+    queryFn: () => adminApi.getCloudLogCredentials().then(r => r.data),
+    enabled: activeGroup === 'logs' && subTab === 'connectors',
+  })
+
+  // Populate credentials form when loaded
+  useEffect(() => {
+    if (cloudCredsData) {
+      setCloudCredsForm(prev => ({
+        ...prev,
+        render_service_id: cloudCredsData.render_service_id || '',
+        vercel_project_id: cloudCredsData.vercel_project_id || '',
+      }))
+    }
+  }, [cloudCredsData])
+
+  // Auto-scroll terminal to bottom when new logs arrive
+  useEffect(() => {
+    if (logAutoScroll && logTerminalRef.current) {
+      logTerminalRef.current.scrollTop = logTerminalRef.current.scrollHeight
+    }
+  }, [liveLogsData, logAutoScroll])
+
+  // Mutations
+  const updateCloudCredsMutation = useMutation({
+    mutationFn: (payload) => adminApi.updateCloudLogCredentials(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminCloudLogCredentials'] })
+      queryClient.invalidateQueries({ queryKey: ['adminRenderLogs'] })
+      queryClient.invalidateQueries({ queryKey: ['adminVercelLogs'] })
+      setCloudCredsSavedMsg('Cloud credentials updated and verified!')
+      triggerToast('Cloud log connectors saved successfully.')
+      setTimeout(() => setCloudCredsSavedMsg(''), 4000)
+    },
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to update credentials.', 'error')
+  })
+
+  const clearLiveLogsMutation = useMutation({
+    mutationFn: () => adminApi.clearLiveLogs(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminLiveLogs'] })
+      triggerToast('Terminal log buffer cleared.')
+    },
+    onError: () => triggerToast('Failed to clear logs.', 'error'),
+  })
+
   const approveCertMutation = useMutation({
     mutationFn: (id) => certificateApi.adminApprove(id),
     onSuccess: (res) => {
@@ -307,7 +399,6 @@ export default function Admin() {
     onError: () => triggerToast('Failed to reject certificate.', 'error'),
   })
 
-  // User Mutations
   const createUserMutation = useMutation({
     mutationFn: (payload) => adminApi.createUser(payload),
     onSuccess: (res) => {
@@ -317,9 +408,7 @@ export default function Admin() {
       setNewUserForm({ name: '', email: '', password: '', role: 'user', goal_title: 'Software Engineer', experience_level: 'beginner' })
       triggerToast(res.data?.message || 'Learner account created successfully.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to create user.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to create user.', 'error')
   })
 
   const bulkUserActionMutation = useMutation({
@@ -330,9 +419,7 @@ export default function Admin() {
       setSelectedUserIds([])
       triggerToast(res.data?.message || 'Bulk action executed.')
     },
-    onError: (err) => {
-      triggerToast(err.response?.data?.detail || 'Failed to execute bulk action.', 'error')
-    }
+    onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to execute bulk action.', 'error')
   })
 
   const updateServiceFlagMutation = useMutation({
@@ -425,7 +512,6 @@ export default function Admin() {
     },
   })
 
-  // Resource Mutations
   const createResourceMutation = useMutation({
     mutationFn: (payload) => adminApi.createResource(payload),
     onSuccess: (res) => {
@@ -456,7 +542,6 @@ export default function Admin() {
     onError: (err) => triggerToast(err.response?.data?.detail || 'Failed to delete resource.', 'error')
   })
 
-  // Notification Mutations
   const createNotifMutation = useMutation({
     mutationFn: (data) => adminApi.createNotification(data),
     onSuccess: () => {
@@ -479,7 +564,6 @@ export default function Admin() {
     onError: () => triggerToast('Failed to remove notification.', 'error'),
   })
 
-  // Support Mutations
   const adminReplyMutation = useMutation({
     mutationFn: ({ ticketId, message, status }) => adminApi.replySupportTicket(ticketId, message, status),
     onSuccess: () => {
@@ -585,6 +669,25 @@ export default function Admin() {
     triggerToast("Learner records exported to JSON.")
   }
 
+  const handleDownloadLogsFile = () => {
+    const rawLogs = liveLogsData?.logs || []
+    if (!rawLogs.length) {
+      triggerToast('No logs to download.', 'error')
+      return
+    }
+    const lines = rawLogs.map(l => `[${l.timestamp}] [${l.level}] [${l.module}]: ${l.message}`).join('\n')
+    const blob = new Blob([lines], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `pathmind_server_logs_${new Date().toISOString().replace(/:/g, '-')}.log`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    triggerToast(`Downloaded ${rawLogs.length} log lines to .log file.`)
+  }
+
   // Filtered & Sorted Users
   const processedUsers = useMemo(() => {
     let result = users.filter((u) => {
@@ -664,7 +767,7 @@ export default function Admin() {
             <span>Platform Operations & Governance</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 mt-0.5">
-            Supervise learners, manage curriculum catalog, resolve helpdesk tickets, and configure service flags.
+            Supervise learners, inspect curriculum catalog, monitor cloud logs, and configure infrastructure.
           </p>
         </div>
 
@@ -759,28 +862,30 @@ export default function Admin() {
           </p>
         </div>
 
-        {/* Metric 4: Pending Certificates */}
+        {/* Metric 4: Cloud Logs & Health */}
         <div
-          onClick={() => { setActiveGroup('learners'); setSubTab('certificates') }}
+          onClick={() => { setActiveGroup('logs'); setSubTab('live') }}
           className={`card cursor-pointer p-4 transition-all ${
-            activeGroup === 'learners' && subTab === 'certificates'
+            activeGroup === 'logs'
               ? 'ring-2 ring-indigo-500/40 border-indigo-500 dark:border-indigo-400'
               : 'hover:border-slate-300 dark:hover:border-zinc-700'
           }`}
         >
           <div className="flex items-center justify-between text-slate-500 dark:text-zinc-400 mb-2">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider">Credentials</span>
-            <Award className="w-4 h-4 text-amber-500" />
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider">Cloud Logs</span>
+            <Terminal className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="stat-value">{pendingCertsCount}</div>
+          <div className="stat-value font-mono text-xl text-emerald-600 dark:text-emerald-400">
+            {liveLogsData?.total ?? 'Live'}
+          </div>
           <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1">
-            Pending administrative review
+            Real-time streaming console
           </p>
         </div>
 
       </div>
 
-      {/* ── Primary Executive Group Navigation Tabs ── */}
+      {/* ── Primary Executive Group Navigation Tabs (5 Clean Modules) ── */}
       <div className="border-b border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between overflow-x-auto gap-4">
         <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-white/[0.08] text-xs font-semibold">
           
@@ -839,7 +944,21 @@ export default function Admin() {
             }`}
           >
             <Sliders className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-            <span>System & Infrastructure</span>
+            <span>System & Switches</span>
+          </button>
+
+          {/* Module 5: Cloud & Server Logs */}
+          <button
+            onClick={() => { setActiveGroup('logs'); setSubTab('live') }}
+            className={`px-3.5 py-2 rounded-lg transition-all flex items-center gap-2 ${
+              activeGroup === 'logs'
+                ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 shadow-subtle font-bold'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
+            }`}
+          >
+            <Terminal className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Cloud & Server Logs</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           </button>
 
         </div>
@@ -851,7 +970,6 @@ export default function Admin() {
       {activeGroup === 'learners' && (
         <div className="space-y-4">
           
-          {/* Sub-navigation */}
           <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-white/[0.04]">
             <div className="flex items-center gap-2">
               <button
@@ -882,7 +1000,6 @@ export default function Admin() {
               </button>
             </div>
 
-            {/* Quick Add User Button */}
             {subTab === 'directory' && (
               <button
                 onClick={() => setCreateUserModalOpen(true)}
@@ -898,7 +1015,6 @@ export default function Admin() {
           {subTab === 'directory' && (
             <div className="space-y-4">
               
-              {/* Filter, Search & Sorting Controls */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2 flex-1">
                   <div className="relative w-64">
@@ -1059,7 +1175,6 @@ export default function Admin() {
                               }`}
                             >
                               
-                              {/* Checkbox */}
                               <td className="px-3 py-3">
                                 <input
                                   type="checkbox"
@@ -1070,7 +1185,6 @@ export default function Admin() {
                                 />
                               </td>
 
-                              {/* Name & Avatar */}
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
                                   <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center flex-shrink-0 border border-indigo-200/50 dark:border-white/[0.08]">
@@ -1127,7 +1241,6 @@ export default function Admin() {
                                 </div>
                               </td>
 
-                              {/* Password */}
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-1.5">
                                   <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
@@ -1152,7 +1265,6 @@ export default function Admin() {
                                 </div>
                               </td>
 
-                              {/* Permissions Switchboard */}
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-1.5">
                                   <button
@@ -1188,7 +1300,6 @@ export default function Admin() {
                                 </div>
                               </td>
 
-                              {/* Role */}
                               <td className="px-4 py-3">
                                 <select
                                   value={u.role}
@@ -1201,7 +1312,6 @@ export default function Admin() {
                                 </select>
                               </td>
 
-                              {/* Status */}
                               <td className="px-4 py-3">
                                 <button
                                   disabled={isSuperadmin}
@@ -1214,13 +1324,11 @@ export default function Admin() {
                                 </button>
                               </td>
 
-                              {/* Goal */}
                               <td className="px-4 py-3">
                                 <p className="font-bold text-slate-800 dark:text-zinc-200 line-clamp-1">{u.goal_title || 'No Goal'}</p>
                                 <p className="text-[10px] text-slate-400 capitalize">{u.experience_level || 'beginner'} • {u.skills_count} skills</p>
                               </td>
 
-                              {/* Progress */}
                               <td className="px-4 py-3">
                                 <div className="w-24 space-y-1">
                                   <div className="flex justify-between text-[10px] font-mono text-slate-500">
@@ -1232,7 +1340,6 @@ export default function Admin() {
                                 </div>
                               </td>
 
-                              {/* Actions */}
                               <td className="px-4 py-3 text-right">
                                 <div className="inline-flex items-center gap-1">
                                   <button
@@ -1411,7 +1518,6 @@ export default function Admin() {
             </button>
           </div>
 
-          {/* Sub-view 2A: Catalog Resources */}
           {subTab === 'resources' && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1539,10 +1645,8 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Sub-view 2B: Analytics */}
           {subTab === 'analytics' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              
               <div className="card p-5 space-y-3">
                 <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 font-mono">Career Track Popularity</h4>
                 <div className="space-y-2.5">
@@ -1582,7 +1686,6 @@ export default function Admin() {
                   ))}
                 </div>
               </div>
-
             </div>
           )}
 
@@ -1618,7 +1721,6 @@ export default function Admin() {
             </button>
           </div>
 
-          {/* Sub-view 3A: Helpdesk */}
           {subTab === 'helpdesk' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -1705,10 +1807,8 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Sub-view 3B: Broadcasts */}
           {subTab === 'broadcasts' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
               <div className="card p-5 space-y-4 lg:col-span-1">
                 <div>
                   <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100">Send Announcement</h3>
@@ -1802,7 +1902,6 @@ export default function Admin() {
                   )}
                 </div>
               </div>
-
             </div>
           )}
 
@@ -1868,7 +1967,6 @@ export default function Admin() {
             </button>
           </div>
 
-          {/* Sub-view 4A: Switchboard */}
           {subTab === 'switchboard' && (
             <div className="space-y-4">
               <div>
@@ -1917,7 +2015,6 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Sub-view 4B: Maintenance */}
           {subTab === 'maintenance' && (
             <div className="card p-6 max-w-2xl space-y-4">
               <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/[0.08] pb-4">
@@ -1943,10 +2040,8 @@ export default function Admin() {
             </div>
           )}
 
-          {/* Sub-view 4C: AI Telemetry */}
           {subTab === 'ai_telemetry' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              
               <div className="card p-5 space-y-3">
                 <span className="text-xs font-mono font-bold uppercase text-slate-400">Primary Gemini Model</span>
                 <p className="text-lg font-bold font-mono text-indigo-600 dark:text-indigo-400">
@@ -1987,16 +2082,12 @@ export default function Admin() {
                   </div>
                 )}
               </div>
-
             </div>
           )}
 
-          {/* Sub-view 4D: Diagnostics */}
           {subTab === 'diagnostics' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                {/* Database Records Breakdown */}
                 <div className="card p-5 space-y-3 md:col-span-2">
                   <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.04] pb-3">
                     <div className="flex items-center gap-2">
@@ -2016,7 +2107,6 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Runtime & OS Info */}
                 <div className="card p-5 space-y-3">
                   <div className="flex items-center gap-2 border-b border-slate-100 dark:border-white/[0.04] pb-3">
                     <Terminal className="w-4 h-4 text-sky-600 dark:text-sky-400" />
@@ -2041,12 +2131,10 @@ export default function Admin() {
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           )}
 
-          {/* Sub-view 4E: Audit Logs */}
           {subTab === 'audit_logs' && (
             <div className="card p-0 overflow-hidden">
               <div className="p-4 border-b border-slate-200/80 dark:border-white/[0.08] flex items-center justify-between">
@@ -2078,6 +2166,501 @@ export default function Admin() {
                   ))
                 )}
               </div>
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* ── MODULE 5: CLOUD & SERVER LOGS (RENDER & VERCEL)         ── */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      {activeGroup === 'logs' && (
+        <div className="space-y-4">
+          
+          {/* Sub-navigation */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-slate-200/60 dark:border-white/[0.04]">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSubTab('live')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  subTab === 'live'
+                    ? 'bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-white/[0.08]'
+                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+                }`}
+              >
+                <Terminal className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Live Server Runtime ({liveLogsData?.total ?? 0})</span>
+              </button>
+
+              <button
+                onClick={() => setSubTab('render')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  subTab === 'render'
+                    ? 'bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-white/[0.08]'
+                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+                }`}
+              >
+                <Cloud className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Render Backend Stream</span>
+              </button>
+
+              <button
+                onClick={() => setSubTab('vercel')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  subTab === 'vercel'
+                    ? 'bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-white/[0.08]'
+                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5 text-sky-500" />
+                <span>Vercel Frontend Stream</span>
+              </button>
+
+              <button
+                onClick={() => setSubTab('connectors')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  subTab === 'connectors'
+                    ? 'bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-white/[0.08]'
+                    : 'text-slate-500 dark:text-zinc-400 hover:text-slate-900'
+                }`}
+              >
+                <Key className="w-3.5 h-3.5 text-amber-500" />
+                <span>API Connectors Vault</span>
+              </button>
+            </div>
+
+            {/* Quick Actions for Live Stream */}
+            {subTab === 'live' && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadLogsFile}
+                  className="btn-secondary text-[11px] py-1.5 px-2.5 rounded-lg flex items-center gap-1.5"
+                  title="Download .log file"
+                >
+                  <Download className="w-3 h-3 text-slate-500" />
+                  <span>Save .log</span>
+                </button>
+                <button
+                  onClick={() => clearLiveLogsMutation.mutate()}
+                  disabled={clearLiveLogsMutation.isPending}
+                  className="btn-secondary text-[11px] py-1.5 px-2.5 rounded-lg text-rose-600 dark:text-rose-400"
+                  title="Clear Terminal Buffer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Clear</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Sub-view 5A: Live Application Terminal Console */}
+          {subTab === 'live' && (
+            <div className="space-y-3">
+              
+              {/* Terminal Control Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 bg-slate-900 text-slate-200 rounded-xl border border-slate-800 text-xs">
+                
+                {/* Level Filters */}
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-mono uppercase text-slate-400 mr-1">Filter:</span>
+                  {['ALL', 'INFO', 'WARN', 'ERROR', 'HTTP', 'GEMINI'].map((lvl) => (
+                    <button
+                      key={lvl}
+                      onClick={() => setLogLevelFilter(lvl)}
+                      className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-all ${
+                        logLevelFilter === lvl
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'bg-slate-800/80 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {lvl}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search in logs */}
+                <div className="relative w-48 sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search logs regex..."
+                    value={logSearchInput}
+                    onChange={(e) => setLogSearchInput(e.target.value)}
+                    className="w-full bg-slate-800 text-slate-100 pl-8 pr-2.5 py-1 text-[11px] font-mono rounded-lg border border-slate-700 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                {/* Stream Options: Polling Interval & Auto-scroll */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono text-slate-400">Stream:</span>
+                    <select
+                      value={logPollingInterval}
+                      onChange={(e) => setLogPollingInterval(Number(e.target.value))}
+                      className="bg-slate-800 text-slate-200 text-[10px] font-mono px-2 py-0.5 rounded border border-slate-700"
+                    >
+                      <option value="1000">1s (Real-time)</option>
+                      <option value="2000">2s (Standard)</option>
+                      <option value="5000">5s (Relaxed)</option>
+                      <option value="0">Paused</option>
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={() => setLogAutoScroll(!logAutoScroll)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 border ${
+                      logAutoScroll
+                        ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                    title="Auto-scroll terminal to newest entries"
+                  >
+                    <span>Auto-scroll</span>
+                    <span className={`w-1.5 h-1.5 rounded-full ${logAutoScroll ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                  </button>
+                </div>
+
+              </div>
+
+              {/* Dark Terminal Window */}
+              <div
+                ref={logTerminalRef}
+                className="bg-[#0b0f19] text-slate-300 font-mono text-[11px] p-4 rounded-xl border border-slate-800/80 shadow-2xl h-[520px] overflow-y-auto space-y-1.5 select-text"
+              >
+                {liveLogsLoading ? (
+                  <p className="text-slate-500 text-center py-12">Connecting to live application log pipe…</p>
+                ) : liveLogsData?.logs?.length === 0 ? (
+                  <div className="text-center py-16 space-y-2">
+                    <Terminal className="w-8 h-8 text-slate-600 mx-auto" />
+                    <p className="text-slate-500">No log events recorded matching the active filters.</p>
+                    <p className="text-[10px] text-slate-600">Interact with the platform to generate live stream signals.</p>
+                  </div>
+                ) : (
+                  liveLogsData?.logs?.map((l) => {
+                    const timeStr = l.timestamp ? new Date(l.timestamp).toLocaleTimeString() : '00:00:00'
+                    
+                    let badgeColor = 'text-slate-400 bg-slate-800/50'
+                    if (l.level === 'ERROR') badgeColor = 'text-rose-400 bg-rose-950/60 border border-rose-900'
+                    else if (l.level === 'WARN' || l.level === 'WARNING') badgeColor = 'text-amber-300 bg-amber-950/60 border border-amber-900'
+                    else if (l.category === 'GEMINI') badgeColor = 'text-purple-300 bg-purple-950/60 border border-purple-900'
+                    else if (l.category === 'HTTP') badgeColor = 'text-sky-300 bg-sky-950/60 border border-sky-900'
+                    else if (l.level === 'INFO') badgeColor = 'text-emerald-400 bg-emerald-950/50 border border-emerald-900/60'
+
+                    return (
+                      <div key={l.id} className="flex items-start gap-2 leading-relaxed hover:bg-white/[0.03] px-1 py-0.5 rounded transition-colors group">
+                        <span className="text-slate-500 select-none flex-shrink-0 text-[10px] font-mono">[{timeStr}]</span>
+                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider flex-shrink-0 ${badgeColor}`}>
+                          {l.category || l.level}
+                        </span>
+                        <span className="text-slate-400 select-none flex-shrink-0 text-[10px]">[{l.module}]:</span>
+                        <span className={`flex-1 break-all ${
+                          l.level === 'ERROR' ? 'text-rose-200 font-semibold' : l.level === 'WARN' ? 'text-amber-200' : 'text-slate-200'
+                        }`}>
+                          {l.message}
+                        </span>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+
+            </div>
+          )}
+
+          {/* Sub-view 5B: Render Backend Cloud Stream */}
+          {subTab === 'render' && (
+            <div className="space-y-4">
+              
+              {/* Render Service Health Card */}
+              <div className="card p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 dark:border-white/[0.08] pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                      <Cloud className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+                        <span>{renderLogsData?.service?.name || 'PathMind Backend (Render)'}</span>
+                        <span className={`badge uppercase text-[10px] font-mono font-bold ${
+                          renderLogsData?.status === 'connected' ? 'badge-green' : 'badge-yellow'
+                        }`}>
+                          {renderLogsData?.status === 'connected' ? 'Render API Connected' : 'Container Mode'}
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Region: <span className="font-mono">{renderLogsData?.service?.region || 'oregon (Free Tier Container)'}</span> • Type: <span className="font-mono">{renderLogsData?.service?.type || 'web_service'}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['adminRenderLogs'] })}
+                    className="btn-secondary text-xs py-1.5 px-3 rounded-lg self-start sm:self-auto"
+                  >
+                    Sync Render Signals
+                  </button>
+                </div>
+
+                {renderLogsData?.status === 'unconfigured' && (
+                  <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">Render Cloud REST API Key Not Added Yet</p>
+                      <p className="text-[11px] mt-0.5">
+                        Showing realtime container process logs directly from FastAPI. To enable Render Deployment history and Cloud Events, open the <strong onClick={() => setSubTab('connectors')} className="underline cursor-pointer">API Connectors Vault</strong> and paste your free Render API Key & Service ID.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Render Deploys & Events Grid */}
+                {renderLogsData?.deploys && renderLogsData.deploys.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 font-mono">Recent Render Deployments</h4>
+                    <div className="divide-y divide-slate-100 dark:divide-white/[0.04] border border-slate-200/60 dark:border-white/[0.04] rounded-xl overflow-hidden text-xs">
+                      {renderLogsData.deploys.slice(0, 5).map((d) => (
+                        <div key={d.deploy?.id || d.id} className="p-3 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-zinc-800/40">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`badge uppercase text-[10px] font-bold ${
+                                (d.deploy?.status || d.status) === 'live' ? 'badge-green' : 'badge-yellow'
+                              }`}>
+                                {d.deploy?.status || d.status}
+                              </span>
+                              <span className="font-mono text-[11px] text-slate-800 dark:text-zinc-200">
+                                {d.deploy?.commit?.message || d.commit?.message || 'Production Release'}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono mt-0.5 block">
+                              Trigger: {d.deploy?.trigger || d.trigger || 'git push'} • ID: {d.deploy?.id || d.id}
+                            </span>
+                          </div>
+                          <span className="text-[11px] font-mono text-slate-500">
+                            {new Date(d.deploy?.createdAt || d.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          )}
+
+          {/* Sub-view 5C: Vercel Frontend Cloud Stream */}
+          {subTab === 'vercel' && (
+            <div className="space-y-4">
+              
+              <div className="card p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 dark:border-white/[0.08] pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold">
+                      <Globe className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+                        <span>PathMind AI Frontend (Vercel)</span>
+                        <span className={`badge uppercase text-[10px] font-mono font-bold ${
+                          vercelLogsData?.status === 'connected' ? 'badge-green' : 'badge-yellow'
+                        }`}>
+                          {vercelLogsData?.status === 'connected' ? 'Vercel API Connected' : 'Setup Required'}
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
+                        Vercel Edge Network & Production Deployments Stream
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['adminVercelLogs'] })}
+                    className="btn-secondary text-xs py-1.5 px-3 rounded-lg self-start sm:self-auto"
+                  >
+                    Sync Vercel Deploys
+                  </button>
+                </div>
+
+                {vercelLogsData?.status === 'unconfigured' && (
+                  <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">Vercel Free Token Not Configured</p>
+                      <p className="text-[11px] mt-0.5">
+                        To inspect Vercel Frontend build logs, deployment outputs, and git commit previews, generate a free Personal Access Token at <a href="https://vercel.com/account/tokens" target="_blank" rel="noreferrer" className="underline font-bold">vercel.com/account/tokens</a> and paste it into the <strong onClick={() => setSubTab('connectors')} className="underline cursor-pointer">API Connectors Vault</strong>.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Vercel Deployments Table */}
+                {vercelLogsData?.deployments && vercelLogsData.deployments.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 font-mono">Vercel Production & Preview Deployments</h4>
+                    <div className="divide-y divide-slate-100 dark:divide-white/[0.04] border border-slate-200/60 dark:border-white/[0.04] rounded-xl overflow-hidden text-xs">
+                      {vercelLogsData.deployments.map((dep) => (
+                        <div key={dep.uid || dep.id} className="p-3 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-zinc-800/40">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`badge uppercase text-[10px] font-bold ${
+                                dep.state === 'READY' ? 'badge-green' : dep.state === 'BUILDING' ? 'badge-yellow' : 'badge-red'
+                              }`}>
+                                {dep.state}
+                              </span>
+                              <a
+                                href={`https://${dep.url}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-mono text-[11px] text-indigo-600 dark:text-indigo-400 font-bold hover:underline flex items-center gap-1"
+                              >
+                                <span>{dep.url}</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono mt-0.5 block">
+                              Commit: {dep.meta?.githubCommitMessage || 'Production build'} • Target: {dep.target || 'production'}
+                            </span>
+                          </div>
+                          <span className="text-[11px] font-mono text-slate-500">
+                            {new Date(dep.created).toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Latest Deployment Build Events */}
+                {vercelLogsData?.latest_deployment_events && vercelLogsData.latest_deployment_events.length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 font-mono">Latest Build Output Stream</h4>
+                    <div className="bg-[#0b0f19] text-slate-300 font-mono text-[11px] p-3 rounded-xl border border-slate-800 max-h-48 overflow-y-auto space-y-1">
+                      {vercelLogsData.latest_deployment_events.map((evt, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <span className="text-slate-500 text-[10px]">[{new Date(evt.created || Date.now()).toLocaleTimeString()}]</span>
+                          <span className="text-slate-200">{evt.text || evt.payload?.text || JSON.stringify(evt)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+          )}
+
+          {/* Sub-view 5D: Cloud Connectors Vault */}
+          {subTab === 'connectors' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              <div className="card p-5 space-y-4">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+                    <Key className="w-4 h-4 text-amber-500" />
+                    <span>Cloud API Credentials Vault</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400">
+                    Configure your free Render & Vercel API keys directly from the UI. Keys are stored securely in database settings.
+                  </p>
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    updateCloudCredsMutation.mutate(cloudCredsForm)
+                  }}
+                  className="space-y-3"
+                >
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200/80 dark:border-white/[0.04] space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-zinc-200">
+                      <Cloud className="w-4 h-4 text-indigo-500" />
+                      <span>Render API Connector (Backend)</span>
+                    </div>
+                    <div>
+                      <label className="input-label">Render API Key (Free)</label>
+                      <input
+                        type="password"
+                        placeholder={cloudCredsData?.render_api_key_configured ? `Current: ${cloudCredsData.render_api_key_masked} (Leave empty to keep)` : 'rnd_xxxxxxxxxxxxxxxxxxxx'}
+                        value={cloudCredsForm.render_api_key}
+                        onChange={(e) => setCloudCredsForm({ ...cloudCredsForm, render_api_key: e.target.value })}
+                        className="input text-xs font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="input-label">Render Service ID</label>
+                      <input
+                        type="text"
+                        placeholder="srv-xxxxxxxxxxxxxxxxxxxx"
+                        value={cloudCredsForm.render_service_id}
+                        onChange={(e) => setCloudCredsForm({ ...cloudCredsForm, render_service_id: e.target.value })}
+                        className="input text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 border border-slate-200/80 dark:border-white/[0.04] space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-zinc-200">
+                      <Globe className="w-4 h-4 text-sky-500" />
+                      <span>Vercel API Connector (Frontend)</span>
+                    </div>
+                    <div>
+                      <label className="input-label">Vercel Personal Access Token (Free)</label>
+                      <input
+                        type="password"
+                        placeholder={cloudCredsData?.vercel_api_token_configured ? `Current: ${cloudCredsData.vercel_api_token_masked} (Leave empty to keep)` : 'ver_xxxxxxxxxxxxxxxxxxxx'}
+                        value={cloudCredsForm.vercel_api_token}
+                        onChange={(e) => setCloudCredsForm({ ...cloudCredsForm, vercel_api_token: e.target.value })}
+                        className="input text-xs font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="input-label">Vercel Project ID (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="prj_xxxxxxxxxxxxxxxxxxxx"
+                        value={cloudCredsForm.vercel_project_id}
+                        onChange={(e) => setCloudCredsForm({ ...cloudCredsForm, vercel_project_id: e.target.value })}
+                        className="input text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {cloudCredsSavedMsg && (
+                    <p className="text-xs text-emerald-600 font-bold">{cloudCredsSavedMsg}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={updateCloudCredsMutation.isPending}
+                    className="btn-primary text-xs w-full py-2.5 rounded-xl shadow-subtle flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Save & Verify Cloud Credentials</span>
+                  </button>
+                </form>
+              </div>
+
+              <div className="card p-5 space-y-4">
+                <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100">Free Tier API Setup Walkthrough</h3>
+                <div className="space-y-3 text-xs text-slate-600 dark:text-zinc-400">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-white/[0.04] space-y-1">
+                    <p className="font-bold text-slate-900 dark:text-zinc-100">1. How to get Render API Key & Service ID (Free):</p>
+                    <p>• Go to <a href="https://dashboard.render.com/account/settings" target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 font-bold underline">dashboard.render.com/account/settings</a></p>
+                    <p>• Scroll down to <strong>API Keys</strong> and click <strong>Create API Key</strong>.</p>
+                    <p>• Your Service ID is in the URL of your backend web service: <code className="font-mono text-[10px] bg-slate-200 dark:bg-zinc-700 px-1 rounded">dashboard.render.com/web/srv-xxxxx</code>.</p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-white/[0.04] space-y-1">
+                    <p className="font-bold text-slate-900 dark:text-zinc-100">2. How to get Vercel Personal Access Token (Free):</p>
+                    <p>• Go to <a href="https://vercel.com/account/tokens" target="_blank" rel="noreferrer" className="text-sky-600 dark:text-sky-400 font-bold underline">vercel.com/account/tokens</a></p>
+                    <p>• Click <strong>Create Token</strong> (Scope: Full Account or Read-Only).</p>
+                    <p>• Copy the generated token and paste it above.</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 
@@ -2439,7 +3022,6 @@ export default function Admin() {
               <button onClick={() => setSelectedTicketForAdmin(null)} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
             </div>
 
-            {/* Conversation Thread */}
             <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-slate-50 dark:bg-zinc-900 rounded-xl max-h-72">
               {detailLoading ? (
                 <p className="text-xs text-slate-400 text-center py-4">Loading messages…</p>
@@ -2458,7 +3040,6 @@ export default function Admin() {
               ))}
             </div>
 
-            {/* Reply Input */}
             <form
               onSubmit={(e) => {
                 e.preventDefault()

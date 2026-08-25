@@ -85,6 +85,12 @@ class BulkUserActionIn(BaseModel):
     user_ids: List[int]
     action: str  # "activate", "suspend", "delete"
 
+class CloudLogCredentialsIn(BaseModel):
+    render_api_key: Optional[str] = None
+    render_service_id: Optional[str] = None
+    vercel_api_token: Optional[str] = None
+    vercel_project_id: Optional[str] = None
+
 
 # ── User Management ───────────────────────────────────────────────────────────
 
@@ -1235,4 +1241,263 @@ def get_system_activity_stream(
     # Sort all events chronologically descending
     events.sort(key=lambda x: x["timestamp"], reverse=True)
     return events[:35]
+
+
+# ── 6. Realtime Application & Cloud Logs Engine ────────────────────────────────
+
+from app.core.log_buffer import log_buffer
+import httpx
+
+
+def _get_cloud_credentials(db: Session) -> dict:
+    """Read cloud credentials from DB SystemSetting with fallback to settings/env."""
+    keys = ["render_api_key", "render_service_id", "vercel_api_token", "vercel_project_id"]
+    res = {}
+    for k in keys:
+        db_setting = db.query(SystemSetting).filter(SystemSetting.key == k).first()
+        if db_setting and db_setting.value:
+            res[k] = db_setting.value.strip()
+        else:
+            env_val = getattr(settings, k.upper(), None) or os.getenv(k.upper(), "")
+            res[k] = env_val.strip() if env_val else ""
+    return res
+
+
+@router.get("/logs/live")
+def get_live_application_logs(
+    limit: Optional[int] = 200,
+    level: Optional[str] = "ALL",
+    search: Optional[str] = None,
+    min_id: Optional[int] = None,
+    admin: User = Depends(get_current_admin_user),
+):
+    """Retrieve realtime rolling application logs from in-memory ring buffer."""
+    safe_limit = min(max(1, limit or 200), 1000)
+    entries = log_buffer.get_logs(
+        limit=safe_limit,
+        level=level if level != "ALL" else None,
+        search=search,
+        min_id=min_id,
+    )
+    return {
+        "status": "success",
+        "total": len(entries),
+        "logs": entries,
+        "server_time": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+@router.delete("/logs/live")
+def clear_live_application_logs(
+    admin: User = Depends(get_current_admin_user),
+):
+    """Clear in-memory live log buffer."""
+    log_buffer.clear()
+    log_buffer.add_custom_log(
+        level="INFO",
+        category="SYSTEM",
+        module="admin.logs",
+        message=f"Log buffer cleared by admin ({admin.email})",
+    )
+    return {"status": "success", "message": "Live log buffer cleared."}
+
+
+@router.get("/logs/render")
+async def get_render_cloud_logs(
+    limit: Optional[int] = 50,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    """
+    Fetch Render Service Deployments & Event Stream via Render REST API (Free Tier compatible).
+    Falls back to live container application logs if credentials are not provided.
+    """
+    creds = _get_cloud_credentials(db)
+    api_key = creds.get("render_api_key")
+    service_id = creds.get("render_service_id")
+
+    if not api_key or not service_id:
+        # Fallback to in-app application logs captured inside Render container
+        in_app_logs = log_buffer.get_logs(limit=limit or 50)
+        return {
+            "status": "unconfigured",
+            "source": "container_runtime_fallback",
+            "message": "Render API credentials not configured. Showing live container process logs.",
+            "api_key_configured": bool(api_key),
+            "service_id_configured": bool(service_id),
+            "logs": in_app_logs,
+            "events": [],
+            "deploys": [],
+        }
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "application/json",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            # 1. Fetch Service Detail
+            service_resp = await client.get(f"https://api.render.com/v1/services/{service_id}", headers=headers)
+            service_data = service_resp.json() if service_resp.status_code == 200 else {}
+
+            # 2. Fetch Recent Deploys
+            deploys_resp = await client.get(f"https://api.render.com/v1/services/{service_id}/deploys?limit=10", headers=headers)
+            deploys_data = deploys_resp.json() if deploys_resp.status_code == 200 else []
+
+            # 3. Fetch Service Events
+            events_resp = await client.get(f"https://api.render.com/v1/services/{service_id}/events?limit=25", headers=headers)
+            events_data = events_resp.json() if events_resp.status_code == 200 else []
+
+            return {
+                "status": "connected",
+                "source": "render_rest_api",
+                "service": {
+                    "id": service_id,
+                    "name": service_data.get("service", {}).get("name", "PathMind Backend"),
+                    "type": service_data.get("service", {}).get("type", "web_service"),
+                    "region": service_data.get("service", {}).get("serviceDetails", {}).get("region", "oregon"),
+                    "updated_at": service_data.get("service", {}).get("updatedAt"),
+                },
+                "deploys": deploys_data,
+                "events": events_data,
+                "logs": log_buffer.get_logs(limit=limit or 50),
+            }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "source": "render_rest_api",
+            "error_detail": str(exc),
+            "logs": log_buffer.get_logs(limit=limit or 50),
+        }
+
+
+@router.get("/logs/vercel")
+async def get_vercel_cloud_logs(
+    limit: Optional[int] = 20,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    """
+    Fetch Vercel Deployments & Build Event logs via Vercel REST API (Free Hobby Tier compatible).
+    """
+    creds = _get_cloud_credentials(db)
+    token = creds.get("vercel_api_token")
+    project_id = creds.get("vercel_project_id")
+
+    if not token:
+        return {
+            "status": "unconfigured",
+            "source": "vercel_rest_api",
+            "message": "Vercel API Token not configured. Enter your Personal Access Token in Settings.",
+            "token_configured": False,
+            "deployments": [],
+        }
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/json",
+    }
+
+    url = "https://api.vercel.com/v6/deployments?limit=15"
+    if project_id:
+        url += f"&projectId={project_id}"
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, headers=headers)
+            if resp.status_code == 200:
+                data = resp.json()
+                deployments = data.get("deployments", [])
+                
+                # Fetch build events for the latest deployment
+                latest_events = []
+                if deployments:
+                    latest_id = deployments[0].get("uid") or deployments[0].get("id")
+                    if latest_id:
+                        events_resp = await client.get(f"https://api.vercel.com/v2/deployments/{latest_id}/events", headers=headers)
+                        if events_resp.status_code == 200:
+                            latest_events = events_resp.json() if isinstance(events_resp.json(), list) else []
+
+                return {
+                    "status": "connected",
+                    "source": "vercel_rest_api",
+                    "deployments": deployments,
+                    "latest_deployment_events": latest_events[:50],
+                }
+            else:
+                return {
+                    "status": "error",
+                    "source": "vercel_rest_api",
+                    "error_detail": f"Vercel API returned status {resp.status_code}: {resp.text}",
+                    "deployments": [],
+                }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "source": "vercel_rest_api",
+            "error_detail": str(exc),
+            "deployments": [],
+        }
+
+
+@router.get("/logs/credentials")
+def get_cloud_log_credentials(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    """Retrieve masked status of Render & Vercel API credentials."""
+    creds = _get_cloud_credentials(db)
+    
+    def mask_key(k: str) -> str:
+        if not k or len(k) < 6:
+            return ""
+        return f"{k[:3]}...{k[-3:]}"
+
+    return {
+        "render_api_key_configured": bool(creds.get("render_api_key")),
+        "render_api_key_masked": mask_key(creds.get("render_api_key")),
+        "render_service_id": creds.get("render_service_id") or "",
+        "vercel_api_token_configured": bool(creds.get("vercel_api_token")),
+        "vercel_api_token_masked": mask_key(creds.get("vercel_api_token")),
+        "vercel_project_id": creds.get("vercel_project_id") or "",
+    }
+
+
+@router.post("/logs/credentials")
+def update_cloud_log_credentials(
+    payload: CloudLogCredentialsIn,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user),
+):
+    """Persist Render & Vercel API credentials into SystemSetting table."""
+    def save_setting(key: str, val: Optional[str]):
+        if val is None:
+            return
+        clean_val = val.strip()
+        st = db.query(SystemSetting).filter(SystemSetting.key == key).first()
+        if not st:
+            st = SystemSetting(key=key, value=clean_val)
+            db.add(st)
+        else:
+            st.value = clean_val
+
+    if payload.render_api_key is not None:
+        save_setting("render_api_key", payload.render_api_key)
+    if payload.render_service_id is not None:
+        save_setting("render_service_id", payload.render_service_id)
+    if payload.vercel_api_token is not None:
+        save_setting("vercel_api_token", payload.vercel_api_token)
+    if payload.vercel_project_id is not None:
+        save_setting("vercel_project_id", payload.vercel_project_id)
+
+    db.commit()
+    log_buffer.add_custom_log(
+        level="INFO",
+        category="CONFIG",
+        module="admin.logs",
+        message=f"Cloud log connector credentials updated by admin ({admin.email})",
+    )
+    return {"status": "success", "message": "Cloud log credentials updated successfully."}
+
 

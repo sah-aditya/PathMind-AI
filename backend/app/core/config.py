@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days
     GEMINI_API_KEY: str
     BACKEND_CORS_ORIGINS: str = '["*"]'
+    RENDER_API_KEY: str = ""
+    RENDER_SERVICE_ID: str = ""
+    VERCEL_API_TOKEN: str = ""
+    VERCEL_PROJECT_ID: str = ""
 
     @property
     def cors_origins(self) -> List[str]:

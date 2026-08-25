@@ -143,6 +143,18 @@ export const adminApi = {
     api.get('/admin/activity-stream'),
   getDiagnostics: () =>
     api.get('/admin/system/diagnostics'),
+  getLiveLogs: (params) =>
+    api.get('/admin/logs/live', { params }),
+  clearLiveLogs: () =>
+    api.delete('/admin/logs/live'),
+  getRenderLogs: (params) =>
+    api.get('/admin/logs/render', { params }),
+  getVercelLogs: (params) =>
+    api.get('/admin/logs/vercel', { params }),
+  getCloudLogCredentials: () =>
+    api.get('/admin/logs/credentials'),
+  updateCloudLogCredentials: (data) =>
+    api.post('/admin/logs/credentials', data),
 }
 
 // ── Support Tickets (Learner) ──────────────────────────────────────────────────
