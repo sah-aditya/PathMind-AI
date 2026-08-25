@@ -21,6 +21,7 @@ import Maintenance from './pages/Maintenance'
 import Help from './pages/Help'
 import Certificates from './pages/Certificates'
 import VerifyCertificate from './pages/VerifyCertificate'
+import Profile from './pages/Profile'
 import AppLayout from './components/AppLayout'
 
 function PrivateRoute({ children }) {
@@ -102,6 +103,7 @@ export default function App() {
           <Route path="/roadmap" element={<Roadmap />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/certificates" element={<Certificates />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/resource/:id" element={<ResourceDetail />} />
           <Route path="/help" element={<Help />} />
           

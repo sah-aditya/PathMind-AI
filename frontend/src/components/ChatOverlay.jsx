@@ -1,14 +1,18 @@
 import { useState, useRef, useEffect } from 'react'
-import { X, Send, Brain, Loader2, Bot, MessageSquare, AlertTriangle } from 'lucide-react'
+import {
+  X, Send, Brain, Loader2, Bot, MessageSquare, AlertTriangle,
+  Volume2, Download, Trash2, Sparkles, Check, Code, HelpCircle
+} from 'lucide-react'
 import { chatApi } from '../services/api'
 import toast from 'react-hot-toast'
 import MarkdownMessage from './MarkdownMessage'
 
-const SUGGESTIONS = [
-  'Why was my top resource recommended?',
-  'What should I focus on next?',
-  'How long will my roadmap take?',
-  'Explain my skill gap analysis',
+const SMART_ACTION_PILLS = [
+  { id: 'analogy', label: '💡 Explain with Analogy', prompt: 'Explain the core concept of my current learning unit using an intuitive real-world analogy.' },
+  { id: 'quiz', label: '📝 3 Practice Questions', prompt: 'Generate 3 quick practical multiple-choice quiz questions to test my understanding of this topic with answers explained.' },
+  { id: 'project', label: '🚀 Mini-Project Idea', prompt: 'Suggest a hands-on 1-day mini project I can build to master this specific skill for my portfolio.' },
+  { id: 'interview', label: '🎯 Interview Tech Questions', prompt: 'What are the top 3 interview questions top tech companies ask about this specific skill and how to answer them?' },
+  { id: 'debug', label: '🐞 Debug / Review Code', prompt: 'I want to review my code. What common pitfalls, memory bugs, or anti-patterns should I avoid for this topic?' },
 ]
 
 function formatTime(date) {
@@ -21,14 +25,15 @@ export default function ChatOverlay({ onClose, isPaused = false }) {
       role: 'assistant',
       content: isPaused 
         ? "⚠️ **AI Advisor is Offline**: The conversational advisor service is temporarily paused for scheduled maintenance by administration. Please check back shortly."
-        : "Hello! I'm your **PathMind AI** learning advisor. Ask me anything about your curriculum, prerequisite dependencies, or personalized recommendations.",
+        : "Hello! I'm your **PathMind AI** learning advisor. Ask me anything about your curriculum, prerequisite dependencies, or click a smart action pill below.",
       time: new Date(),
     },
   ])
-  const [input, setInput]     = useState('')
+  const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [speakingIndex, setSpeakingIndex] = useState(null)
   const bottomRef = useRef(null)
-  const inputRef  = useRef(null)
+  const inputRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -37,6 +42,68 @@ export default function ChatOverlay({ onClose, isPaused = false }) {
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
+
+  const handleSpeakText = (text, idx) => {
+    if (!('speechSynthesis' in window)) {
+      toast.error('Text-to-speech is not supported on this browser.')
+      return
+    }
+
+    if (speakingIndex === idx) {
+      window.speechSynthesis.cancel()
+      setSpeakingIndex(null)
+      return
+    }
+
+    window.speechSynthesis.cancel()
+    const cleanText = text.replace(/[*_#`]/g, '')
+    const utter = new SpeechSynthesisUtterance(cleanText)
+    
+    let speed = 1.0
+    try { speed = Number(localStorage.getItem('pathmind_tts_speed')) || 1.0 } catch {}
+    utter.rate = speed
+
+    utter.onend = () => setSpeakingIndex(null)
+    utter.onerror = () => setSpeakingIndex(null)
+    
+    setSpeakingIndex(idx)
+    window.speechSynthesis.speak(utter)
+  }
+
+  const handleExportChat = () => {
+    if (messages.length <= 1) {
+      toast.error('No conversation to export yet.')
+      return
+    }
+
+    const lines = messages.map(m => `### ${m.role === 'user' ? 'Learner' : 'PathMind AI Advisor'} [${formatTime(m.time)}]\n\n${m.content}\n\n---\n`).join('\n')
+    const blob = new Blob([lines], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `pathmind_chat_session_${new Date().toISOString().split('T')[0]}.md`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success('Chat dialogue exported to Markdown file!')
+  }
+
+  const handleClearHistory = async () => {
+    try {
+      await chatApi.reset()
+      setMessages([
+        {
+          role: 'assistant',
+          content: "Conversation history cleared! How can I assist you on your roadmap today?",
+          time: new Date(),
+        }
+      ])
+      toast.success('Chat history cleared.')
+    } catch {
+      toast.error('Failed to clear chat history.')
+    }
+  }
 
   const sendMessage = async (text = input) => {
     const msg = text.trim()
@@ -70,48 +137,87 @@ export default function ChatOverlay({ onClose, isPaused = false }) {
     >
       {/* Chat panel */}
       <div
-        className="w-full max-w-md flex flex-col bg-white dark:bg-darkBg-card rounded-2xl shadow-elevated border border-slate-200/80 dark:border-darkBg-border overflow-hidden animate-slide-up"
-        style={{ height: 'min(600px, calc(100vh - 40px))' }}
+        className="w-full max-w-lg flex flex-col bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-white/[0.08] overflow-hidden animate-slide-up"
+        style={{ height: 'min(640px, calc(100vh - 35px))' }}
       >
         {/* ── Header ─────────────────────────────── */}
-        <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-slate-200/80 dark:border-darkBg-border bg-white dark:bg-darkBg-card">
-          <div className="w-7 h-7 rounded-xl bg-brand-600 dark:bg-brand-500 flex items-center justify-center text-white flex-shrink-0 shadow-subtle">
-            <Brain className="w-4 h-4" />
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-zinc-900">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white flex-shrink-0 shadow-subtle">
+              <Brain className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-900 dark:text-zinc-100 text-xs sm:text-sm tracking-tight flex items-center gap-1.5">
+                <span>PathMind AI Studio Mentor</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              </p>
+              <p className="text-[10px] text-slate-400 font-mono">
+                Context-Aware Curriculum Advisor
+              </p>
+            </div>
           </div>
-          <div className="flex-1">
-            <p className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm tracking-tight">PathMind AI Advisor</p>
-            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-              Active Session
-            </p>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleExportChat}
+              className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-zinc-200 rounded-lg transition-colors"
+              title="Download Conversation (.md)"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleClearHistory}
+              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg transition-colors"
+              title="Clear Chat History"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg transition-colors"
+              aria-label="Close chat"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg transition-colors"
-            aria-label="Close chat"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
         {/* ── Messages ───────────────────────────── */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3.5 bg-slate-50 dark:bg-darkBg-canvas">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3.5 bg-slate-50 dark:bg-zinc-950/60">
           {messages.map((m, i) => (
             <div key={i} className={`flex gap-2.5 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {m.role === 'assistant' && (
-                <div className="w-6 h-6 rounded-lg bg-brand-100 dark:bg-brand-950/60 flex items-center justify-center flex-shrink-0 mt-0.5 text-brand-600 dark:text-brand-400">
-                  <Bot className="w-3.5 h-3.5" />
+                <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 mt-0.5 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 dark:border-white/[0.06]">
+                  <Bot className="w-4 h-4" />
                 </div>
               )}
-              <div className="flex flex-col gap-1" style={{ maxWidth: '84%' }}>
-                <div className={m.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}>
+              <div className="flex flex-col gap-1" style={{ maxWidth: '85%' }}>
+                <div className={m.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai group relative'}>
                   {m.role === 'user'
-                    ? <p className="text-sm leading-relaxed">{m.content}</p>
-                    : <MarkdownMessage content={m.content} className="text-sm" />
+                    ? <p className="text-xs sm:text-sm leading-relaxed">{m.content}</p>
+                    : (
+                      <div>
+                        <MarkdownMessage content={m.content} className="text-xs sm:text-sm" />
+                        <div className="pt-2 mt-2 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+                          <button
+                            onClick={() => handleSpeakText(m.content, i)}
+                            className={`text-[10px] font-mono flex items-center gap-1 transition-colors ${
+                              speakingIndex === i
+                                ? 'text-indigo-600 dark:text-indigo-400 font-bold'
+                                : 'text-slate-400 hover:text-slate-700 dark:hover:text-zinc-300'
+                            }`}
+                            title="Listen to response (TTS)"
+                          >
+                            <Volume2 className="w-3 h-3" />
+                            <span>{speakingIndex === i ? 'Speaking… (Click to Stop)' : 'Listen'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    )
                   }
                 </div>
                 {m.time && (
-                  <span className={`text-[10px] text-slate-400 ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
+                  <span className={`text-[10px] text-slate-400 font-mono ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
                     {formatTime(m.time)}
                   </span>
                 )}
@@ -122,40 +228,37 @@ export default function ChatOverlay({ onClose, isPaused = false }) {
           {/* Typing indicator */}
           {loading && (
             <div className="flex gap-2.5 justify-start">
-              <div className="w-6 h-6 rounded-lg bg-brand-100 dark:bg-brand-950/60 flex items-center justify-center flex-shrink-0 mt-0.5 text-brand-600 dark:text-brand-400">
-                <Bot className="w-3.5 h-3.5" />
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 mt-0.5 text-indigo-600 dark:text-indigo-400">
+                <Bot className="w-4 h-4" />
               </div>
               <div className="chat-bubble-ai flex items-center gap-2 py-2 px-3">
                 <span className="flex gap-1">
                   {[0, 1, 2].map(n => (
                     <span
                       key={n}
-                      className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"
+                      className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"
                       style={{ animationDelay: `${n * 0.2}s` }}
                     />
                   ))}
                 </span>
-                <span className="text-slate-400 text-xs">Analyzing…</span>
+                <span className="text-slate-400 text-xs font-mono">Synthesizing answer…</span>
               </div>
             </div>
           )}
           <div ref={bottomRef} />
         </div>
 
-        {/* ── Suggested Questions ─────────────────── */}
-        {messages.length === 1 && !loading && (
-          <div className="px-3.5 py-2.5 bg-white dark:bg-darkBg-card border-t border-slate-200/80 dark:border-darkBg-border">
-            <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1 font-mono">
-              <MessageSquare className="w-3 h-3" /> Quick Inquiries
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {SUGGESTIONS.map(s => (
+        {/* ── Smart Context Action Pills Bar ─────────────────── */}
+        {!loading && (
+          <div className="px-3 py-2 bg-white dark:bg-zinc-900 border-t border-slate-200/80 dark:border-white/[0.06] overflow-x-auto">
+            <div className="flex items-center gap-1.5">
+              {SMART_ACTION_PILLS.map(p => (
                 <button
-                  key={s}
-                  onClick={() => sendMessage(s)}
-                  className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-darkBg-cardSub text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-darkBg-border hover:bg-slate-200/60 transition-colors"
+                  key={p.id}
+                  onClick={() => sendMessage(p.prompt)}
+                  className="text-[11px] font-semibold whitespace-nowrap px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200/60 dark:border-white/[0.04] hover:border-indigo-400 hover:text-indigo-600 transition-all flex-shrink-0"
                 >
-                  {s}
+                  {p.label}
                 </button>
               ))}
             </div>
@@ -163,9 +266,9 @@ export default function ChatOverlay({ onClose, isPaused = false }) {
         )}
 
         {/* ── Input bar ──────────────────────────── */}
-        <div className="p-3 border-t border-slate-200/80 dark:border-darkBg-border bg-white dark:bg-darkBg-card">
+        <div className="p-3 border-t border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-zinc-900">
           {isPaused ? (
-            <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
               <span>AI Advisor responses are temporarily paused for maintenance.</span>
             </div>
@@ -183,14 +286,14 @@ export default function ChatOverlay({ onClose, isPaused = false }) {
                 onKeyDown={e => {
                   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
                 }}
-                placeholder="Ask about your learning path…"
+                placeholder="Ask about this unit, request code review, or explain..."
                 className="flex-1 resize-none input text-xs py-2 leading-relaxed"
                 style={{ minHeight: '38px', maxHeight: '90px' }}
               />
               <button
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || loading}
-                className="btn-primary px-3 py-2 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="btn-primary px-3.5 py-2 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl"
                 aria-label="Send message"
               >
                 <Send className="w-3.5 h-3.5" />
@@ -198,7 +301,7 @@ export default function ChatOverlay({ onClose, isPaused = false }) {
             </div>
           )}
           <p className="text-[10px] text-slate-400 mt-1 text-center font-mono">
-            {isPaused ? 'Service Under Maintenance' : 'Enter to send · Shift+Enter for new line'}
+            {isPaused ? 'Service Under Maintenance' : 'Press Enter to send · Shift+Enter for new line · Press Ctrl+K for Spotlight'}
           </p>
         </div>
       </div>

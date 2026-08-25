@@ -63,6 +63,8 @@ export const pathApi = {
   updateItemStatus: (itemId, status) =>
     api.put(`/learning-path/items/${itemId}/status`, { status }),
   getSkillGap: () => api.get('/learning-path/skill-gap/report'),
+  recalibratePace: (hours_per_week) =>
+    api.post('/learning-path/recalibrate-pace', { hours_per_week }),
 }
 
 // ── Assessments ───────────────────────────────────────────────────────────────

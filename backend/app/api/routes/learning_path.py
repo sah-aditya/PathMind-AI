@@ -14,9 +14,13 @@ from app.models.learning import (
 )
 from app.services.skill_gap_engine import compute_skill_gap, GOALS_DATA
 from app.services.path_generator import generate_path
+from app.services.recommendation_engine import RESOURCE_BY_ID
 from app.services.adaptive_engine import (
     evaluate_and_adapt, update_skill_level_from_score, calculate_path_progress
 )
+
+class RecalibratePaceIn(BaseModel):
+    hours_per_week: int
 
 router = APIRouter(prefix="/learning-path", tags=["learning-path"])
 
@@ -302,3 +306,52 @@ def _serialize_path(path: LearningPath) -> dict:
             for a in (path.adaptations or [])
         ],
     }
+
+
+@router.post("/recalibrate-pace")
+def recalibrate_learning_pace(
+    payload: RecalibratePaceIn,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = db.query(LearnerProfile).filter(LearnerProfile.user_id == current_user.id).first()
+    if profile:
+        profile.hours_per_week = max(2, min(payload.hours_per_week, 40))
+        db.commit()
+
+    active_path = db.query(LearningPath).filter(
+        LearningPath.user_id == current_user.id,
+        LearningPath.status == PathStatus.active
+    ).first()
+
+    if not active_path:
+        return {"status": "success", "message": "Weekly hours updated in profile."}
+
+    # Recalculate target weeks based on total estimated hours
+    hours_rate = max(4, payload.hours_per_week)
+    total_hours = 0
+    for phase in active_path.phases:
+        for item in phase.items:
+            res = RESOURCE_BY_ID.get(item.resource_id, {})
+            total_hours += res.get("duration_hours", 6)
+    
+    recalculated_weeks = max(4, min(16, round(total_hours / hours_rate)))
+    active_path.total_weeks = recalculated_weeks
+    
+    # Adapt phase boundaries
+    if active_path.phases:
+        phase_count = len(active_path.phases)
+        weeks_per_phase = max(1, recalculated_weeks // phase_count)
+        for idx, phase in enumerate(active_path.phases):
+            phase.week_start = idx * weeks_per_phase + 1
+            phase.week_end = min(recalculated_weeks, (idx + 1) * weeks_per_phase)
+        active_path.phases[-1].week_end = recalculated_weeks
+
+    db.commit()
+    return {
+        "status": "success",
+        "new_target_weeks": recalculated_weeks,
+        "hours_per_week": payload.hours_per_week,
+        "message": f"Roadmap paced dynamically to {recalculated_weeks} weeks ({payload.hours_per_week} hrs/week)."
+    }
+
