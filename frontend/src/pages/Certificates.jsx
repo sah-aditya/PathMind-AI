@@ -258,41 +258,42 @@ export default function Certificates() {
                 </div>
 
                 {/* ── Visual Certificate Surface (True A4 Landscape Ratio: 1.414) ── */}
-                <div className="overflow-x-auto pb-4">
+                <div className="overflow-x-auto pb-4 rounded-2xl border border-slate-200/80 dark:border-white/[0.08] p-2 bg-slate-100/60 dark:bg-darkBg-cardSub/40 flex justify-center">
                   <div
                     ref={certRef}
-                    className="w-[842px] min-w-[842px] h-[595px] bg-white text-slate-900 p-10 rounded-2xl shadow-card relative flex flex-col justify-between select-none print-certificate-only"
+                    className="w-[842px] min-w-[842px] h-[595px] text-slate-900 rounded-2xl shadow-card relative flex flex-col justify-between select-none print-certificate-only"
                     style={{
                       fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
                       backgroundColor: '#FFFFFF',
-                      border: '10px solid #1e1b4b',
+                      border: '12px solid #1e1b4b',
                       backgroundImage: 'radial-gradient(#e2e8f0 1.2px, transparent 1.2px)',
                       backgroundSize: '20px 20px',
+                      padding: '36px 40px',
                       boxSizing: 'border-box',
                     }}
                   >
                     {/* Ornate Gold & Navy Inner Guilloche Borders */}
                     <div
-                      className="absolute inset-2.5 pointer-events-none rounded-xl"
-                      style={{ border: '2px solid #b45309' }}
+                      className="absolute pointer-events-none rounded-xl"
+                      style={{ inset: '8px', border: '2px solid #b45309' }}
                     />
                     <div
-                      className="absolute inset-4 pointer-events-none rounded-lg"
-                      style={{ border: '1px solid #4338ca' }}
+                      className="absolute pointer-events-none rounded-lg"
+                      style={{ inset: '14px', border: '1px solid #4338ca' }}
                     />
 
                     {/* Corner Accent Rosettes */}
-                    <div className="absolute top-4 left-4 w-3.5 h-3.5 rounded-full pointer-events-none" style={{ backgroundColor: '#b45309' }} />
-                    <div className="absolute top-4 right-4 w-3.5 h-3.5 rounded-full pointer-events-none" style={{ backgroundColor: '#b45309' }} />
-                    <div className="absolute bottom-4 left-4 w-3.5 h-3.5 rounded-full pointer-events-none" style={{ backgroundColor: '#b45309' }} />
-                    <div className="absolute bottom-4 right-4 w-3.5 h-3.5 rounded-full pointer-events-none" style={{ backgroundColor: '#b45309' }} />
+                    <div className="absolute w-3.5 h-3.5 rounded-full pointer-events-none" style={{ top: '14px', left: '14px', backgroundColor: '#b45309' }} />
+                    <div className="absolute w-3.5 h-3.5 rounded-full pointer-events-none" style={{ top: '14px', right: '14px', backgroundColor: '#b45309' }} />
+                    <div className="absolute w-3.5 h-3.5 rounded-full pointer-events-none" style={{ bottom: '14px', left: '14px', backgroundColor: '#b45309' }} />
+                    <div className="absolute w-3.5 h-3.5 rounded-full pointer-events-none" style={{ bottom: '14px', right: '14px', backgroundColor: '#b45309' }} />
 
                     {/* Top Header */}
-                    <div className="text-center space-y-1.5 relative z-10 pt-2">
-                      <div className="flex items-center justify-center gap-2.5 mb-1">
+                    <div className="text-center relative z-10 pt-1" style={{ marginBottom: '10px' }}>
+                      <div className="flex items-center justify-center mb-1">
                         <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs text-white"
-                          style={{ backgroundColor: '#4338ca' }}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs text-white"
+                          style={{ backgroundColor: '#4338ca', marginRight: '8px' }}
                         >
                           PM
                         </div>
@@ -308,44 +309,49 @@ export default function Certificates() {
                         style={{
                           fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif",
                           color: '#0f172a',
-                          letterSpacing: '0.04em',
+                          letterSpacing: '0.05em',
+                          margin: '4px 0',
+                          lineHeight: '1.2',
                         }}
                       >
                         Certificate of Completion
                       </h2>
                       <p
-                        className="text-[11px] font-bold tracking-widest uppercase font-mono"
-                        style={{ color: '#64748b' }}
+                        className="text-[10.5px] font-bold tracking-widest uppercase font-mono"
+                        style={{ color: '#64748b', margin: '0' }}
                       >
                         Autonomous Competency Credential
                       </p>
                     </div>
 
                     {/* Body Text */}
-                    <div className="text-center space-y-3 my-auto relative z-10 px-10">
+                    <div className="text-center my-auto relative z-10 px-10">
                       <p
                         className="text-xs italic"
-                        style={{ color: '#475569', fontFamily: "Georgia, serif" }}
+                        style={{ color: '#475569', fontFamily: "Georgia, serif", margin: '0 0 8px 0' }}
                       >
                         This is to officially certify that
                       </p>
                       
-                      <div className="py-0.5">
+                      <div style={{ margin: '6px 0 12px 0' }}>
                         <h1
-                          className="text-4xl font-extrabold tracking-tight inline-block pb-1.5 px-10"
+                          className="text-4xl font-extrabold tracking-tight inline-block px-8"
                           style={{
                             fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif",
                             color: '#1e1b4b',
-                            borderBottom: '3px solid #b45309',
+                            lineHeight: '1.3',
+                            margin: '0',
                           }}
                         >
                           {approvedCert.recipient_name}
                         </h1>
+                        {/* Clean dedicated underline divider */}
+                        <div style={{ width: '280px', height: '3px', backgroundColor: '#b45309', margin: '6px auto 0 auto', borderRadius: '2px' }} />
                       </div>
 
                       <p
-                        className="text-xs max-w-lg mx-auto leading-relaxed pt-1"
-                        style={{ color: '#334155' }}
+                        className="text-xs max-w-lg mx-auto leading-relaxed"
+                        style={{ color: '#334155', margin: '0 auto 6px auto' }}
                       >
                         has successfully completed all prerequisite milestones, evaluations, and structured units in the academic curriculum of
                       </p>
@@ -355,6 +361,7 @@ export default function Certificates() {
                         style={{
                           color: '#0f172a',
                           fontFamily: "'Inter', sans-serif",
+                          margin: '4px 0 0 0',
                         }}
                       >
                         {cleanCourseTitle(approvedCert.path_title)}
@@ -363,15 +370,15 @@ export default function Certificates() {
 
                     {/* Footer Details & Verification Seal */}
                     <div
-                      className="flex items-end justify-between pt-5 relative z-10 text-xs"
-                      style={{ borderTop: '1px solid #cbd5e1' }}
+                      className="flex items-end justify-between relative z-10 text-xs"
+                      style={{ borderTop: '1px solid #cbd5e1', paddingTop: '16px' }}
                     >
                       
                       {/* Left: Unique Code & Verification URL */}
-                      <div className="space-y-1 text-left">
+                      <div className="text-left" style={{ minWidth: '180px' }}>
                         <p
                           className="text-[10px] uppercase font-bold font-mono"
-                          style={{ color: '#64748b' }}
+                          style={{ color: '#64748b', margin: '0 0 3px 0' }}
                         >
                           Credential ID
                         </p>
@@ -381,70 +388,63 @@ export default function Certificates() {
                             backgroundColor: '#eef2ff',
                             color: '#312e81',
                             border: '1px solid #c7d2fe',
+                            margin: '0 0 3px 0',
                           }}
                         >
                           {approvedCert.code || 'PENDING-APPROVAL'}
                         </p>
                         <p
-                          className="text-[9.5px] font-mono block pt-0.5"
-                          style={{ color: '#475569' }}
+                          className="text-[9.5px] font-mono block"
+                          style={{ color: '#475569', margin: '0' }}
                         >
                           verify at: path-mind-ai-xi.vercel.app/verify/{approvedCert.code || ''}
                         </p>
                       </div>
 
                       {/* Center: Digital Signature Stamp Badge */}
-                      <div className="text-center space-y-1.5 px-4">
+                      <div className="text-center" style={{ padding: '0 12px' }}>
                         <div
-                          className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3.5 py-1.5 rounded-full"
                           style={{
+                            display: 'inline-block',
                             backgroundColor: '#ecfdf5',
-                            border: '1.5px solid #6ee7b7',
-                            color: '#047857',
+                            border: '1.5px solid #10b981',
+                            borderRadius: '9999px',
+                            padding: '5px 16px',
+                            textAlign: 'center',
+                            whiteSpace: 'nowrap',
+                            boxSizing: 'border-box',
                           }}
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#059669"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            style={{ display: 'inline-block', verticalAlign: 'middle' }}
-                          >
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                            <path d="m9 12 2 2 4-4"/>
-                          </svg>
-                          <span style={{ fontWeight: 700, color: '#047857' }}>
-                            Digitally Verified & Sealed
+                          <span style={{ fontSize: '13px', marginRight: '6px', verticalAlign: 'middle' }}>
+                            🛡️
+                          </span>
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: '#047857', letterSpacing: '0.03em', verticalAlign: 'middle', fontFamily: "'Inter', sans-serif" }}>
+                            Digitally Verified &amp; Sealed
                           </span>
                         </div>
                         <p
                           className="text-[9.5px] font-mono font-medium"
-                          style={{ color: '#64748b' }}
+                          style={{ color: '#64748b', margin: '6px 0 0 0' }}
                         >
                           Issued on {approvedCert.approved_at ? new Date(approvedCert.approved_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                         </p>
                       </div>
 
                       {/* Right: Institutional Signature Line */}
-                      <div className="text-right space-y-1">
+                      <div className="text-right" style={{ minWidth: '180px' }}>
                         <p
                           className="font-mono text-xs font-bold tracking-wider uppercase"
-                          style={{ color: '#1e1b4b' }}
+                          style={{ color: '#1e1b4b', margin: '0 0 4px 0' }}
                         >
                           PathMind Authority
                         </p>
                         <div
                           className="w-40 h-0.5 ml-auto"
-                          style={{ backgroundColor: '#4338ca' }}
+                          style={{ backgroundColor: '#4338ca', margin: '0 0 4px auto' }}
                         />
                         <p
                           className="text-[9.5px] font-mono"
-                          style={{ color: '#64748b' }}
+                          style={{ color: '#64748b', margin: '0' }}
                         >
                           Curriculum Intelligence Board
                         </p>
