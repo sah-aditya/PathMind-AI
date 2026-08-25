@@ -14,17 +14,9 @@ from app.core.security import hash_password
 
 from app.core.log_buffer import log_buffer
 import time
+import sys
 
-logging.basicConfig(level=logging.INFO)
-root_logger = logging.getLogger()
-if log_buffer not in root_logger.handlers:
-    root_logger.addHandler(log_buffer)
-
-logging.getLogger("uvicorn.access").addHandler(log_buffer)
-logging.getLogger("uvicorn.error").addHandler(log_buffer)
-logging.getLogger("app").addHandler(log_buffer)
-
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app")
 
 
 def _seed_superadmin():
@@ -115,7 +107,11 @@ async def lifespan(app: FastAPI):
         logger.warning("Database table creation warning: %s", e)
     
     # Auto-seed master superadmin account
-    _seed_superadmin()
+    try:
+        _seed_superadmin()
+    except Exception as e:
+        logger.warning("Superadmin seeding warning: %s", e)
+
     yield
 
 
