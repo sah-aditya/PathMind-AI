@@ -247,5 +247,43 @@
     "optional_skills": ["docker"],
     "typical_path_weeks": 12,
     "phases": ["Programming Basics", "API Testing", "UI Automation", "Test Strategy & CI/CD", "Capstone Project"]
+  },
+
+  "dsa-software-engineer": {
+    "title": "Data Structures & Algorithms (DSA) Specialist",
+    "description": "Master algorithmic problem solving, time-space complexity optimization, and coding interviews.",
+    "required_skills": [
+      "python-basics", "dsa-arrays-strings",
+      "dsa-linked-lists-stacks", "dsa-trees-graphs",
+      "dsa-dynamic-programming", "dsa-problem-solving"
+    ],
+    "optional_skills": ["system-design"],
+    "typical_path_weeks": 12,
+    "phases": ["Arrays & Two Pointers", "Stacks, Queues & Lists", "Trees & Graphs", "Dynamic Programming", "Interview Masterclass"]
+  },
+
+  "ai-agents-engineer": {
+    "title": "AI Agents & Autonomous Systems Engineer",
+    "description": "Architect multi-agent autonomous systems, tool-using LLMs, and enterprise RAG pipelines.",
+    "required_skills": [
+      "python-intermediate", "llm-fundamentals", "prompt-engineering",
+      "rag", "vector-databases", "langchain-framework", "ai-agents", "fastapi-deployment"
+    ],
+    "optional_skills": ["fine-tuning", "docker"],
+    "typical_path_weeks": 12,
+    "phases": ["Python & LLM Core", "Vector Databases & RAG", "LangChain & Frameworks", "Autonomous Agents & Swarms", "Production Deployment"]
+  },
+
+  "nextjs-fullstack-engineer": {
+    "title": "Next.js & Modern Full-Stack Engineer",
+    "description": "Build modern full-stack web applications with React 19, Next.js App Router, TypeScript, and Prisma.",
+    "required_skills": [
+      "html-css", "tailwind-css", "javascript-basics", "javascript-advanced",
+      "typescript-advanced", "react-basics", "react-advanced",
+      "nextjs-fullstack", "prisma-orm", "fullstack-deployment"
+    ],
+    "optional_skills": ["docker"],
+    "typical_path_weeks": 12,
+    "phases": ["Modern HTML/CSS & Tailwind", "TypeScript & React 19", "Next.js App Router", "Prisma & PostgreSQL", "Production Deployment"]
   }
 }

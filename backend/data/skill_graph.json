@@ -50,5 +50,19 @@
   "cloud-ml":               { "prerequisites": ["aws-fundamentals", "ml-fundamentals"],           "importance": "required" },
 
   "cybersecurity-basics":   { "prerequisites": ["networking-basics"],                             "importance": "required" },
-  "ethical-hacking":        { "prerequisites": ["cybersecurity-basics", "linux-basics"],          "importance": "required" }
+  "ethical-hacking":        { "prerequisites": ["cybersecurity-basics", "linux-basics"],          "importance": "required" },
+
+  "dsa-linked-lists-stacks":{ "prerequisites": ["dsa-arrays-strings"],                            "importance": "required" },
+  "dsa-trees-graphs":       { "prerequisites": ["dsa-linked-lists-stacks"],                       "importance": "required" },
+  "dsa-dynamic-programming":{ "prerequisites": ["dsa-trees-graphs"],                             "importance": "required" },
+  "dsa-problem-solving":    { "prerequisites": ["dsa-dynamic-programming"],                       "importance": "required" },
+
+  "langchain-framework":    { "prerequisites": ["rag", "llm-fundamentals"],                       "importance": "required" },
+  "ai-agents":              { "prerequisites": ["langchain-framework"],                           "importance": "required" },
+  "vector-databases":       { "prerequisites": ["rag"],                                           "importance": "required" },
+
+  "nextjs-fullstack":       { "prerequisites": ["react-advanced", "typescript-advanced"],         "importance": "required" },
+  "typescript-advanced":    { "prerequisites": ["javascript-advanced"],                           "importance": "required" },
+  "prisma-orm":             { "prerequisites": ["databases-web", "typescript-advanced"],          "importance": "required" },
+  "tailwind-css":           { "prerequisites": ["html-css"],                                      "importance": "required" }
 }

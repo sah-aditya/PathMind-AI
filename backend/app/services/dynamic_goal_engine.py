@@ -85,36 +85,36 @@ Return ONLY valid JSON with this exact schema:
   "description": "2-sentence summary of this career path.",
   "typical_path_weeks": 12,
   "phases": [
-    "Phase 1 Title",
-    "Phase 2 Title",
-    "Phase 3 Title",
-    "Phase 4 Title"
+    "Phase 1: Foundations & Core Concepts",
+    "Phase 2: Practical Principles & Tools",
+    "Phase 3: Advanced Applications",
+    "Phase 4: Capstone Project & Portfolio"
   ],
   "skills": [
-    {{
+    {
       "id": "skill-slug-1",
       "name": "Skill Name",
       "category": "Domain/Category",
       "parent": null,
       "description": "What this skill covers"
-    }},
-    {{
+    },
+    {
       "id": "skill-slug-2",
       "name": "Skill Name 2",
       "category": "Domain/Category",
       "parent": "skill-slug-1",
       "description": "What this skill covers"
-    }}
+    }
   ],
   "resources": [
-    {{
+    {
       "id": "dyn-res-1",
       "title": "Course/Project Title",
       "description": "Comprehensive description of what you learn and build.",
       "provider": "PathMind Academy",
       "type": "course",
       "difficulty": "beginner",
-      "duration_hours": 12,
+      "duration_hours": 8,
       "url": "https://learn.pathmind.ai/resource",
       "skills_taught": ["skill-slug-1"],
       "prerequisite_skills": [],
@@ -122,15 +122,15 @@ Return ONLY valid JSON with this exact schema:
       "rating": 4.8,
       "is_project": false,
       "has_assessment": true
-    }},
-    {{
+    },
+    {
       "id": "dyn-res-2",
       "title": "Hands-on Project Title",
       "description": "Real-world project description.",
       "provider": "PathMind Projects",
       "type": "project",
       "difficulty": "intermediate",
-      "duration_hours": 10,
+      "duration_hours": 6,
       "url": "https://learn.pathmind.ai/project",
       "skills_taught": ["skill-slug-2"],
       "prerequisite_skills": ["skill-slug-1"],
@@ -138,11 +138,14 @@ Return ONLY valid JSON with this exact schema:
       "rating": 4.9,
       "is_project": true,
       "has_assessment": false
-    }}
+    }
   ]
-}}
+}
 
-Generate 4-6 realistic skills and 5-8 corresponding high-quality learning resources (mix of courses and projects) mapped across the 4 phases. Return ONLY JSON."""
+PEDAGOGICAL RULES:
+1. typical_path_weeks MUST be between 8 and 12 weeks (realistic student term).
+2. Phase 1 resource MUST be beginner-friendly with zero prerequisites (introductory concepts first, never an upfront exam).
+3. Generate 4-6 realistic skills and 6-8 corresponding modular learning resources (mix of conceptual lessons, hands-on projects, and checkpoint quizzes). Return ONLY JSON."""
 
     raw = _generate_with_fallback(prompt)
     clean_json = re.sub(r"^```json\s*|\s*```$", "", raw.strip(), flags=re.MULTILINE)

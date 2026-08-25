@@ -82,6 +82,7 @@ def generate_path(
 ) -> PathPlan:
     """
     Generate a complete phased learning path for a learner.
+    Calibrated to a realistic student horizon (4–16 weeks max, default 8–12 weeks).
     """
     if interests is None:
         interests = []
@@ -100,16 +101,19 @@ def generate_path(
         limit=80,
     )
 
-    # Step 2: Filter — only include resources that cover gap skills or are high-relevance
-    selected = _select_relevant_resources(scored, gap_skill_ids, max_resources=30)
+    # Step 2: Curate high-impact core units (8–14 units max to keep roadmap realistic & digestible)
+    selected = _select_relevant_resources(scored, gap_skill_ids, experience_level, max_resources=12)
 
-    # Step 3: Topological sort via skill dependency graph
-    ordered = _topological_sort_resources(selected, learner_skills)
+    # Step 3: Topological sort via skill dependency graph (foundations first)
+    ordered = _topological_sort_resources(selected, learner_skills, experience_level)
 
-    # Step 4: Assign to phases
+    # Step 4: Assign to phases with Smart Horizon Budgeting (4–16 weeks)
     goal = GOALS_DATA.get(goal_id, {})
-    phase_titles = goal.get("phases", ["Foundation", "Core Skills", "Advanced", "Project"])
-    phases = _assign_to_phases(ordered, phase_titles, hours_per_week, gap_report.estimated_weeks)
+    phase_titles = goal.get("phases", ["Foundation", "Core Skills", "Advanced Application", "Capstone Project"])
+    
+    # Target weeks bounded to student reality
+    target_weeks = max(4, min(16, gap_report.estimated_weeks or 12))
+    phases = _assign_to_phases(ordered, phase_titles, hours_per_week, target_weeks, experience_level)
 
     total_hours = sum(
         item.duration_hours
@@ -121,7 +125,7 @@ def generate_path(
         goal_id=goal_id,
         goal_title=gap_report.goal_title,
         title=f"Your {gap_report.goal_title} Learning Path",
-        total_weeks=phases[-1].week_end if phases else gap_report.estimated_weeks,
+        total_weeks=phases[-1].week_end if phases else target_weeks,
         phases=phases,
         total_resources=sum(len(p.items) for p in phases),
         total_hours=total_hours,
@@ -131,19 +135,30 @@ def generate_path(
 def _select_relevant_resources(
     scored: List[ScoredResource],
     gap_skill_ids: List[str],
-    max_resources: int = 30,
+    experience_level: str = "beginner",
+    max_resources: int = 12,
 ) -> List[ScoredResource]:
     """
-    Select resources that cover the learner's gap skills.
-    Ensures all gap skills are covered, then fills with top-scored remaining.
+    Select high-impact resources that cover the learner's gap skills.
+    Ensures a balanced mix of foundational lessons, practical exercises, and capstones.
     """
     gap_skills_remaining = set(gap_skill_ids)
     selected = []
     selected_ids = set()
 
-    # First pass: greedily cover gap skills
+    # Pass 1: Prioritize foundational courses for beginners
+    if experience_level == "beginner":
+        for resource in scored:
+            if resource.difficulty == "beginner" and not resource.is_project:
+                covers = set(resource.skills_taught) & gap_skills_remaining
+                if covers and resource.resource_id not in selected_ids:
+                    selected.append(resource)
+                    selected_ids.add(resource.resource_id)
+                    gap_skills_remaining -= covers
+
+    # Pass 2: Greedily cover remaining gap skills
     for resource in scored:
-        if not gap_skills_remaining:
+        if not gap_skills_remaining or len(selected) >= max_resources - 2:
             break
         covers = set(resource.skills_taught) & gap_skills_remaining
         if covers and resource.resource_id not in selected_ids:
@@ -151,17 +166,16 @@ def _select_relevant_resources(
             selected_ids.add(resource.resource_id)
             gap_skills_remaining -= covers
 
-    # Second pass: add high-scoring projects and assessments
+    # Pass 3: Add high-scoring practical project
     for resource in scored:
-        if len(selected) >= max_resources:
+        if len(selected) >= max_resources - 1:
             break
-        if resource.resource_id not in selected_ids and resource.score > 0.2:
-            # Include projects and capstones for richness
-            if resource.is_project or resource.has_assessment:
-                selected.append(resource)
-                selected_ids.add(resource.resource_id)
+        if resource.resource_id not in selected_ids and resource.is_project and resource.score > 0.15:
+            selected.append(resource)
+            selected_ids.add(resource.resource_id)
+            break
 
-    # Third pass: fill with top-scored remaining
+    # Pass 4: Fill remaining slots with top-scored items
     for resource in scored:
         if len(selected) >= max_resources:
             break
@@ -175,17 +189,14 @@ def _select_relevant_resources(
 def _topological_sort_resources(
     resources: List[ScoredResource],
     learner_skills: Dict[str, float],
+    experience_level: str = "beginner",
 ) -> List[ScoredResource]:
     """
     Sort resources so that prerequisites come before dependent resources.
-    Uses networkx for topological sort.
-    
-    Algorithm:
-    - Map each resource to the skills it teaches
-    - If resource B requires skill X and resource A teaches skill X → A before B
+    For beginners, ensures beginner-difficulty foundation units are prioritized to the start.
     """
     # Build skill → teaching resource map
-    skill_taught_by: Dict[str, str] = {}  # skill_id → resource_id
+    skill_taught_by: Dict[str, str] = {}
     for r in resources:
         for skill in r.skills_taught:
             if skill not in skill_taught_by:
@@ -200,10 +211,8 @@ def _topological_sort_resources(
 
     for r in resources:
         for prereq_skill in r.prerequisite_skills:
-            # If learner already has this skill, no dependency needed
             if learner_skills.get(prereq_skill, 0.0) >= 0.70:
                 continue
-            # If another resource in our set teaches this prereq skill
             if prereq_skill in skill_taught_by:
                 teaching_resource_id = skill_taught_by[prereq_skill]
                 if teaching_resource_id != r.resource_id:
@@ -213,10 +222,9 @@ def _topological_sort_resources(
     try:
         sorted_ids = list(nx.topological_sort(G))
     except nx.NetworkXUnfeasible:
-        # Cycle detected (shouldn't happen with well-formed data) — fall back to score order
+        # Fall back to score order if cycle detected
         sorted_ids = [r.resource_id for r in resources]
 
-    # Map back to resources, preserving original order for any not in graph
     ordered = []
     seen = set()
     for rid in sorted_ids:
@@ -224,10 +232,21 @@ def _topological_sort_resources(
             ordered.append(resource_map[rid])
             seen.add(rid)
 
-    # Add any remaining resources not in graph
     for r in resources:
         if r.resource_id not in seen:
             ordered.append(r)
+
+    # For beginners, ensure beginner courses with zero prerequisites are at the very start
+    if experience_level == "beginner" and ordered:
+        def beginner_priority(r: ScoredResource):
+            diff_score = 0 if r.difficulty == "beginner" else 1 if r.difficulty == "intermediate" else 2
+            proj_score = 1 if r.is_project else 0
+            prereq_count = len(r.prerequisite_skills)
+            return (diff_score, proj_score, prereq_count)
+
+        # Sort the first 3 items by difficulty/prereq priority to guarantee friendly start
+        top_candidates = sorted(ordered[:min(4, len(ordered))], key=beginner_priority)
+        ordered = top_candidates + ordered[len(top_candidates):]
 
     return ordered
 
@@ -237,15 +256,27 @@ def _assign_to_phases(
     phase_titles: List[str],
     hours_per_week: int,
     total_weeks: int,
+    experience_level: str = "beginner",
 ) -> List[PhasePlan]:
     """
-    Distribute resources into phases based on available weekly hours.
-    The last phase is always a capstone project.
+    Distribute resources into phases using Smart Horizon Budgeting (4–16 weeks).
+    Phase week spans (week_start, week_end) are proportionally allocated so that
+    total_weeks matches a realistic semester horizon.
     """
     if not resources:
         return []
 
     n_phases = len(phase_titles)
+    # Guarantee at least 1 week per phase, bounded between 4 and 16 weeks total
+    total_weeks = max(n_phases, min(16, total_weeks))
+    
+    # Calculate weeks per phase evenly
+    base_weeks_per_phase = total_weeks // n_phases
+    extra_weeks = total_weeks % n_phases
+
+    phase_week_lengths = [base_weeks_per_phase + (1 if i < extra_weeks else 0) for i in range(n_phases)]
+
+    # Distribute resources across phases
     resources_per_phase = max(1, len(resources) // n_phases)
     phases = []
     current_week = 1
@@ -253,21 +284,25 @@ def _assign_to_phases(
 
     for i, title in enumerate(phase_titles):
         is_last = i == n_phases - 1
-        # Assign resources to this phase
         start_idx = i * resources_per_phase
         if is_last:
-            phase_resources = resources[start_idx:]  # Give rest to last phase
+            phase_resources = resources[start_idx:]
         else:
             phase_resources = resources[start_idx: start_idx + resources_per_phase]
 
         if not phase_resources and not is_last:
             continue
 
-        phase_hours = sum(r.duration_hours for r in phase_resources)
-        phase_weeks = max(1, round(phase_hours / hours_per_week))
+        phase_weeks = max(1, phase_week_lengths[i] if i < len(phase_week_lengths) else 2)
         week_end = current_week + phase_weeks - 1
 
         items = []
+        # Sort phase items: non-project learning guides first, then projects
+        phase_resources = sorted(
+            phase_resources,
+            key=lambda r: (1 if r.is_project else 0, 0 if r.difficulty == "beginner" else 1)
+        )
+
         for r in phase_resources:
             assessment_id = None
             if r.has_assessment:

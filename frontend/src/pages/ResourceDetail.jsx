@@ -377,31 +377,44 @@ export default function ResourceDetail() {
         )}
       </div>
 
-      {/* ── Knowledge Check Section ───────────────── */}
+      {/* ── Knowledge Check Section (Post-Study Review) ───────────────── */}
       {resource.has_assessment && (
-        <div>
+        <div className="space-y-3">
           {!showAssessment ? (
-            <div className="card p-6 text-center space-y-3 bg-slate-50 dark:bg-darkBg-cardSub/40">
-              <div className="w-10 h-10 rounded-2xl bg-white dark:bg-darkBg-card border border-slate-200/80 dark:border-darkBg-border flex items-center justify-center mx-auto text-slate-800 dark:text-slate-200 shadow-subtle">
+            <div className="card p-6 text-center space-y-3 bg-gradient-to-b from-slate-50 to-indigo-50/20 dark:from-darkBg-cardSub/40 dark:to-indigo-950/10 border border-slate-200/80 dark:border-darkBg-border">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center mx-auto text-indigo-600 dark:text-indigo-400 shadow-subtle">
                 <ClipboardList className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-bold text-slate-900 dark:text-white text-base">Interactive Knowledge Check</h2>
-                <p className="text-slate-500 dark:text-slate-400 text-xs max-w-sm mx-auto mt-1">
-                  Validate your understanding of this module. Your score will update the Bayesian skill model and adapt subsequent phases.
+                <span className="text-[10px] font-bold font-mono text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">End-of-Module Mastery Check</span>
+                <h2 className="font-bold text-slate-900 dark:text-white text-base mt-0.5">Test Your Understanding</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-xs max-w-md mx-auto mt-1 leading-relaxed">
+                  💡 <strong>Tip for Beginners:</strong> Make sure to review the core concepts in this unit first. Once you're ready, take this quick checkpoint quiz to reinforce what you learned!
                 </p>
               </div>
-              <div className="pt-1">
+              <div className="pt-2 flex items-center justify-center gap-3">
                 <button
                   onClick={() => setShowAssessment(true)}
-                  className="btn-primary text-xs mx-auto"
+                  className="btn-primary text-xs"
                 >
-                  Start Knowledge Check <ChevronRight className="w-3.5 h-3.5" />
+                  <ClipboardList className="w-3.5 h-3.5" /> Start Knowledge Check <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
           ) : (
             <div className="card p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-darkBg-border pb-3">
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-sm">Interactive Knowledge Check</h3>
+                  <p className="text-slate-500 text-xs">Answer the questions below to validate your mastery.</p>
+                </div>
+                <button
+                  onClick={() => setShowAssessment(false)}
+                  className="btn-ghost text-xs text-slate-500"
+                >
+                  Back to Lesson
+                </button>
+              </div>
               <AssessmentView
                 assessmentId={resource.assessment_id || `asmt-${id}`}
                 pathItemId={pathItemId}

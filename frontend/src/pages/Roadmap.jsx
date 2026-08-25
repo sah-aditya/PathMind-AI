@@ -278,7 +278,7 @@ export default function Roadmap() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-1">
-            <Map className="w-3.5 h-3.5" /> Phased Milestone Schedule
+            <Map className="w-3.5 h-3.5" /> Structured Weekly Schedule
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{data.title}</h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 font-mono">
@@ -293,6 +293,21 @@ export default function Roadmap() {
           <RefreshCw className={`w-3.5 h-3.5 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
           <span>Regenerate</span>
         </button>
+      </div>
+
+      {/* ── Student Friendly Timeline Notice Banner ── */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-brand-50 to-indigo-50/50 dark:from-brand-950/30 dark:to-indigo-950/20 border border-brand-200/80 dark:border-brand-900/40 flex items-start gap-3">
+        <div className="w-8 h-8 rounded-xl bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <Compass className="w-4 h-4" />
+        </div>
+        <div className="text-xs space-y-0.5">
+          <p className="font-bold text-slate-900 dark:text-white">
+            🎓 Student-Calibrated {data.total_weeks}-Week Roadmap
+          </p>
+          <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+            Your curriculum is structured into realistic weekly milestones. Beginner units start with step-by-step visual lessons and guides — quizzes only appear as gentle checkpoints after learning each concept!
+          </p>
+        </div>
       </div>
 
       {/* ── Visual Subway Pipeline Infographic ──────── */}

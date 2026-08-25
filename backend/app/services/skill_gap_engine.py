@@ -120,13 +120,16 @@ def compute_skill_gap(
     # Prioritize by: (1) prerequisite depth, (2) gap size
     _prioritize_gaps(skills_to_learn, required_skills)
 
-    # Estimate weeks based on total gap and hours per week
-    avg_hours_per_skill = 12  # Average resource duration
+    # Estimate weeks calibrated to a realistic, student-friendly horizon (4-16 weeks)
+    avg_hours_per_skill = 8  # Modular duration
     total_hours_needed = sum(
         avg_hours_per_skill * (1 - sg.current_level / 0.7)
         for sg in skills_to_learn
     )
-    estimated_weeks = max(4, min(24, int(total_hours_needed / hours_per_week) + 2))
+    effective_h_per_week = max(hours_per_week, 6)
+    estimated_weeks = max(4, min(16, round(total_hours_needed / effective_h_per_week)))
+    if estimated_weeks < 6 and len(skills_to_learn) > 4:
+        estimated_weeks = 8
 
     # Readiness reflects fraction of required competencies or foundation met
     readiness_sum = sum(min(1.0, learner_skills.get(s, 0.0) / min_mastery) for s in required_skills)
