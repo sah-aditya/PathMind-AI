@@ -72,7 +72,7 @@ export default function About() {
             <div className="p-5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 space-y-2">
               <h3 className="font-bold text-amber-900 dark:text-amber-300 text-sm">Static One-Size Syllabi</h3>
               <p className="text-xs text-amber-800/80 dark:text-amber-400/80">
-                Standard courses impose rigid 40-hour schedules that fail to accommodate student velocity, background strengths, or personal time availability ($4\text{ to }30\text{ hrs/week}$).
+                Standard courses impose rigid 40-hour schedules that fail to accommodate student velocity, background strengths, or personal time availability (4 to 30 hours per week).
               </p>
             </div>
 
@@ -104,10 +104,10 @@ export default function About() {
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Directed Acyclic Graph (DAG) Sequencing</h3>
               <p className="text-xs text-slate-600 dark:text-zinc-300 leading-relaxed">
-                Curriculum units are represented as vertices $V$ in a directed graph $G = (V, E)$ where edges $(u, v)$ specify mandatory prerequisite constraints. PathMind AI runs Kahn's algorithm over the in-degree topology:
+                Curriculum units are represented as vertices in a directed graph where edges specify mandatory prerequisite constraints. PathMind AI runs Kahn's algorithm over the in-degree topology:
               </p>
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 font-mono text-xs text-indigo-600 dark:text-indigo-300 border border-slate-200 dark:border-white/[0.06]">
-                In-Degree(v) = |&#123;u &isin; V : (u, v) &isin; E&#125;|
+                {'In-Degree(v) = count of unresolved prerequisite edges into v'}
               </div>
               <p className="text-xs text-slate-500 dark:text-zinc-400">
                 Guarantees zero prerequisite inversions and eliminates premature exposure to advanced material.
@@ -141,7 +141,7 @@ export default function About() {
                 Based on research by Phong et al. (<em>STDJ, 2024</em>), PathMind AI assesses candidate competencies across three orthogonal dimensions:
               </p>
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 font-mono text-xs text-emerald-600 dark:text-emerald-300 border border-slate-200 dark:border-white/[0.06]">
-                Readiness(u) = w_K &middot; K_u + w_S &middot; S_u + w_A &middot; A_u
+                {'Readiness = (Weight_K * Knowledge) + (Weight_S * Skill) + (Weight_A * Attitude)'}
               </div>
               <p className="text-xs text-slate-500 dark:text-zinc-400">
                 Directly aligns student milestones with professional workplace competency standards.
@@ -158,7 +158,7 @@ export default function About() {
                 Combines Global Optimal Pathing (GOLPR) with Local Iterative Learning (LILPR). When quiz performance drops below 60%:
               </p>
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-800 font-mono text-xs text-purple-600 dark:text-purple-300 border border-slate-200 dark:border-white/[0.06]">
-                L_(t+1) = 0.60 &middot; L_t + 0.40 &middot; S_quiz &rarr; Injects Revision Unit
+                {'New_Mastery = 0.60 * Old_Mastery + 0.40 * Quiz_Score -> Injects Revision Unit'}
               </div>
               <p className="text-xs text-slate-500 dark:text-zinc-400">
                 Prevents knowledge debt from propagating through downstream advanced phases.

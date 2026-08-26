@@ -1,11 +1,24 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Shield, FileText, Lock, Scale, ArrowLeft, Sun, Moon, CheckCircle, AlertTriangle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Shield, FileText, Lock, Scale, ArrowLeft, Sun, Moon } from 'lucide-react'
 import useThemeStore from '../store/themeStore'
 
 export default function Legal() {
-  const [activeTab, setActiveTab] = useState('terms')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState(tabParam || 'terms')
   const { theme, toggleTheme } = useThemeStore()
+
+  useEffect(() => {
+    if (tabParam && ['terms', 'privacy', 'ethics', 'citations'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId)
+    setSearchParams({ tab: tabId })
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 flex flex-col transition-colors duration-200">
@@ -60,7 +73,7 @@ export default function Legal() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   isCurrent
                     ? 'bg-indigo-600 text-white shadow-sm'
@@ -113,21 +126,21 @@ export default function Legal() {
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">4. Intellectual Property & Open Licensing</h2>
                 <p>
-                  The core source code, proprietary graph sequencing algorithms, Bloom taxonomy classification models, user interface tokens, and platform documentation are protected by intellectual property laws. Unless otherwise specified under an open-source license (such as MIT or Apache 2.0 where applicable), unauthorized redistribution, commercial white-labeling, or deceptive duplication of the PathMind AI system is strictly prohibited.
+                  The core source code, proprietary graph sequencing algorithms, Bloom taxonomy classification models, user interface tokens, and platform documentation are protected by intellectual property laws. Unless otherwise specified under an open-source license, unauthorized redistribution, commercial white-labeling, or deceptive duplication of the PathMind AI system is strictly prohibited.
                 </p>
               </div>
 
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">5. Cryptographic Certificate Verification</h2>
                 <p>
-                  Certificates generated upon milestone completion reflect verified progress in the platform's database. Each certificate is assigned a unique cryptographic verification identifier and timestamp. PathMind AI maintains a public registry at <span className="font-mono text-indigo-600 dark:text-indigo-400">/verify/:code</span> to permit third-party verification of student achievement without compromising personally identifiable data.
+                  Certificates generated upon milestone completion reflect verified progress in the platform database. Each certificate is assigned a unique cryptographic verification identifier and timestamp. PathMind AI maintains a public registry at <span className="font-mono text-indigo-600 dark:text-indigo-400">/verify/:code</span> to permit third-party verification of student achievement without compromising personally identifiable data.
                 </p>
               </div>
 
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">6. Limitation of Liability</h2>
                 <p>
-                  To the maximum extent permitted by applicable law, PathMind AI, its contributors, and developers shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of data, loss of anticipated career advancement, or interruptions in cloud platform availability (Render, Vercel, Supabase).
+                  To the maximum extent permitted by applicable law, PathMind AI, its contributors, and developers shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of data, loss of anticipated career advancement, or interruptions in cloud platform availability.
                 </p>
               </div>
 
@@ -146,7 +159,7 @@ export default function Legal() {
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Data Privacy Philosophy</h2>
                 <p>
-                  PathMind AI is architected around principles of **Data Minimization**, **Storage Limitation**, and **User Autonomy**. We collect only the telemetry strictly essential to power personalized recommendations and preserve longitudinal learning states.
+                  PathMind AI is architected around principles of Data Minimization, Storage Limitation, and User Autonomy. We collect only the telemetry strictly essential to power personalized recommendations and preserve longitudinal learning states.
                 </p>
               </div>
 
@@ -184,7 +197,7 @@ export default function Legal() {
                 <ul className="list-disc pl-5 space-y-1.5">
                   <li><strong>In-Transit Encryption:</strong> All client-server communications are enforced via HTTPS with TLS 1.3 cryptographic ciphers.</li>
                   <li><strong>At-Rest Encryption:</strong> PostgreSQL databases on Supabase utilize AES-256 block-level encryption.</li>
-                  <li><strong>Token Architecture:</strong> Stateless authentication using HMAC-SHA256 signed JSON Web Tokens with strict time-to-live (TTL) expiration.</li>
+                  <li><strong>Token Architecture:</strong> Stateless authentication using HMAC-SHA256 signed JSON Web Tokens with strict time-to-live expiration.</li>
                   <li><strong>Password Storage:</strong> Cryptographic password hashing utilizing adaptive bcrypt salting with cost factor 12.</li>
                 </ul>
               </div>
@@ -204,7 +217,7 @@ export default function Legal() {
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Explainable AI (XAI) & Anti-Black-Box Architecture</h2>
                 <p>
-                  In compliance with UNESCO and IEEE guidelines on Artificial Intelligence in Education, PathMind AI rejects opaque, uninterpretable "black-box" decision systems. Every single course, project, and milestone recommended to a student exposes a verifiable explainability payload:
+                  In compliance with UNESCO and IEEE guidelines on Artificial Intelligence in Education, PathMind AI rejects opaque, uninterpretable decision systems. Every single course, project, and milestone recommended to a student exposes a verifiable explainability payload:
                 </p>
                 <div className="mt-3 p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-white/[0.06] space-y-2 font-mono text-xs">
                   <p><strong className="text-indigo-600 dark:text-indigo-400">1. Prerequisite Proof:</strong> Exact validation that preceding DAG nodes have been completed.</p>
@@ -228,7 +241,7 @@ export default function Legal() {
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">3. Closed-Loop Adaptive Remediation (GOLPR + LILPR)</h2>
                 <p>
-                  When assessment scores indicate incomplete mastery ($S &lt; 0.60$), the adaptive engine prevents compounding learning deficits by injecting targeted remediation units rather than penalizing the student's standing.
+                  When assessment scores indicate incomplete mastery (Score under 60%), the adaptive engine prevents compounding learning deficits by injecting targeted remediation units rather than penalizing the student standing.
                 </p>
               </div>
             </div>
@@ -256,7 +269,7 @@ export default function Legal() {
                     Authors: Aili Li, Yong Li, Xiyu Gao (2026). Published in <em>Electronics</em>, 15(1), 238. DOI: 10.3390/electronics15010238.
                   </p>
                   <p className="text-xs text-slate-600 dark:text-zinc-300">
-                    <strong>Utilized Concepts:</strong> Bloom's 6-tier Cognitive Progression ($g_1 \to g_6$), Closed-Loop Hybrid Planning (GOLPR + LILPR), and Explainability Similarity Metrics ($E = \text{Sim}(R, e)$).
+                    <strong>Utilized Concepts:</strong> Bloom 6-tier Cognitive Progression (g1: Remember to g6: Create), Closed-Loop Hybrid Planning (GOLPR + LILPR), and Explainability Similarity Metrics.
                   </p>
                 </div>
 
