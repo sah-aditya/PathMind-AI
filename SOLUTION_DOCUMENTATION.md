@@ -132,8 +132,8 @@ $$L_{t+1} = 0.60 \cdot L_t + 0.40 \cdot S_{\text{quiz}}$$
 1. **Conversational AI Onboarding Studio**: Natural language chat interface capturing career objectives, background, and weekly availability.
 2. **Visual Skill Gap Diagnostics**: Radar chart comparing learner baseline against industry requirements.
 3. **Phased Adaptive Roadmap**: Step-by-step weekly milestone tracker with status management (Start, Complete, Re-adapt).
-4. **Interactive Prerequisite Skill Tree Graph (`/skill-tree`)**: SVG Bezier curved graph with Mastered 🟢, Active 🔵, and Locked ⚪ nodes + Competency Inspector Drawer.
-5. **AI Recommendation Explainability Engine**: Explicit "💡 Why Recommended?" accordions detailing exact skill gap closure and prerequisite validation.
+4. **Interactive Prerequisite Skill Tree Graph (`/skill-tree`)**: SVG Bezier curved graph with Mastered, In-Progress, and Locked nodes + Competency Inspector Drawer.
+5. **AI Recommendation Explainability Engine**: Explicit "Why Recommended?" accordions detailing exact skill gap closure and prerequisite validation.
 6. **Bloom's Cognitive Progression Badges**: Every unit tagged with $g_1 \dots g_6$ cognitive development indicators.
 7. **KSA Industry Career Readiness Meter**: Live Dashboard index showing Knowledge, Skill, and Attitude readiness percentages.
 8. **Dynamic Study Pacing Slider**: Real-time weekly commitment recalibration ($4\text{ to }30\text{ hrs/week}$).

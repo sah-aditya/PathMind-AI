@@ -1,138 +1,140 @@
-# PathMind AI 🧠
-### AI-Powered Personalized Learning Path Recommender
+# PathMind AI: AI-Powered Personalized Learning Path Recommender
 
-> Your goal. Your pace. Your path.
-
-PathMind AI uses **Gemini AI** + a custom **6-factor recommendation engine** to generate adaptive, personalized learning roadmaps based on your skills, goals, and learning style — then continuously adapts as you progress.
+PathMind AI is an adaptive educational platform and intelligent curriculum recommendation engine. It leverages Natural Language Processing, Directed Acyclic Graph (DAG) topological sorting, and a multi-factor recommendation model to generate personalized, pedagogical learning paths tailored to an individual's background, career goals, and pace.
 
 ---
 
-## ✨ Platform Highlights & Core Engines
+## 1. Platform Highlights & Core Engines
 
-| Engine / Feature | Description | Research / Architecture Foundation |
+| Component / Subsystem | Description | Theoretical & Architecture Foundation |
 |---|---|---|
-| 🤖 **Natural Language Onboarding** | Conversational goal & profile extraction | Gemini 1.5 Flash + Few-Shot Instruction Tuning |
-| 🎯 **Skill Gap Diagnostics** | Current proficiency vs target benchmark matrix | Vector Space Model + Radar Chart Analytics |
-| 🗺️ **Phased Adaptive Roadmap** | Step-by-step weekly milestone schedule | Topological DAG Sort + Bloom's Cognitive Smoothness |
-| 🌐 **Interactive Prerequisite Skill Tree** | Visual dependency node graph with SVG bezier curves | NetworkX Directed Acyclic Graph (DAG) |
-| 🧠 **Bloom's Cognitive Progression** | Cognitive tiers from Remember ($g_1$) to Create ($g_6$) | *Li et al., MDPI Electronics 2026 Survey* |
-| 💼 **KSA Career Readiness Matrix** | Knowledge ($K$), Skill ($S$), Attitude ($A$) benchmark | *Phong et al., STDJ 2024 Hybrid Recommender* |
-| 💡 **AI Explainability Engine** | "Why was this recommended?" transparent breakdown | Model rationale + Gap impact + Prerequisite proof |
-| 🔄 **Closed-Loop Adaptive Engine** | Real-time path mutation & revision injection ($S < 0.60$) | GOLPR Global Planning + LILPR Local Iterative Learning |
-| 🏆 **Verifiable Digital Credentials** | Tamper-proof certificate with live QR verification | Cryptographic hash verification (`/verify/{code}`) |
-| ⚡ **Spotlight & Executive Learner Hub** | `Ctrl+K` global command palette, TTS voice & pacing slider | Executive Accessibility & Focus Studio |
+| **Natural Language Onboarding** | Conversational goal and background profile extraction | Google Gemini 1.5 Flash with Few-Shot Instruction Tuning |
+| **Skill Gap Diagnostics** | Baseline proficiency vs. target competency benchmark matrix | Vector Space Model with Radar Chart Analytics |
+| **Phased Adaptive Roadmap** | Step-by-step weekly milestone scheduler | Directed Acyclic Graph (DAG) Topological Sorting |
+| **Interactive Prerequisite Skill Tree** | Dependency node graph with SVG Bezier curves | NetworkX Graph Engine with Interactive Inspection |
+| **Bloom's Cognitive Progression** | Cognitive tiers from Remember (g1) to Create (g6) | Li et al., MDPI Electronics 2026 Survey |
+| **KSA Career Readiness Matrix** | Knowledge (K), Skill (S), and Attitude (A) benchmark | Phong et al., STDJ 2024 Hybrid Recommender |
+| **AI Recommendation Explainability** | Transparent "Why Recommended?" justification | Feature vector similarity and prerequisite verification |
+| **Closed-Loop Adaptive Engine** | Real-time path adaptation and revision injection | Global Optimal Planning (GOLPR) + Local Iterative Learning (LILPR) |
+| **Verifiable Digital Credentials** | Cryptographic certificate with live QR verification | SHA-256 Hash Verification Registry |
+| **Executive Accessibility Studio** | Global command palette (Ctrl+K), TTS synthesizer, and pacing | Web Speech API and WCAG-compliant design tokens |
 
 ---
 
-## 🏗️ Architecture
+## 2. System Architecture
 
 ```
-frontend (React + Vite + Tailwind)
-    ↕ REST API (FastAPI)
-backend (Python + FastAPI)
-    ├── Gemini AI service         ← Conversational intelligence
-    ├── Skill Gap Engine          ← Gap analysis + prioritization
-    ├── Recommendation Engine     ← 6-factor hybrid scoring
-    ├── Path Generator            ← NetworkX topological sort
-    └── Adaptive Engine           ← Real-time path mutation
-    ↕ PostgreSQL (Supabase)
+[ Frontend Client: React 18 + Vite + TailwindCSS ]
+                     |
+                     | HTTPS / REST API / JWT Authentication
+                     v
+[ Application Core: FastAPI + Python 3.11 ]
+    |-- Conversational NLP Context Engine (Gemini 1.5 Flash)
+    |-- Skill Gap Diagnostics Engine
+    |-- Multi-Objective Hybrid Recommendation Scorer (TF-IDF + SVD)
+    |-- Topological DAG Path Generator (NetworkX)
+    |-- Dynamic Closed-Loop Adaptive Feedback Handler
+    |-- Enterprise Telemetry and Audit Logging
+                     |
+                     | SQLAlchemy ORM Connection Pool
+                     v
+[ Persistence Layer: PostgreSQL on Supabase ]
+    |-- Users and Role-Based Access Control (RBAC)
+    |-- Learner Profiles and Competency Mastery Vectors
+    |-- Learning Paths, Structured Phases, and Milestone Items
+    |-- Assessment Records, Submission Logs, and Certificates
 ```
 
 ---
 
-## 🚀 Local Setup
+## 3. Local Installation & Execution
 
-### Backend
+### Prerequisites
+- Python 3.11+
+- Node.js 18+ and npm
+- PostgreSQL database (or Supabase instance)
 
+### Backend Configuration
 ```bash
 cd backend
-python -m venv venv
-venv\Scripts\activate        # Windows
+python -m venv .venv
+
+# On Windows:
+.venv\Scripts\activate
+# On Linux / macOS:
+source .venv/bin/activate
+
 pip install -r requirements.txt
-cp .env.example .env         # Fill in your values
-python seed.py               # Create tables + demo user
-uvicorn app.main:app --reload
+cp .env.example .env
+python seed.py
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-**Required `.env` values:**
-- `DATABASE_URL` — Supabase PostgreSQL connection string
-- `GEMINI_API_KEY` — Free at [ai.google.dev](https://ai.google.dev)
-- `SECRET_KEY` — Any random 32-char string
+**Required Environment Variables (`.env`):**
+- `DATABASE_URL`: PostgreSQL connection URI
+- `GEMINI_API_KEY`: Google Gemini API key
+- `SECRET_KEY`: Cryptographic signing key for JWT tokens
 
-### Frontend
-
+### Frontend Configuration
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Visit `http://localhost:5173`
-
-**Demo credentials:** `demo@pathmind.ai` / `Demo@1234`
+The application will be accessible at `http://localhost:5173`.  
+**Default Demo Credentials:** `demo@pathmind.ai` / `Demo@1234`
 
 ---
 
-## ☁️ Deployment (Free Tier)
+## 4. Cloud Deployment Architecture
 
-| Service | What it hosts | Free tier |
+| Tier | Service Provider | Deployment Configuration |
 |---|---|---|
-| **Supabase** | PostgreSQL database | 500MB, unlimited API calls |
-| **Render.com** | FastAPI backend | 750hrs/month |
-| **Vercel** | React frontend | Unlimited static |
-
-### Deploy Backend (Render.com)
-1. Connect your GitHub repo to Render
-2. Set `Root Directory` = `backend`
-3. Set `Build Command` = `pip install -r requirements.txt && python seed.py`
-4. Set `Start Command` = `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-5. Add env vars from `.env.example`
-
-### Deploy Frontend (Vercel)
-1. Connect your GitHub repo to Vercel
-2. Set `Root Directory` = `frontend`
-3. Set `Build Command` = `npm run build`
-4. Update `vercel.json` with your Render backend URL
+| **Database** | Supabase Cloud | Managed PostgreSQL 15 Instance |
+| **Backend API** | Render.com | Python 3.11 Web Service with Uvicorn ASGI |
+| **Frontend UI** | Vercel | Single-Page Application (SPA) with Global Edge CDN |
 
 ---
 
-## 🧠 Recommendation Algorithm
+## 5. Algorithmic Formulation
 
-The 6-factor hybrid scoring assigns weights to:
-1. **Goal Relevance (30%)** — Jaccard similarity to required skills
-2. **Skill Gap Coverage (25%)** — Fraction of gaps this resource teaches
-3. **Prerequisite Readiness (20%)** — Learner already has prerequisites
-4. **Difficulty Fit (10%)** — Difficulty matches experience level
-5. **Interest Alignment (10%)** — Tags match learner interests
-6. **Style Preference (5%)** — Matches video/reading/project preference
+Candidate learning units are scored across eight weighted pedagogical and statistical factors:
+$$\text{Score}(r) = 0.22 \cdot R_{\text{goal}} + 0.25 \cdot C_{\text{gap}} + 0.20 \cdot P_{\text{readiness}} + 0.10 \cdot D_{\text{fit}} + 0.05 \cdot I_{\text{align}} + 0.03 \cdot T_{\text{style}} + 0.05 \cdot Q_{\text{rating}} + 0.12 \cdot S_{\text{tfidf}} + 0.03 \cdot S_{\text{collab}}$$
 
-Resources are then topologically sorted using **NetworkX** to ensure prerequisites always come before dependent content.
+Selected units are organized into a Directed Acyclic Graph $G = (V, E)$ and topologically ordered using Kahn's algorithm, ensuring absolute prerequisite compliance and Bloom's cognitive taxonomy progression.
 
 ---
 
-## 📁 Project Structure
+## 6. Directory Structure
 
 ```
 Learning Path Gen/
-├── backend/
-│   ├── app/
-│   │   ├── ai/                ← Gemini service
-│   │   ├── api/routes/        ← FastAPI routes
-│   │   ├── core/              ← Config + security
-│   │   ├── db/                ← SQLAlchemy setup
-│   │   ├── models/            ← DB models
-│   │   ├── schemas/           ← Pydantic schemas
-│   │   └── services/          ← Intelligence engines
-│   ├── data/                  ← JSON datasets
-│   └── seed.py
-└── frontend/
-    └── src/
-        ├── components/        ← AppLayout, ChatOverlay
-        ├── pages/             ← All 8 pages
-        ├── services/          ← API layer
-        └── store/             ← Zustand auth store
+|-- .gitignore
+|-- .python-version
+|-- README.md
+|-- SOLUTION_DOCUMENTATION.md
+|-- backend/
+|   |-- alembic/
+|   |-- app/
+|   |   |-- ai/
+|   |   |-- api/routes/
+|   |   |-- core/
+|   |   |-- db/
+|   |   |-- models/
+|   |   |-- schemas/
+|   |   `-- services/
+|   |-- data/
+|   |-- requirements.txt
+|   `-- seed.py
+`-- frontend/
+    |-- public/
+    |-- src/
+    |   |-- components/
+    |   |-- pages/
+    |   |-- services/
+    |   `-- store/
+    |-- package.json
+    |-- tailwind.config.js
+    `-- vite.config.js
 ```
-
----
-
-*Built with ❤️ using FastAPI, React, Gemini AI, and free-tier cloud services.*
