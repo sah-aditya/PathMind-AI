@@ -22,6 +22,7 @@ import Help from './pages/Help'
 import Certificates from './pages/Certificates'
 import VerifyCertificate from './pages/VerifyCertificate'
 import Profile from './pages/Profile'
+import SkillTree from './pages/SkillTree'
 import AppLayout from './components/AppLayout'
 
 function PrivateRoute({ children }) {
@@ -101,6 +102,7 @@ export default function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/skill-gap" element={<SkillGap />} />
           <Route path="/roadmap" element={<Roadmap />} />
+          <Route path="/skill-tree" element={<SkillTree />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/certificates" element={<Certificates />} />
           <Route path="/profile" element={<Profile />} />

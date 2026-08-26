@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Target, Compass, LogOut, Brain,
   Sparkles, MessageCircle, Menu, X, Sun, Moon, RotateCcw, Shield, BookOpen,
   ChevronDown, LifeBuoy, User as UserIcon, Key, Lock, Check, AlertCircle,
-  PanelLeftClose, PanelLeftOpen, Award, Search
+  PanelLeftClose, PanelLeftOpen, Award, Search, GitBranch
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
@@ -18,6 +18,7 @@ import toast from 'react-hot-toast'
 const navItems = [
   { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard',    service: 'dashboard' },
   { to: '/roadmap',      icon: Compass,         label: 'Roadmap',      service: 'roadmap' },
+  { to: '/skill-tree',   icon: GitBranch,       label: 'Skill Tree',   service: 'roadmap' },
   { to: '/skill-gap',    icon: Target,          label: 'Skill Gap',    service: 'skill_gap' },
   { to: '/certificates', icon: Award,           label: 'Certificates', service: 'dashboard' },
   { to: '/profile',      icon: UserIcon,        label: 'Learner Hub',  service: 'dashboard' },

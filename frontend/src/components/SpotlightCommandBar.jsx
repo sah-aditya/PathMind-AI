@@ -4,7 +4,7 @@ import {
   Search, LayoutDashboard, Target, Compass, Award,
   User, LifeBuoy, Shield, Moon, Sun, MessageCircle,
   RotateCcw, Sparkles, ArrowRight, CornerDownLeft, X,
-  BookOpen, Terminal, CheckSquare, Zap, ExternalLink
+  BookOpen, Terminal, CheckSquare, Zap, ExternalLink, GitBranch
 } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import useThemeStore from '../store/themeStore'
@@ -46,6 +46,15 @@ export default function SpotlightCommandBar({ isOpen, onClose }) {
         icon: Compass,
         badge: 'G R',
         action: () => { navigate('/roadmap'); onClose(); }
+      },
+      {
+        id: 'nav-skill-tree',
+        category: 'Navigation',
+        title: 'Prerequisite Skill Tree (DAG Graph)',
+        desc: 'Visual node graph displaying mastered competencies & prerequisite topology',
+        icon: GitBranch,
+        badge: 'G T',
+        action: () => { navigate('/skill-tree'); onClose(); }
       },
       {
         id: 'nav-skill-gap',

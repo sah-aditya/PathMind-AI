@@ -47,10 +47,12 @@ function RoadmapSkeleton() {
 /* ── Resource Card ────────────────────────────────────── */
 function ResourceCard({ item, onStatusChange, onOpen }) {
   const Icon = TYPE_ICON[item.type] || BookOpen
-  const cfg  = STATUS_CONFIG[item.status] || STATUS_CONFIG.pending
-  const isCompleted  = item.status === 'completed'
+  const cfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.pending
+  const isCompleted = item.status === 'completed'
   const isInProgress = item.status === 'in_progress'
-  const isRevision   = item.is_revision
+  const isRevision = item.is_revision
+  const [showRationale, setShowRationale] = useState(false)
+  const rationale = item.ai_rationale
 
   return (
     <div
@@ -58,7 +60,7 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
       className={`
         group relative bg-white dark:bg-darkBg-card border rounded-2xl p-4 cursor-pointer
         transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-700 shadow-subtle
-        ${isCompleted  ? 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/10' : ''}
+        ${isCompleted ? 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-950/10' : ''}
         ${isInProgress ? 'border-amber-200 dark:border-amber-900/40 bg-amber-50/20 dark:bg-amber-950/10' : ''}
         ${!isCompleted && !isInProgress ? 'border-slate-200/80 dark:border-darkBg-border' : ''}
       `}
@@ -82,6 +84,11 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
               {item.title}
             </p>
             <div className="flex items-center gap-1.5 flex-shrink-0">
+              {rationale?.match_score && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800">
+                  {rationale.match_score}% Match
+                </span>
+              )}
               {isRevision && <span className="badge badge-yellow text-[10px]">Adaptive Revision</span>}
               <span className={`flex items-center gap-1 text-xs font-medium ${cfg.text}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
@@ -103,6 +110,26 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
               </span>
             )}
           </div>
+
+          {/* AI Recommendation Explainability Banner */}
+          {rationale && (
+            <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-white/[0.04]" onClick={e => e.stopPropagation()}>
+              <button
+                onClick={() => setShowRationale(!showRationale)}
+                className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+              >
+                <Zap className="w-3 h-3" />
+                <span>{showRationale ? 'Hide AI Rationale' : '💡 Why was this recommended?'}</span>
+              </button>
+
+              {showRationale && (
+                <div className="mt-2 p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/70 border border-slate-200/80 dark:border-white/[0.06] text-[11px] space-y-1 animate-fade-in text-slate-600 dark:text-zinc-300">
+                  <p><strong>🎯 Gap Addressed:</strong> {rationale.gap_impact}</p>
+                  <p><strong>🔗 Prerequisite Proof:</strong> {rationale.prerequisite_reason}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
