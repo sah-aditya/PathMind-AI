@@ -267,9 +267,10 @@ export default function AppLayout() {
         />
       )}
 
-      {/* ── Studio Left Sidebar ── */}
+      {/* ── Studio Left Sidebar (Fixed & Sticky on Scroll) ── */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
+        fixed inset-y-0 left-0 z-40
+        lg:sticky lg:top-0 lg:h-screen lg:inset-auto
         flex flex-col bg-white dark:bg-darkBg-card border-r border-slate-200/80 dark:border-white/[0.08]
         shadow-card-lg lg:shadow-none
         transform transition-all duration-200 ease-out
@@ -451,7 +452,7 @@ export default function AppLayout() {
         {/* Floating Studio Top Header */}
         <header className="bg-white/80 dark:bg-darkBg-card/80 backdrop-blur-md border-b border-slate-200/80 dark:border-darkBg-border px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-30">
           
-          {/* Left: Hamburger (mobile), Sidebar Toggle (desktop) & Greeting */}
+          {/* Left: Hamburger (mobile) & Greeting */}
           <div className="flex items-center gap-3">
             <button
               className="lg:hidden p-2 -ml-1 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-darkBg-cardSub rounded-xl"
@@ -459,15 +460,6 @@ export default function AppLayout() {
               aria-label="Open sidebar"
             >
               <Menu className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={toggleSidebar}
-              className="hidden lg:flex p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-darkBg-cardSub rounded-xl border border-slate-200/60 dark:border-darkBg-border transition-colors"
-              title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-              aria-label="Toggle sidebar collapse"
-            >
-              {sidebarCollapsed ? <PanelLeftOpen className="w-4 h-4 text-brand-600 dark:text-brand-400" /> : <PanelLeftClose className="w-4 h-4" />}
             </button>
 
             <div>
