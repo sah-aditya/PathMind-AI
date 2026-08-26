@@ -100,6 +100,15 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className={`badge ${TYPE_CLASS[item.type] || 'badge-gray'} text-[10px] uppercase`}>{item.type}</span>
             <span className={`badge ${DIFF_CLASS[item.difficulty] || 'badge-gray'} text-[10px]`}>{item.difficulty}</span>
+            {item.bloom_level && (
+              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase ${
+                item.bloom_tier <= 2 ? 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border-cyan-200/60 dark:border-cyan-800' :
+                item.bloom_tier <= 4 ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800' :
+                'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200/60 dark:border-purple-800'
+              }`}>
+                g{item.bloom_tier}: {item.bloom_level}
+              </span>
+            )}
             {item.has_assessment && <span className="badge badge-indigo text-[10px]">Assessment Check</span>}
             <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
               <Clock className="w-3 h-3" /> {item.duration_hours}h
@@ -124,6 +133,7 @@ function ResourceCard({ item, onStatusChange, onOpen }) {
 
               {showRationale && (
                 <div className="mt-2 p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/70 border border-slate-200/80 dark:border-white/[0.06] text-[11px] space-y-1 animate-fade-in text-slate-600 dark:text-zinc-300">
+                  <p><strong>🧠 Bloom's Cognitive Tier:</strong> {rationale.bloom_alignment || `Tier g${item.bloom_tier}: ${item.bloom_level}`}</p>
                   <p><strong>🎯 Gap Addressed:</strong> {rationale.gap_impact}</p>
                   <p><strong>🔗 Prerequisite Proof:</strong> {rationale.prerequisite_reason}</p>
                 </div>

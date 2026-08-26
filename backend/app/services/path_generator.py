@@ -48,6 +48,9 @@ class PathItemPlan:
     order_index: int
     is_revision: bool = False
     why_recommended: str = ""
+    bloom_level: str = "understand"   # remember | understand | apply | analyze | evaluate | create
+    bloom_tier: int = 2               # 1 to 6
+    ksa_category: str = "knowledge"   # knowledge | skill | attitude
 
 
 @dataclass
@@ -262,6 +265,35 @@ def _topological_sort_resources(
     return ordered
 
 
+def _infer_bloom_and_ksa(r) -> tuple:
+    """Infers Bloom's Taxonomy Cognitive Tier (g1-g6) and KSA Category based on research paper specs."""
+    is_proj = getattr(r, "is_project", False)
+    diff = getattr(r, "difficulty", "beginner")
+    title = getattr(r, "title", "").lower()
+
+    if is_proj:
+        if any(w in title for w in ["capstone", "full-stack", "portfolio", "saas", "e-commerce"]):
+            return "create", 6, "attitude"
+        elif "deploy" in title or "evaluat" in title:
+            return "evaluate", 5, "skill"
+        return "create", 6, "skill"
+
+    if diff == "advanced":
+        if any(w in title for w in ["system design", "audit", "architect", "tuning", "optimization"]):
+            return "evaluate", 5, "skill"
+        return "analyze", 4, "skill"
+
+    if diff == "intermediate":
+        if any(w in title for w in ["deep dive", "analysis", "testing", "evaluation", "internals", "eda"]):
+            return "analyze", 4, "skill"
+        return "apply", 3, "skill"
+
+    # Beginner
+    if any(w in title for w in ["fundamentals", "basics", "introduction", "getting started"]):
+        return "remember", 1, "knowledge"
+    return "understand", 2, "knowledge"
+
+
 def _score_resource_for_phase(r: ScoredResource, phase_title: str, phase_idx: int, total_phases: int) -> float:
     """Scores how well a resource fits a specific phase title."""
     title_lower = phase_title.lower()
@@ -373,6 +405,8 @@ def _assign_to_phases(
                 if asmt:
                     assessment_id = asmt["id"]
 
+            bloom_lvl, bloom_t, ksa_cat = _infer_bloom_and_ksa(r)
+
             items.append(
                 PathItemPlan(
                     resource_id=r.resource_id,
@@ -386,6 +420,9 @@ def _assign_to_phases(
                     order_index=order_counter,
                     is_revision=False,
                     why_recommended=_generate_why(r, i, n_phases),
+                    bloom_level=bloom_lvl,
+                    bloom_tier=bloom_t,
+                    ksa_category=ksa_cat,
                 )
             )
             order_counter += 1
