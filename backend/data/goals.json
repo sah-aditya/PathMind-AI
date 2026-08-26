@@ -285,5 +285,19 @@
     "optional_skills": ["docker"],
     "typical_path_weeks": 12,
     "phases": ["Modern HTML/CSS & Tailwind", "TypeScript & React 19", "Next.js App Router", "Prisma & PostgreSQL", "Production Deployment"]
+  },
+
+  "mern-stack-developer": {
+    "title": "MERN Stack Web Developer",
+    "description": "Build modern full-stack web applications using MongoDB, Express.js, React, and Node.js.",
+    "required_skills": [
+      "html-css", "javascript-basics", "javascript-advanced",
+      "react-basics", "react-advanced",
+      "nodejs-express", "databases-web", "sql-basics",
+      "git-basics", "docker", "fullstack-deployment"
+    ],
+    "optional_skills": ["tailwind-css", "typescript-advanced"],
+    "typical_path_weeks": 12,
+    "phases": ["Web Foundations (HTML/CSS & Git)", "JavaScript & Frontend (React)", "Backend APIs (Node.js & Express)", "Databases (MongoDB & SQL)", "Deployment & Cloud", "Full-Stack Capstone Project"]
   }
 }

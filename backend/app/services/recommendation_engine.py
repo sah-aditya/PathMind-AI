@@ -184,17 +184,21 @@ def score_resources(
         svd_score = svd_scores.get(resource["id"], 0.0)
 
         # ── Weighted Final Score ──
-        final_score = (
-            0.22 * goal_relevance
-            + 0.25 * gap_coverage        # Prioritize gap closure
-            + 0.20 * prereq_readiness    # Ensure readiness
-            + 0.10 * difficulty_fit
-            + 0.05 * interest_alignment
-            + 0.03 * type_pref
-            + 0.05 * rating_boost        # Quality signal
-            + 0.12 * tfidf_score
-            + 0.03 * svd_score
-        )
+        all_goal_skills = required_skills | set(goal.get("optional_skills", [])) | gap_skills
+        if all_goal_skills and not (skills_taught & all_goal_skills):
+            final_score = 0.0
+        else:
+            final_score = (
+                0.22 * goal_relevance
+                + 0.25 * gap_coverage        # Prioritize gap closure
+                + 0.20 * prereq_readiness    # Ensure readiness
+                + 0.10 * difficulty_fit
+                + 0.05 * interest_alignment
+                + 0.03 * type_pref
+                + 0.05 * rating_boost        # Quality signal
+                + 0.12 * tfidf_score
+                + 0.03 * svd_score
+            )
 
         scored.append(
             ScoredResource(
