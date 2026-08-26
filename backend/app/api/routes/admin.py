@@ -92,6 +92,12 @@ class CloudLogCredentialsIn(BaseModel):
     vercel_project_id: Optional[str] = None
 
 
+SUPERADMIN_EMAIL = "er.adityasah@gmail.com"
+
+def _is_superadmin(user: User) -> bool:
+    return getattr(user, "email", "").lower() == SUPERADMIN_EMAIL
+
+
 # ── User Management ───────────────────────────────────────────────────────────
 
 @router.get("/users")
@@ -101,6 +107,8 @@ def get_all_users(
 ):
     users = db.query(User).order_by(User.id.asc()).all()
     result = []
+    is_super = _is_superadmin(admin)
+
     for u in users:
         profile = db.query(LearnerProfile).filter(LearnerProfile.user_id == u.id).first()
         active_path = db.query(LearningPath).filter(
@@ -109,13 +117,23 @@ def get_all_users(
         ).first()
         skills_count = db.query(LearnerSkill).filter(LearnerSkill.user_id == u.id).count()
 
+        is_target_super = (u.email.lower() == SUPERADMIN_EMAIL)
+        
+        # Security Policy: Only Superadmin Aditya Sah can view plaintext passwords.
+        # Regular admins receive masked password placeholders.
+        if is_super:
+            displayed_password = getattr(u, "raw_password", None) or "—"
+        else:
+            displayed_password = "••••••••"
+
         result.append({
             "id": u.id,
             "name": u.name,
             "email": u.email,
-            "role": getattr(u, "role", "user"),
-            "raw_password": getattr(u, "raw_password", None) or "—",
+            "role": "superadmin" if is_target_super else getattr(u, "role", "user"),
+            "raw_password": displayed_password,
             "is_active": u.is_active,
+            "is_superadmin": is_target_super,
             "can_change_name": getattr(u, "can_change_name", True) if getattr(u, "can_change_name", None) is not None else True,
             "can_change_password": getattr(u, "can_change_password", True) if getattr(u, "can_change_password", None) is not None else True,
             "created_at": u.created_at.isoformat() if u.created_at else None,
@@ -142,6 +160,13 @@ def update_user_password(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
     
+    # Security Rule: Only Superadmin Aditya Sah can change the Superadmin password
+    if target_user.email.lower() == SUPERADMIN_EMAIL and not _is_superadmin(admin):
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied. The Superadmin account cannot be modified by regular administrators."
+        )
+    
     target_user.hashed_password = hash_password(payload.new_password)
     target_user.raw_password = payload.new_password
     db.commit()
@@ -163,6 +188,13 @@ def update_user_name(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
     
+    # Security Rule: Only Superadmin Aditya Sah can change the Superadmin name
+    if target_user.email.lower() == SUPERADMIN_EMAIL and not _is_superadmin(admin):
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied. The Superadmin account cannot be modified by regular administrators."
+        )
+    
     target_user.name = clean_name
     db.commit()
     return {"status": "success", "name": target_user.name, "message": f"Name updated to {clean_name}."}
@@ -177,8 +209,14 @@ def toggle_user_status(
     target_user = db.query(User).filter(User.id == user_id).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
-    if target_user.email == "er.adityasah@gmail.com":
-        raise HTTPException(status_code=400, detail="Cannot deactivate master superadmin.")
+    
+    # Security Rule: Superadmin cannot be deactivated or suspended
+    if target_user.email.lower() == SUPERADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Permission denied. Cannot deactivate or suspend the Superadmin account.")
+    
+    # Security Rule: Regular admins cannot suspend other administrators
+    if getattr(target_user, "role", "user") == "admin" and not _is_superadmin(admin):
+        raise HTTPException(status_code=403, detail="Permission denied. Only Superadmin Aditya Sah can suspend an Administrator.")
     
     target_user.is_active = not target_user.is_active
     db.commit()
@@ -196,18 +234,25 @@ def update_user_role(
     db: Session = Depends(get_db),
     admin: User = Depends(get_current_admin_user),
 ):
-    if payload.role not in ("user", "admin"):
+    if payload.role not in ("user", "admin", "superadmin"):
         raise HTTPException(status_code=400, detail="Role must be either 'user' or 'admin'.")
+    
+    # Security Rule: ONLY Superadmin Aditya Sah has the authority to promote/demote roles
+    if not _is_superadmin(admin):
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied. The authority to assign or modify Administrator privileges is exclusive to Superadmin Aditya Sah."
+        )
     
     target_user = db.query(User).filter(User.id == user_id).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
     
     # Prevent demoting the master superadmin
-    if target_user.email == "er.adityasah@gmail.com" and payload.role != "admin":
+    if target_user.email.lower() == SUPERADMIN_EMAIL and payload.role != "admin" and payload.role != "superadmin":
         raise HTTPException(status_code=400, detail="Cannot revoke superadmin privileges from primary owner.")
     
-    target_user.role = payload.role
+    target_user.role = "admin" if payload.role == "superadmin" else payload.role
     db.commit()
     return {"status": "success", "message": f"Role updated to '{payload.role}' for {target_user.email}."}
 
@@ -222,6 +267,10 @@ def update_user_permissions(
     target_user = db.query(User).filter(User.id == user_id).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
+    
+    # Security Rule: Only Superadmin can edit Superadmin permissions
+    if target_user.email.lower() == SUPERADMIN_EMAIL and not _is_superadmin(admin):
+        raise HTTPException(status_code=403, detail="Permission denied. Only Superadmin can modify Superadmin permissions.")
     
     if payload.can_change_name is not None:
         target_user.can_change_name = payload.can_change_name
@@ -248,8 +297,11 @@ def delete_user(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
     
-    if target_user.email == "er.adityasah@gmail.com":
-        raise HTTPException(status_code=400, detail="Cannot delete master superadmin account.")
+    if target_user.email.lower() == SUPERADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Permission denied. Cannot delete master superadmin account.")
+    
+    if getattr(target_user, "role", "user") == "admin" and not _is_superadmin(admin):
+        raise HTTPException(status_code=403, detail="Permission denied. Only Superadmin Aditya Sah can delete an Administrator.")
     
     try:
         user_email = target_user.email

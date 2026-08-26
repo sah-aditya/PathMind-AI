@@ -1160,38 +1160,53 @@ export default function Admin() {
                         </tr>
                       ) : (
                         processedUsers.map((u) => {
-                          const isSuperadmin = u.email === 'er.adityasah@gmail.com'
+                          const isOperatingAsSuperAdmin = user?.email?.toLowerCase() === 'er.adityasah@gmail.com'
+                          const isRowSuperadmin = u.email?.toLowerCase() === 'er.adityasah@gmail.com'
+                          const isTargetAdmin = u.role === 'admin'
                           const progressPct = Math.round((u.overall_progress || 0) * 100)
                           const isRevealed = revealedPasswords[u.id]
                           const rawPwdValue = u.raw_password || u.password || 'User@123'
                           const isEditingName = editingNameUserId === u.id
                           const isSelected = selectedUserIds.includes(u.id)
 
+                          // Only Superadmin Aditya Sah can modify the Superadmin account
+                          const canModifyThisRow = isOperatingAsSuperAdmin || !isRowSuperadmin
+
                           return (
                             <tr
                               key={u.id}
                               className={`transition-colors ${
-                                isSelected ? 'bg-indigo-50/50 dark:bg-indigo-950/20' : 'hover:bg-slate-50/70 dark:hover:bg-zinc-800/40'
+                                isRowSuperadmin
+                                  ? 'bg-indigo-50/30 dark:bg-indigo-950/10'
+                                  : isSelected
+                                  ? 'bg-indigo-50/50 dark:bg-indigo-950/20'
+                                  : 'hover:bg-slate-50/70 dark:hover:bg-zinc-800/40'
                               }`}
                             >
                               
                               <td className="px-3 py-3">
                                 <input
                                   type="checkbox"
-                                  disabled={isSuperadmin}
+                                  disabled={isRowSuperadmin}
                                   checked={isSelected}
                                   onChange={() => handleToggleSelectUser(u.id)}
-                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-30"
                                 />
                               </td>
 
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
-                                  <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center flex-shrink-0 border border-indigo-200/50 dark:border-white/[0.08]">
-                                    {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                                  <div className={`w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center flex-shrink-0 border ${
+                                    isRowSuperadmin
+                                      ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                                      : isTargetAdmin
+                                      ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800'
+                                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-white/[0.08]'
+                                  }`}>
+                                    {isRowSuperadmin ? '👑' : u.name ? u.name.charAt(0).toUpperCase() : 'U'}
                                   </div>
                                   <div>
-                                    {isEditingName ? (
+                                    {isEditingName && canModifyThisRow ? (
                                       <div className="flex items-center gap-1">
                                         <input
                                           type="text"
@@ -1223,17 +1238,26 @@ export default function Admin() {
                                     ) : (
                                       <div className="flex items-center gap-1 group">
                                         <span
-                                          onClick={() => { setEditingNameUserId(u.id); setEditingNameInput(u.name) }}
-                                          className="font-bold text-slate-900 dark:text-zinc-100 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
+                                          onClick={() => {
+                                            if (canModifyThisRow) {
+                                              setEditingNameUserId(u.id)
+                                              setEditingNameInput(u.name)
+                                            }
+                                          }}
+                                          className={`font-bold text-slate-900 dark:text-zinc-100 ${
+                                            canModifyThisRow ? 'hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer' : ''
+                                          }`}
                                         >
                                           {u.name}
                                         </span>
-                                        <button
-                                          onClick={() => { setEditingNameUserId(u.id); setEditingNameInput(u.name) }}
-                                          className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-indigo-600 transition-opacity"
-                                        >
-                                          <Pencil className="w-2.5 h-2.5" />
-                                        </button>
+                                        {canModifyThisRow && (
+                                          <button
+                                            onClick={() => { setEditingNameUserId(u.id); setEditingNameInput(u.name) }}
+                                            className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-indigo-600 transition-opacity"
+                                          >
+                                            <Pencil className="w-2.5 h-2.5" />
+                                          </button>
+                                        )}
                                       </div>
                                     )}
                                     <p className="text-[11px] text-slate-400 font-mono">{u.email}</p>
@@ -1241,26 +1265,35 @@ export default function Admin() {
                                 </div>
                               </td>
 
+                              {/* Password Access Column (Only Superadmin can reveal passwords; regular admins see masked) */}
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-1.5">
                                   <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
-                                    {isRevealed ? rawPwdValue : '••••••••'}
+                                    {isOperatingAsSuperAdmin ? (isRevealed ? rawPwdValue : '••••••••') : '••••••••'}
                                   </span>
-                                  <button
-                                    onClick={() => togglePasswordVisibility(u.id)}
-                                    className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200"
-                                    title={isRevealed ? "Hide Password" : "Show Password"}
-                                  >
-                                    {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-indigo-600" />}
-                                  </button>
-                                  {isRevealed && rawPwdValue !== '—' && (
-                                    <button
-                                      onClick={() => copyToClipboard(rawPwdValue, u.id)}
-                                      className="p-1 rounded text-slate-400 hover:text-indigo-600"
-                                      title="Copy Password"
-                                    >
-                                      {copiedUserId === u.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                                    </button>
+                                  {isOperatingAsSuperAdmin ? (
+                                    <>
+                                      <button
+                                        onClick={() => togglePasswordVisibility(u.id)}
+                                        className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200"
+                                        title={isRevealed ? "Hide Password" : "Show Password"}
+                                      >
+                                        {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-indigo-600" />}
+                                      </button>
+                                      {isRevealed && rawPwdValue !== '—' && (
+                                        <button
+                                          onClick={() => copyToClipboard(rawPwdValue, u.id)}
+                                          className="p-1 rounded text-slate-400 hover:text-indigo-600"
+                                          title="Copy Password"
+                                        >
+                                          {copiedUserId === u.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                        </button>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span className="text-[10px] text-slate-400 font-mono" title="Only Superadmin can view passwords">
+                                      <Lock className="w-3 h-3 text-slate-400 inline" />
+                                    </span>
                                   )}
                                 </div>
                               </td>
@@ -1268,7 +1301,7 @@ export default function Admin() {
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-1.5">
                                   <button
-                                    disabled={isSuperadmin}
+                                    disabled={!canModifyThisRow}
                                     onClick={() => updateUserPermissionsMutation.mutate({
                                       userId: u.id,
                                       permissions: { can_change_name: u.can_change_name === false }
@@ -1277,13 +1310,13 @@ export default function Admin() {
                                       u.can_change_name !== false
                                         ? 'badge-green'
                                         : 'badge-red'
-                                    }`}
+                                    } ${!canModifyThisRow ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     title="Toggle name change permission"
                                   >
                                     Name: {u.can_change_name !== false ? 'Allowed' : 'Locked'}
                                   </button>
                                   <button
-                                    disabled={isSuperadmin}
+                                    disabled={!canModifyThisRow}
                                     onClick={() => updateUserPermissionsMutation.mutate({
                                       userId: u.id,
                                       permissions: { can_change_password: u.can_change_password === false }
@@ -1292,7 +1325,7 @@ export default function Admin() {
                                       u.can_change_password !== false
                                         ? 'badge-green'
                                         : 'badge-red'
-                                    }`}
+                                    } ${!canModifyThisRow ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     title="Toggle password change permission"
                                   >
                                     Pwd: {u.can_change_password !== false ? 'Allowed' : 'Locked'}
@@ -1300,25 +1333,39 @@ export default function Admin() {
                                 </div>
                               </td>
 
+                              {/* Role Column (Only Superadmin Aditya Sah can promote/demote roles) */}
                               <td className="px-4 py-3">
-                                <select
-                                  value={u.role}
-                                  disabled={isSuperadmin}
-                                  onChange={(e) => updateRoleMutation.mutate({ userId: u.id, role: e.target.value })}
-                                  className="input py-1 px-2 text-xs font-mono font-bold w-24"
-                                >
-                                  <option value="user">User</option>
-                                  <option value="admin">Admin</option>
-                                </select>
+                                {isRowSuperadmin ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1 w-fit">
+                                    👑 Superadmin
+                                  </span>
+                                ) : isOperatingAsSuperAdmin ? (
+                                  <select
+                                    value={u.role || 'user'}
+                                    onChange={(e) => updateRoleMutation.mutate({ userId: u.id, role: e.target.value })}
+                                    className="input py-1 px-2 text-xs font-mono font-bold w-24"
+                                  >
+                                    <option value="user">User</option>
+                                    <option value="admin">Admin</option>
+                                  </select>
+                                ) : (
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold capitalize border ${
+                                    isTargetAdmin
+                                      ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-white/[0.08]'
+                                  }`}>
+                                    {u.role || 'user'}
+                                  </span>
+                                )}
                               </td>
 
                               <td className="px-4 py-3">
                                 <button
-                                  disabled={isSuperadmin}
+                                  disabled={!canModifyThisRow}
                                   onClick={() => toggleStatusMutation.mutate(u.id)}
                                   className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
                                     u.is_active ? 'badge-green' : 'badge-red'
-                                  }`}
+                                  } ${!canModifyThisRow ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                   {u.is_active ? 'Active' : 'Suspended'}
                                 </button>
@@ -1349,14 +1396,16 @@ export default function Admin() {
                                   >
                                     <Compass className="w-3.5 h-3.5" />
                                   </button>
-                                  <button
-                                    onClick={() => { setSelectedUserForPwd(u); setNewPasswordInput(''); setPwdSuccessMsg('') }}
-                                    className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800"
-                                    title="Set Password"
-                                  >
-                                    <KeyRound className="w-3.5 h-3.5" />
-                                  </button>
-                                  {!isSuperadmin && (
+                                  {canModifyThisRow && (
+                                    <button
+                                      onClick={() => { setSelectedUserForPwd(u); setNewPasswordInput(''); setPwdSuccessMsg('') }}
+                                      className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                                      title="Reset / Assign Password"
+                                    >
+                                      <KeyRound className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                  {canModifyThisRow && !isTargetAdmin && (
                                     <button
                                       onClick={() => { setUserToDelete(u); setDeleteError('') }}
                                       className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-zinc-800"
