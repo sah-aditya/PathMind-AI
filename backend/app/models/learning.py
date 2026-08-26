@@ -69,7 +69,7 @@ class PathItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     phase_id = Column(Integer, ForeignKey("path_phases.id"), nullable=False)
-    resource_id = Column(String(20), nullable=False)     # References resources.json
+    resource_id = Column(String(100), nullable=False)     # References resources.json
     order_index = Column(Integer, nullable=False)
     status = Column(SAEnum(ItemStatus), default=ItemStatus.pending)
     score = Column(Float, nullable=True)                  # Assessment score if applicable

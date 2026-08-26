@@ -80,6 +80,9 @@ async def lifespan(app: FastAPI):
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_change_name BOOLEAN DEFAULT TRUE;"))
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_change_password BOOLEAN DEFAULT TRUE;"))
             
+            # Ensure path_items.resource_id supports longer resource IDs up to VARCHAR(100)
+            conn.execute(text("ALTER TABLE path_items ALTER COLUMN resource_id TYPE VARCHAR(100);"))
+
             # Ensure certificates table exists in PostgreSQL
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS certificates (
