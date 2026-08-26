@@ -97,11 +97,26 @@ Curriculum resources form a directed graph $G = (V, E)$, where vertices $V$ repr
 Every candidate resource $r$ is scored using a weighted multi-factor heuristic and ML objective:
 $$\text{Score}(r) = 0.22 \cdot R_{\text{goal}} + 0.25 \cdot C_{\text{gap}} + 0.20 \cdot P_{\text{readiness}} + 0.10 \cdot D_{\text{fit}} + 0.05 \cdot I_{\text{align}} + 0.05 \cdot Q_{\text{rating}} + 0.12 \cdot S_{\text{tfidf}} + 0.03 \cdot S_{\text{collab}}$$
 
-### 3.5 Dynamic Adaptive Remediation Engine
+### 3.5 Bloom's Cognitive Taxonomy Progression ($g_1 \to g_6$)
+*Reference: Li et al., "Personalized Learning Path Recommendation Based on Knowledge Graphs: A Survey", MDPI Electronics, 2026.*
+Every curriculum unit and milestone is modeled with explicit Bloom's cognitive objective levels:
+$$G \in \{g_1 = \text{Remember}, g_2 = \text{Understand}, g_3 = \text{Apply}, g_4 = \text{Analyze}, g_5 = \text{Evaluate}, g_6 = \text{Create}\}$$
+The topological DAG sequencer enforces **Cognitive Smoothness**:
+$$\text{Phase}_1 (g_1, g_2) \longrightarrow \text{Phases}_{2-4} (g_3, g_4) \longrightarrow \text{Phases}_{5-6} (g_5, g_6)$$
+
+### 3.6 KSA (Knowledge-Skill-Attitude) Career Readiness Modeling
+*Reference: Phong et al., "Personalized learning paths recommendation system with collaborative filtering and content-based approaches", STDJ, 2024.*
+To bridge academic curricula with labor market demands, PathMind AI decomposes learner competencies into three orthogonal dimensions:
+$$\text{Readiness}(u) = w_K \cdot K_u + w_S \cdot S_u + w_A \cdot A_u$$
+- **Knowledge ($K$)**: Theoretical syntax & domain concepts ($g_1, g_2$).
+- **Skill ($S$)**: Framework implementation, API testing & database modeling ($g_3, g_4, g_5$).
+- **Attitude ($A$)**: Problem-solving persistence & end-to-end capstone execution ($g_6$).
+
+### 3.7 Dynamic Adaptive Remediation Engine (GOLPR + LILPR)
 When a student completes an end-of-unit Knowledge Check with score $S$:
 - If $S \ge 0.70$: Skill level is updated via moving average:
   $$L_{t+1} = 0.6 \cdot L_t + 0.4 \cdot S$$
-- If $S < 0.60$: The adaptive engine dynamically injects a targeted **Remedial Revision Module** into the active roadmap phase and recalculates timelines.
+- If $S < 0.60$: The adaptive engine dynamically injects a targeted **Remedial Revision Module** into the active roadmap phase (Local Iterative Learning LILPR) and recalculates timelines.
 
 ---
 
