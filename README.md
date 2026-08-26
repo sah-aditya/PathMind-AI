@@ -7,16 +7,20 @@ PathMind AI uses **Gemini AI** + a custom **6-factor recommendation engine** to 
 
 ---
 
-## ✨ Features
+## ✨ Platform Highlights & Core Engines
 
-| Feature | Description |
-|---|---|
-| 🤖 **AI Chat Onboarding** | Conversational profile builder via Gemini AI |
-| 🎯 **Skill Gap Analysis** | Radar chart visualization of current vs required skills |
-| 🗺️ **Smart Roadmap** | Week-by-week path with topological prerequisite ordering |
-| 🔄 **Adaptive Learning** | Path mutates in real-time based on assessment scores |
-| 📊 **Dashboard** | Progress ring, skill radar, next action card |
-| 💬 **AI Assistant** | Context-aware Q&A chat overlay |
+| Engine / Feature | Description | Research / Architecture Foundation |
+|---|---|---|
+| 🤖 **Natural Language Onboarding** | Conversational goal & profile extraction | Gemini 1.5 Flash + Few-Shot Instruction Tuning |
+| 🎯 **Skill Gap Diagnostics** | Current proficiency vs target benchmark matrix | Vector Space Model + Radar Chart Analytics |
+| 🗺️ **Phased Adaptive Roadmap** | Step-by-step weekly milestone schedule | Topological DAG Sort + Bloom's Cognitive Smoothness |
+| 🌐 **Interactive Prerequisite Skill Tree** | Visual dependency node graph with SVG bezier curves | NetworkX Directed Acyclic Graph (DAG) |
+| 🧠 **Bloom's Cognitive Progression** | Cognitive tiers from Remember ($g_1$) to Create ($g_6$) | *Li et al., MDPI Electronics 2026 Survey* |
+| 💼 **KSA Career Readiness Matrix** | Knowledge ($K$), Skill ($S$), Attitude ($A$) benchmark | *Phong et al., STDJ 2024 Hybrid Recommender* |
+| 💡 **AI Explainability Engine** | "Why was this recommended?" transparent breakdown | Model rationale + Gap impact + Prerequisite proof |
+| 🔄 **Closed-Loop Adaptive Engine** | Real-time path mutation & revision injection ($S < 0.60$) | GOLPR Global Planning + LILPR Local Iterative Learning |
+| 🏆 **Verifiable Digital Credentials** | Tamper-proof certificate with live QR verification | Cryptographic hash verification (`/verify/{code}`) |
+| ⚡ **Spotlight & Executive Learner Hub** | `Ctrl+K` global command palette, TTS voice & pacing slider | Executive Accessibility & Focus Studio |
 
 ---
 
