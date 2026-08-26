@@ -14,8 +14,8 @@ import SkillGap from './pages/SkillGap'
 import Roadmap from './pages/Roadmap'
 import Dashboard from './pages/Dashboard'
 import ResourceDetail from './pages/ResourceDetail'
-import Privacy from './pages/Privacy'
-import Terms from './pages/Terms'
+import Legal from './pages/Legal'
+import About from './pages/About'
 import Admin from './pages/Admin'
 import Maintenance from './pages/Maintenance'
 import Help from './pages/Help'
@@ -90,8 +90,10 @@ export default function App() {
       <Routes>
         {/* Public Pages */}
         <Route path="/" element={<Landing />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/terms" element={<Terms />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/legal" element={<Legal />} />
+        <Route path="/privacy" element={<Legal />} />
+        <Route path="/terms" element={<Legal />} />
         <Route path="/verify/:code" element={<VerifyCertificate />} />
         <Route path="/verify" element={<VerifyCertificate />} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
