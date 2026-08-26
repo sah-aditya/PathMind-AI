@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Shield, FileText, Lock, Scale, ArrowLeft, Sun, Moon } from 'lucide-react'
+import { Shield, FileText, Lock, Scale, ArrowLeft, Sun, Moon, CheckCircle, AlertTriangle } from 'lucide-react'
 import useThemeStore from '../store/themeStore'
 
 export default function Legal() {
@@ -33,27 +33,27 @@ export default function Legal() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 flex-1 space-y-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-12 flex-1 space-y-8">
         
-        <div className="space-y-2 text-center max-w-2xl mx-auto">
+        <div className="space-y-3 text-center max-w-3xl mx-auto">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            Legal, Privacy & Governance
+            Regulatory Compliance & Governance Registry
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            Terms of Service & Privacy Policy
+            Master Terms of Service & Privacy Governance
           </h1>
           <p className="text-sm text-slate-600 dark:text-zinc-400">
-            Effective Date: January 1, 2026 • Version 2.4 (Academic & Enterprise Edition)
+            Document Reference: LEG-2026-V4.2 • Effective Date: January 1, 2026 • Jurisdiction: Republic of India & Global Academic Standards
           </p>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/[0.08] max-w-2xl mx-auto shadow-sm">
+        <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/[0.08] max-w-3xl mx-auto shadow-sm">
           {[
-            { id: 'terms', label: 'Terms of Service', icon: FileText },
-            { id: 'privacy', label: 'Privacy Policy', icon: Lock },
-            { id: 'ethics', label: 'AI Governance & Ethics', icon: Shield },
-            { id: 'academic', label: 'Academic & Data Protection', icon: Scale },
+            { id: 'terms', label: '1. Terms of Service', icon: FileText },
+            { id: 'privacy', label: '2. Privacy & Data Protection', icon: Lock },
+            { id: 'ethics', label: '3. AI Ethics & Model Governance', icon: Shield },
+            { id: 'citations', label: '4. Research & Academic Citations', icon: Scale },
           ].map((tab) => {
             const Icon = tab.icon
             const isCurrent = activeTab === tab.id
@@ -61,7 +61,7 @@ export default function Legal() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                   isCurrent
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800'
@@ -75,132 +75,211 @@ export default function Legal() {
         </div>
 
         {/* Document Content Box */}
-        <div className="p-6 sm:p-10 rounded-3xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/[0.08] shadow-card space-y-8 text-sm leading-relaxed text-slate-700 dark:text-zinc-300">
+        <div className="p-6 sm:p-10 rounded-3xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/[0.08] shadow-card space-y-10 text-sm leading-relaxed text-slate-700 dark:text-zinc-300">
           
           {/* TAB 1: TERMS OF SERVICE */}
           {activeTab === 'terms' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-8 animate-fade-in">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Acceptance of Terms</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Preamble & Binding Agreement</h2>
                 <p>
-                  By accessing, registering for, or using the PathMind AI platform ("Service", "System"), you agree to be bound by these Terms of Service. If you do not agree to these terms, do not access or use the platform. These terms apply to all registered learners, academic researchers, evaluators, and system administrators.
+                  These Terms of Service ("Terms", "Agreement") constitute a legally binding agreement between you ("Learner", "User", "Institution") and PathMind AI ("Platform", "We", "Us"). By accessing the website, utilizing the conversational onboarding studio, querying the Directed Acyclic Graph (DAG) sequencing engine, or generating digital completion credentials, you acknowledge that you have read, understood, and agreed to be bound by all provisions set forth herein. If you are entering into this Agreement on behalf of a university, faculty department, or educational institution, you represent that you possess the requisite authority to bind such entity.
                 </p>
               </div>
 
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">2. Scope of Service & Algorithmic Recommendation</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">2. Description of Algorithmic Service & Advisory Disclaimer</h2>
                 <p>
-                  PathMind AI provides personalized learning path recommendations utilizing Natural Language Processing (NLP), Directed Acyclic Graph (DAG) topological sequencing, Bloom's Cognitive Taxonomy modeling, and heuristic recommendation scorers. While recommendations are generated using state-of-the-art educational models, curriculum trajectories are advisory in nature and subject to individual learner execution and commitment.
+                  PathMind AI provides automated, algorithmic curriculum planning and skill gap analysis. The Platform models educational competencies into mathematical graphs and generates phased learning paths via Kahn’s Topological Sort, Bloom’s Cognitive Taxonomy progression, and hybrid recommendation heuristics. 
+                </p>
+                <p className="mt-2 text-xs font-mono text-slate-500 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-800/60 p-3 rounded-xl border border-slate-200 dark:border-white/[0.06]">
+                  DISCLAIMER: All generated roadmaps, estimated completion hours, match percentages, and milestone prerequisites are advisory computational heuristics. PathMind AI does not guarantee academic credit transfer, university degree equivalency, or employment recruitment outcomes. The platform functions as an intelligent accelerator for structured learning.
                 </p>
               </div>
 
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">3. User Accounts & Security</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">3. User Authentication, Security & Integrity</h2>
                 <p>
-                  Learners are responsible for maintaining the confidentiality of their credentials and session tokens. Any unauthorized activity conducted under an account must be reported immediately. The system reserves the right to suspend accounts engaged in automated scraping, denial-of-service attempts, or reverse-engineering of algorithmic weights.
+                  Users must maintain the confidentiality of their authentication credentials, including JSON Web Tokens (JWT) and passwords. Users agree not to:
+                </p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Engage in automated scraping, denial-of-service (DoS) attempts, or vulnerability penetration testing against API endpoints without prior authorization.</li>
+                  <li>Circumvent or manipulate assessment checks, automated grading scripts, or knowledge tracing algorithms.</li>
+                  <li>Falsify digital completion certificates, SHA-256 verification hashes, or public QR records.</li>
+                  <li>Share administrative credentials or bypass Role-Based Access Controls (RBAC).</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">4. Intellectual Property & Open Licensing</h2>
+                <p>
+                  The core source code, proprietary graph sequencing algorithms, Bloom taxonomy classification models, user interface tokens, and platform documentation are protected by intellectual property laws. Unless otherwise specified under an open-source license (such as MIT or Apache 2.0 where applicable), unauthorized redistribution, commercial white-labeling, or deceptive duplication of the PathMind AI system is strictly prohibited.
                 </p>
               </div>
 
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">4. Digital Credentialing & Verification</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">5. Cryptographic Certificate Verification</h2>
                 <p>
-                  Certificates generated upon milestone completion represent automated validation of curriculum progression. Credentials contain a unique cryptographic hash and public verification registry identifier. PathMind AI disclaims liability for unauthorized external representation or commercial warranties regarding employment acquisition.
+                  Certificates generated upon milestone completion reflect verified progress in the platform's database. Each certificate is assigned a unique cryptographic verification identifier and timestamp. PathMind AI maintains a public registry at <span className="font-mono text-indigo-600 dark:text-indigo-400">/verify/:code</span> to permit third-party verification of student achievement without compromising personally identifiable data.
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">6. Limitation of Liability</h2>
+                <p>
+                  To the maximum extent permitted by applicable law, PathMind AI, its contributors, and developers shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of data, loss of anticipated career advancement, or interruptions in cloud platform availability (Render, Vercel, Supabase).
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">7. Governing Law & Dispute Resolution</h2>
+                <p>
+                  This Agreement shall be governed by and construed in accordance with the laws of the Republic of India. Any dispute arising out of or in connection with this Agreement shall be subject to the exclusive jurisdiction of the competent courts in New Delhi / Bengaluru, India.
                 </p>
               </div>
             </div>
           )}
 
-          {/* TAB 2: PRIVACY POLICY */}
+          {/* TAB 2: PRIVACY & DATA PROTECTION */}
           {activeTab === 'privacy' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-8 animate-fade-in">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Data Collection & Processing</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Data Privacy Philosophy</h2>
                 <p>
-                  PathMind AI collects only data strictly necessary for personalized curriculum generation and performance tracking:
+                  PathMind AI is architected around principles of **Data Minimization**, **Storage Limitation**, and **User Autonomy**. We collect only the telemetry strictly essential to power personalized recommendations and preserve longitudinal learning states.
                 </p>
-                <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li><strong>Account Profile:</strong> Name, email address, hashed authentication credentials, and role assignments.</li>
-                  <li><strong>Learner Feature Vector:</strong> Self-reported experience levels, career objectives, time availability, and modality preferences.</li>
-                  <li><strong>Learning Telemetry:</strong> Milestone completion timestamps, assessment check scores, and dynamic adaptation history.</li>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">2. Taxonomy of Collected Information</h2>
+                <div className="grid sm:grid-cols-2 gap-4 mt-3">
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-white/[0.06] space-y-1">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase font-mono">Explicit Account Data</h3>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400">Name, verified email address, bcrypt-hashed passwords, and user role identifiers.</p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-white/[0.06] space-y-1">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase font-mono">Learner Feature Vector</h3>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400">Self-reported skill proficiencies, target career ambitions, weekly study availability, and format preferences.</p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-white/[0.06] space-y-1">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase font-mono">Learning Telemetry</h3>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400">Milestone completion states, assessment check scores, revision triggers, and study streaks.</p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-white/[0.06] space-y-1">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase font-mono">System Audit Logs</h3>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400">Diagnostic API latency timestamps, error codes, and superadmin configuration updates.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">3. Prohibition of Third-Party Commercial Exploitation</h2>
+                <p>
+                  PathMind AI maintains a strict zero-monetization policy regarding learner telemetry. We do not sell, rent, license, or transfer student behavioral records, assessment scores, or cognitive profiles to third-party advertisers, data aggregators, or marketing networks.
+                </p>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">4. Cryptographic Security & Infrastructure Safeguards</h2>
+                <ul className="list-disc pl-5 space-y-1.5">
+                  <li><strong>In-Transit Encryption:</strong> All client-server communications are enforced via HTTPS with TLS 1.3 cryptographic ciphers.</li>
+                  <li><strong>At-Rest Encryption:</strong> PostgreSQL databases on Supabase utilize AES-256 block-level encryption.</li>
+                  <li><strong>Token Architecture:</strong> Stateless authentication using HMAC-SHA256 signed JSON Web Tokens with strict time-to-live (TTL) expiration.</li>
+                  <li><strong>Password Storage:</strong> Cryptographic password hashing utilizing adaptive bcrypt salting with cost factor 12.</li>
                 </ul>
               </div>
 
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">2. No Third-Party Commercial Data Brokerage</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">5. User Data Rights & GDPR/DPDP Alignment</h2>
                 <p>
-                  PathMind AI does not sell, rent, or trade learner behavioral records, knowledge tracing matrices, or personal identifiers to third-party advertisers or data brokers. All telemetry is utilized solely to train internal scoring heuristics and improve curriculum coherence.
-                </p>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">3. Storage & Encryption Standards</h2>
-                <p>
-                  Data is stored in managed PostgreSQL databases with SSL in-transit encryption (TLS 1.3) and AES-256 at-rest encryption. Authentication relies on industry-standard JSON Web Tokens (JWT) signed with secure cryptographic keys.
+                  Learners retain the right to request a full export of their learning history, recalibrate their skill profile, or request complete account deletion by contacting the compliance desk at <span className="font-mono text-indigo-600 dark:text-indigo-400">privacy@pathmind.ai</span>.
                 </p>
               </div>
             </div>
           )}
 
-          {/* TAB 3: AI ETHICS & GOVERNANCE */}
+          {/* TAB 3: AI ETHICS & MODEL GOVERNANCE */}
           {activeTab === 'ethics' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-8 animate-fade-in">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Algorithmic Transparency & Explainability</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Explainable AI (XAI) & Anti-Black-Box Architecture</h2>
                 <p>
-                  Consistent with recommendations from educational AI literature (e.g., Li et al., 2026; Phong et al., 2024), PathMind AI rejects "black-box" decision making. Every recommended curriculum unit provides an explicit "Why Recommended?" breakdown detailing:
+                  In compliance with UNESCO and IEEE guidelines on Artificial Intelligence in Education, PathMind AI rejects opaque, uninterpretable "black-box" decision systems. Every single course, project, and milestone recommended to a student exposes a verifiable explainability payload:
+                </p>
+                <div className="mt-3 p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-white/[0.06] space-y-2 font-mono text-xs">
+                  <p><strong className="text-indigo-600 dark:text-indigo-400">1. Prerequisite Proof:</strong> Exact validation that preceding DAG nodes have been completed.</p>
+                  <p><strong className="text-indigo-600 dark:text-indigo-400">2. Competency Gap Impact:</strong> Explicit delta measurement against target job benchmarks.</p>
+                  <p><strong className="text-indigo-600 dark:text-indigo-400">3. Bloom Cognitive Classification:</strong> Pedagogical alignment to cognitive levels g1 through g6.</p>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">2. Candidate Space Pruning & Bias Mitigation</h2>
+                <p>
+                  Conventional collaborative filtering algorithms frequently amplify historical popularity biases, systematically locking non-traditional learners out of advanced content. PathMind AI enforces strict candidate-space filtering:
                 </p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li><strong>Prerequisite Fulfillment:</strong> Verification that necessary foundational knowledge has been acquired.</li>
-                  <li><strong>Target Gap Closure:</strong> The specific competencies addressed by the unit.</li>
-                  <li><strong>Bloom's Cognitive Tier:</strong> The level of cognitive complexity (Remember, Understand, Apply, Analyze, Evaluate, Create).</li>
+                  <li>Zero-score thresholding for resources lacking direct semantic overlap with target skills.</li>
+                  <li>Decoupled difficulty grading that evaluates prerequisite readiness rather than user demographic proxies.</li>
+                  <li>Balanced exploration-exploitation trade-offs to prevent filter-bubble homogenization.</li>
                 </ul>
               </div>
 
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">2. Bias Mitigation & Educational Equity</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">3. Closed-Loop Adaptive Remediation (GOLPR + LILPR)</h2>
                 <p>
-                  The recommendation engine incorporates strict candidate-space filtering and goal-skill overlap constraints to prevent demographic or historical interaction biases from skewing path difficulty or pigeonholing learners into restrictive tracks.
-                </p>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">3. Closed-Loop Adaptive Fairness</h2>
-                <p>
-                  When assessment scores trigger adaptive remediation ($S &lt; 0.60$), the system inserts targeted review modules to ensure concept mastery before advancing, preventing cumulative knowledge deficits.
+                  When assessment scores indicate incomplete mastery ($S &lt; 0.60$), the adaptive engine prevents compounding learning deficits by injecting targeted remediation units rather than penalizing the student's standing.
                 </p>
               </div>
             </div>
           )}
 
-          {/* TAB 4: ACADEMIC INTEGRITY & PROTECTION */}
-          {activeTab === 'academic' && (
-            <div className="space-y-6 animate-fade-in">
+          {/* TAB 4: RESEARCH & CITATIONS */}
+          {activeTab === 'citations' && (
+            <div className="space-y-8 animate-fade-in">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Research & Open Citation Compliance</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">1. Research Citations & Scientific Integrity</h2>
                 <p>
-                  PathMind AI incorporates theoretical frameworks from established peer-reviewed academic literature:
-                </p>
-                <ul className="list-disc pl-5 mt-2 space-y-2">
-                  <li>
-                    <strong>Bloom's Cognitive Taxonomy Progression:</strong> Based on <em>"Personalized Learning Path Recommendation Based on Knowledge Graphs: A Survey"</em>, MDPI Electronics, Vol. 15, 2026.
-                  </li>
-                  <li>
-                    <strong>KSA (Knowledge-Skill-Attitude) Framework & Hybrid Filtering:</strong> Based on <em>"Personalized learning paths recommendation system with collaborative filtering and content-based approaches"</em>, Science & Technology Development Journal, Vol. 8, 2024.
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">2. Institutional Deployment Rights</h2>
-                <p>
-                  Universities, corporate learning divisions, and educational institutions are permitted to deploy PathMind AI for non-commercial student support, academic curriculum planning, and research evaluation.
+                  PathMind AI is built upon validated methodologies from peer-reviewed literature in educational psychology and recommender systems. We formally cite and attribute the following foundational papers:
                 </p>
               </div>
 
+              <div className="space-y-4">
+                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-white/[0.06] space-y-2">
+                  <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                    MDPI Electronics 2026 Survey
+                  </span>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+                    Personalized Learning Path Recommendation Based on Knowledge Graphs: A Survey
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-zinc-400">
+                    Authors: Aili Li, Yong Li, Xiyu Gao (2026). Published in <em>Electronics</em>, 15(1), 238. DOI: 10.3390/electronics15010238.
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-zinc-300">
+                    <strong>Utilized Concepts:</strong> Bloom's 6-tier Cognitive Progression ($g_1 \to g_6$), Closed-Loop Hybrid Planning (GOLPR + LILPR), and Explainability Similarity Metrics ($E = \text{Sim}(R, e)$).
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-white/[0.06] space-y-2">
+                  <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-cyan-50 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">
+                    STDJ Economics, Law & Management 2024
+                  </span>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+                    Personalized Learning Paths Recommendation System with Collaborative Filtering and Content-Based Approaches
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-zinc-400">
+                    Authors: Tran Duong Thanh Phong, Vu Bao Khang, Doan Nhat Minh, Dang Truc Quynh, Dang Viet Quang, Ho Trung Thanh (2024). Published in <em>Science & Technology Development Journal</em>, 8(2), 5243-5253. DOI: 10.32508/stdjelm.v8i2.1370.
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-zinc-300">
+                    <strong>Utilized Concepts:</strong> Knowledge-Skill-Attitude (KSA) competency decomposition, hybrid content-based (high recall) and collaborative filtering (high precision) cosine scoring formulas.
+                  </p>
+                </div>
+              </div>
+
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">3. Contact for Legal & Compliance Enquiries</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">2. Institutional MOUs & Accreditation</h2>
                 <p>
-                  For formal enquiries regarding data protection, governance audits, or institutional compliance, contact: <span className="font-mono text-indigo-600 dark:text-indigo-400">compliance@pathmind.ai</span>.
+                  Universities, polytechnics, and corporate training divisions may integrate PathMind AI via custom API endpoints under formal academic Memorandums of Understanding (MOUs). For partnership requests, contact: <span className="font-mono text-indigo-600 dark:text-indigo-400">partnerships@pathmind.ai</span>.
                 </p>
               </div>
             </div>
@@ -212,7 +291,7 @@ export default function Legal() {
 
       {/* Footer */}
       <footer className="py-6 text-xs text-center text-slate-500 dark:text-zinc-500 border-t border-slate-200 dark:border-white/[0.08] bg-white dark:bg-zinc-900">
-        <p>PathMind AI Systems. All rights reserved. Built for academic and professional excellence.</p>
+        <p>PathMind AI Systems. All rights reserved. Built for academic, industrial, and ethical excellence.</p>
       </footer>
 
     </div>
