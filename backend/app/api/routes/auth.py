@@ -84,7 +84,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
             detail="Account is deactivated",
         )
 
-    is_admin = getattr(user, "role", "user") == "admin" or user.email == "er.adityasah@gmail.com"
+    is_admin = getattr(user, "role", "user") == "admin" or settings.is_superadmin(user.email)
     if not is_admin and not _check_service_flag(db, "login"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -95,6 +95,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
     user.raw_password = payload.password
     db.commit()
 
+    is_super = settings.is_superadmin(user.email)
     token = create_access_token({"sub": str(user.id)})
     return Token(
         access_token=token,
@@ -103,6 +104,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
             "email": user.email,
             "name": user.name,
             "role": getattr(user, "role", "user"),
+            "is_superadmin": is_super,
             "can_change_name": getattr(user, "can_change_name", True) if getattr(user, "can_change_name", None) is not None else True,
             "can_change_password": getattr(user, "can_change_password", True) if getattr(user, "can_change_password", None) is not None else True,
         },
@@ -116,6 +118,8 @@ def get_me(current_user: User = Depends(get_current_user)):
         "email": current_user.email,
         "name": current_user.name,
         "role": getattr(current_user, "role", "user"),
+        "is_superadmin": settings.is_superadmin(current_user.email),
         "can_change_name": getattr(current_user, "can_change_name", True) if getattr(current_user, "can_change_name", None) is not None else True,
         "can_change_password": getattr(current_user, "can_change_password", True) if getattr(current_user, "can_change_password", None) is not None else True,
     }
+

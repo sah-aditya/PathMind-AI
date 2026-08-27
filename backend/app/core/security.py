@@ -69,9 +69,10 @@ def get_current_user(
 def get_current_admin_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
-    if getattr(current_user, "role", "user") != "admin" and current_user.email != "er.adityasah@gmail.com":
+    if getattr(current_user, "role", "user") != "admin" and not settings.is_superadmin(current_user.email):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privileges required to perform this action.",
+            detail="Head of Academy or Program Lead privileges required to perform this action.",
         )
     return current_user
+

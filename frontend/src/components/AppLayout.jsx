@@ -235,7 +235,7 @@ export default function AppLayout() {
 
   const canEditName = user?.can_change_name !== false
   const canEditPassword = user?.can_change_password !== false
-  const isMasterAdmin = user?.role === 'admin' || user?.email === 'er.adityasah@gmail.com'
+  const isMasterAdmin = user?.role === 'admin' || user?.is_superadmin
 
   // Route-level service mapping & active guard check
   const location = useLocation()
@@ -551,11 +551,13 @@ export default function AppLayout() {
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate font-mono">{user?.email}</p>
                       <div className="mt-1">
                         <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          user?.role === 'admin' || user?.email === 'er.adityasah@gmail.com'
+                          user?.is_superadmin
+                            ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
+                            : user?.role === 'admin'
                             ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
                             : 'bg-brand-100 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300'
                         }`}>
-                          {user?.role === 'admin' || user?.email === 'er.adityasah@gmail.com' ? 'Superadmin' : 'Learner'}
+                          {user?.is_superadmin ? 'Head of Academy' : user?.role === 'admin' ? 'Program Lead' : 'Scholar'}
                         </span>
                       </div>
                     </div>
@@ -736,7 +738,7 @@ export default function AppLayout() {
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. Aditya Sah"
+                  placeholder="e.g. Alex Morgan"
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-darkBg-border bg-white dark:bg-darkBg-cardSub text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   required
                 />

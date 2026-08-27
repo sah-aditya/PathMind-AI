@@ -180,7 +180,27 @@ npm install
 npm run dev
 ```
 
+### Pre-Configured Access Roles & Evaluator Credentials
+
+| Role Level | Portal Route | Default Email | Default Password | Description & Governance Scope |
+| :--- | :--- | :--- | :--- | :--- |
+| **Head of Academy** *(Root Master)* | `/login` | `er.adityasah@gmail.com` *(Configurable in `.env`)* | `Aditya@2005` | Master institutional owner with unrestricted governance, role assignments (promoting Program Leads), and cloud control. |
+| **Program Lead** *(Track / Admin)* | `/login` | `tushar@pathmind.in` | `tushar2026` | Evaluator & Program Administrator access with live cloud telemetry, service switchboards, and scholar progress tracking. |
+| **Scholar** *(Fellow / Learner)* | `/onboarding` | *Self-Registered via Studio* | *User-Defined* | Standard scholar account for conversational AI onboarding, adaptive roadmap tracking, knowledge checks, and verifiable credentials. |
+
+#### How to Customize the Head of Academy Account:
+To configure a custom Head of Academy account, define these environment variables in `backend/.env`:
+```env
+SUPERADMIN_EMAIL=your.admin.email@domain.com
+SUPERADMIN_PASSWORD=YourSecurePassword123
+SUPERADMIN_NAME=Head of Academy
+```
+Upon startup, the FastAPI server will automatically verify, provision, or synchronize the Head of Academy account in the database.
+
+---
+
 ### Production Deployed Instances
 - **Frontend URL**: `https://path-mind-ai-xi.vercel.app`
 - **Backend API Docs**: `https://pathmind-ai-backend.onrender.com/docs`
 - **Database**: Managed PostgreSQL on Supabase Cloud
+

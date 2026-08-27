@@ -15,6 +15,17 @@ class Settings(BaseSettings):
     VERCEL_API_TOKEN: str = ""
     VERCEL_PROJECT_ID: str = ""
 
+    # Head of Academy Configuration (Configurable via environment variables or .env)
+    SUPERADMIN_EMAIL: str = "er.adityasah@gmail.com"
+    SUPERADMIN_PASSWORD: str = "Aditya@2005"
+    SUPERADMIN_NAME: str = "Head of Academy"
+
+    def is_superadmin(self, email: str | None) -> bool:
+        """Check if a given email matches the configured Head of Academy email."""
+        if not email:
+            return False
+        return email.strip().lower() == self.SUPERADMIN_EMAIL.strip().lower()
+
     @property
     def cors_origins(self) -> List[str]:
         if not self.BACKEND_CORS_ORIGINS:
@@ -31,3 +42,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+

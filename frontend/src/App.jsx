@@ -33,7 +33,7 @@ function PrivateRoute({ children }) {
 function PublicRoute({ children }) {
   const { isAuthenticated, user } = useAuthStore()
   if (isAuthenticated) {
-    if (user?.role === 'admin' || user?.email === 'er.adityasah@gmail.com') {
+    if (user?.role === 'admin' || user?.is_superadmin) {
       return <Navigate to="/admin" replace />
     }
     return <Navigate to="/dashboard" replace />
@@ -44,13 +44,13 @@ function PublicRoute({ children }) {
 function AdminRoute({ children }) {
   const { isAuthenticated, user } = useAuthStore()
   if (!isAuthenticated) return <Navigate to="/login" replace />
-  const isAdmin = user?.role === 'admin' || user?.email === 'er.adityasah@gmail.com'
+  const isAdmin = user?.role === 'admin' || user?.is_superadmin
   return isAdmin ? children : <Navigate to="/dashboard" replace />
 }
 
 export default function App() {
   const { user, isAuthenticated } = useAuthStore()
-  const isAdmin = user?.role === 'admin' || user?.email === 'er.adityasah@gmail.com'
+  const isAdmin = user?.role === 'admin' || user?.is_superadmin
 
   // Query global maintenance status every 20 seconds
   const { data: systemStatus } = useQuery({

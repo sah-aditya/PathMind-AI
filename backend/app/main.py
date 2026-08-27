@@ -20,11 +20,16 @@ logger = logging.getLogger("app")
 
 
 def _seed_superadmin():
-    """Ensure the superadmin account exists and has proper admin credentials."""
+    """
+    Ensure the root Head of Academy account exists and has proper admin credentials.
+    Head of Academy credentials can be configured via SUPERADMIN_EMAIL, SUPERADMIN_PASSWORD,
+    and SUPERADMIN_NAME environment variables in .env.
+    """
     db = SessionLocal()
     try:
-        admin_email = "er.adityasah@gmail.com"
-        admin_pwd = "Aditya@2005"
+        admin_email = settings.SUPERADMIN_EMAIL
+        admin_pwd = settings.SUPERADMIN_PASSWORD
+        admin_name = settings.SUPERADMIN_NAME
         
         admin_user = db.query(user.User).filter(user.User.email == admin_email).first()
         if admin_user:
@@ -36,11 +41,11 @@ def _seed_superadmin():
                 admin_user.can_change_name = True
             if getattr(admin_user, "can_change_password", None) is None:
                 admin_user.can_change_password = True
-            logger.info("Superadmin %s verified and updated.", admin_email)
+            logger.info("Head of Academy account %s verified and synchronized.", admin_email)
         else:
             new_admin = user.User(
                 email=admin_email,
-                name="Aditya Sah",
+                name=admin_name,
                 hashed_password=hash_password(admin_pwd),
                 raw_password=admin_pwd,
                 role="admin",
@@ -58,11 +63,11 @@ def _seed_superadmin():
             elif u.email == admin_email:
                 u.raw_password = admin_pwd
             else:
-                u.raw_password = "User@123"
+                u.raw_password = "password123"
         
         db.commit()
-    except Exception as exc:
-        logger.warning("Superadmin seeding warning: %s", exc)
+    except Exception as e:
+        logger.warning(f"Head of Academy seeding skipped or encountered error: {e}")
         db.rollback()
     finally:
         db.close()
@@ -181,7 +186,7 @@ async def maintenance_middleware(request: Request, call_next):
                         db = SessionLocal()
                         req_user = db.query(user.User).filter(user.User.id == int(user_id)).first()
                         db.close()
-                        if req_user and (req_user.role == "admin" or req_user.email == "er.adityasah@gmail.com"):
+                        if req_user and (req_user.role == "admin" or settings.is_superadmin(req_user.email)):
                             return await call_next(request)
                 except Exception:
                     pass

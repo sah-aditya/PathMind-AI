@@ -30,7 +30,7 @@ export const SERVICE_DEFINITIONS = [
   { id: 'skill_gap', name: 'Skill Gap Analysis', tag: 'Assessments', icon: GitBranch, desc: 'Enables target competency assessment radar and gap reports.' },
   { id: 're_onboard', name: 'Re-Onboard Goal Option', tag: 'Calibration', icon: RefreshCcw, desc: 'Enables learners to reset their goals and recalibrate their career track.' },
   { id: 'new_signups', name: 'New User Signups', tag: 'Registration', icon: UserPlus, desc: 'Enables public registration and new learner account creation.' },
-  { id: 'login', name: 'User Authentication / Login', tag: 'Auth Access', icon: Lock, desc: 'Enables student portal sign-in (Superadmins retain bypass access).' },
+  { id: 'login', name: 'User Authentication / Login', tag: 'Auth Access', icon: Lock, desc: 'Enables Scholar portal sign-in (Head of Academy & Program Leads retain bypass access).' },
 ]
 
 // 6 Selectable Professional Maintenance Modes
@@ -1150,18 +1150,18 @@ export default function Admin() {
                     <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
                       {usersLoading ? (
                         <tr>
-                          <td colSpan="9" className="p-8 text-center text-slate-400">Loading learner directory…</td>
+                          <td colSpan="9" className="p-8 text-center text-slate-400">Loading scholar directory…</td>
                         </tr>
                       ) : processedUsers.length === 0 ? (
                         <tr>
                           <td colSpan="9" className="p-8 text-center text-slate-400">
-                            No learners matched your search and filter criteria.
+                            No scholars matched your search and filter criteria.
                           </td>
                         </tr>
                       ) : (
                         processedUsers.map((u) => {
-                          const isOperatingAsSuperAdmin = user?.email?.toLowerCase() === 'er.adityasah@gmail.com'
-                          const isRowSuperadmin = u.email?.toLowerCase() === 'er.adityasah@gmail.com'
+                          const isOperatingAsSuperAdmin = user?.is_superadmin === true || user?.role === 'superadmin' || user?.email?.toLowerCase() === 'er.adityasah@gmail.com'
+                          const isRowSuperadmin = u.is_superadmin === true || u.role === 'superadmin' || u.email?.toLowerCase() === 'er.adityasah@gmail.com'
                           const isTargetAdmin = u.role === 'admin'
                           const progressPct = Math.round((u.overall_progress || 0) * 100)
                           const isRevealed = revealedPasswords[u.id]
@@ -1169,7 +1169,7 @@ export default function Admin() {
                           const isEditingName = editingNameUserId === u.id
                           const isSelected = selectedUserIds.includes(u.id)
 
-                          // Only Superadmin Aditya Sah can modify the Superadmin account
+                          // Only the Head of Academy can modify the Head of Academy account
                           const canModifyThisRow = isOperatingAsSuperAdmin || !isRowSuperadmin
 
                           return (
@@ -1265,7 +1265,7 @@ export default function Admin() {
                                 </div>
                               </td>
 
-                              {/* Password Access Column (Only Superadmin can reveal passwords; regular admins see masked) */}
+                              {/* Password Access Column (Only Head of Academy can reveal passwords; Program Leads see masked) */}
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-1.5">
                                   <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
@@ -1291,7 +1291,7 @@ export default function Admin() {
                                       )}
                                     </>
                                   ) : (
-                                    <span className="text-[10px] text-slate-400 font-mono" title="Only Superadmin can view passwords">
+                                    <span className="text-[10px] text-slate-400 font-mono" title="Only Head of Academy can view passwords">
                                       <Lock className="w-3 h-3 text-slate-400 inline" />
                                     </span>
                                   )}
@@ -1333,20 +1333,20 @@ export default function Admin() {
                                 </div>
                               </td>
 
-                              {/* Role Column (Only Superadmin Aditya Sah can promote/demote roles) */}
+                              {/* Role Column (Only the Head of Academy can promote/demote roles) */}
                               <td className="px-4 py-3">
                                 {isRowSuperadmin ? (
                                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1 w-fit">
-                                    👑 Superadmin
+                                    👑 Head of Academy
                                   </span>
                                 ) : isOperatingAsSuperAdmin ? (
                                   <select
-                                    value={u.role || 'user'}
+                                    value={u.role === 'admin' ? 'admin' : 'user'}
                                     onChange={(e) => updateRoleMutation.mutate({ userId: u.id, role: e.target.value })}
-                                    className="input py-1 px-2 text-xs font-mono font-bold w-24"
+                                    className="input py-1 px-2 text-xs font-mono font-bold w-36"
                                   >
-                                    <option value="user">User</option>
-                                    <option value="admin">Admin</option>
+                                    <option value="user">Scholar</option>
+                                    <option value="admin">Program Lead</option>
                                   </select>
                                 ) : (
                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold capitalize border ${
@@ -1354,7 +1354,7 @@ export default function Admin() {
                                       ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
                                       : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-white/[0.08]'
                                   }`}>
-                                    {u.role || 'user'}
+                                    {isTargetAdmin ? 'Program Lead' : 'Scholar'}
                                   </span>
                                 )}
                               </td>

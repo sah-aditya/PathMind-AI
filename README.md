@@ -82,8 +82,14 @@ npm install
 npm run dev
 ```
 
-The application will be accessible at `http://localhost:5173`.  
-**Default Demo Credentials:** `demo@pathmind.ai` / `Demo@1234`
+The application will be accessible at `http://localhost:5173`.
+
+### Pre-Configured Access Roles
+- **Head of Academy (Root Master):** `er.adityasah@gmail.com` / `Aditya@2005` *(Configurable via `SUPERADMIN_EMAIL` in `.env`)*
+- **Program Lead (Track Administrator):** `tushar@pathmind.in` / `tushar2026`
+- **Scholar (Fellow / Learner):** `demo@pathmind.ai` / `Demo@1234`
+
+
 
 ---
 

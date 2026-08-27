@@ -50,7 +50,7 @@ export default function Login() {
       const { data } = await authApi.login(form)
       login(data.user, data.access_token)
       toast.success(`Welcome back, ${data.user.name}!`)
-      if (data.user?.role === 'admin' || data.user?.email === 'er.adityasah@gmail.com') {
+      if (data.user?.role === 'admin' || data.user?.is_superadmin) {
         navigate('/admin')
       } else {
         navigate('/dashboard')
@@ -94,9 +94,9 @@ export default function Login() {
             <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2.5">
               <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-500 mt-0.5" />
               <div>
-                <p className="font-bold">Student Logins Paused</p>
+                <p className="font-bold">Scholar Logins Paused</p>
                 <p className="mt-0.5 text-amber-700 dark:text-amber-300">
-                  Learner portal logins are temporarily paused for maintenance. Superadmin credentials can still authenticate.
+                  Scholar portal logins are temporarily paused for maintenance. Head of Academy & Program Lead credentials can still authenticate.
                 </p>
               </div>
             </div>

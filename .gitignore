@@ -19,8 +19,11 @@ Thumbs.db
 backend/.env
 frontend/.env
 
-# Build outputs
+# Build outputs & deliverables
 dist/
 frontend/dist/
 build/
 .vercel
+*.pdf
+*.zip
+

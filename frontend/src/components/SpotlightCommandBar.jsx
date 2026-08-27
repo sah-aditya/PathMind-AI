@@ -145,14 +145,14 @@ export default function SpotlightCommandBar({ isOpen, onClose }) {
     ]
 
     // Admin option
-    if (user?.role === 'admin' || user?.email === 'er.adityasah@gmail.com') {
+    if (user?.role === 'admin' || user?.is_superadmin) {
       items.unshift({
         id: 'nav-admin',
         category: 'Administration',
         title: 'Platform Governance & Admin Console',
-        desc: 'Manage learners, service switchboard, and cloud logs',
+        desc: 'Manage scholars, service switchboard, and cloud telemetry',
         icon: Shield,
-        badge: 'Admin',
+        badge: user?.is_superadmin ? 'Head of Academy' : 'Program Lead',
         action: () => { navigate('/admin'); onClose(); }
       })
     }
