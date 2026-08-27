@@ -94,9 +94,11 @@ export default function Register() {
           </div>
 
           <div className="pt-2 flex items-center gap-4 text-xs text-slate-500 border-t border-slate-800">
-            <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+            <Link to="/legal?tab=privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
             <span>•</span>
-            <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
+            <Link to="/legal?tab=terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
+            <span>•</span>
+            <Link to="/legal?tab=ethics" className="hover:text-slate-300 transition-colors">AI Ethics</Link>
           </div>
         </div>
       </div>
@@ -212,8 +214,8 @@ export default function Register() {
 
           <p className="text-center text-[11px] text-slate-400 mt-4">
             By registering, you agree to our{' '}
-            <Link to="/terms" className="underline hover:text-slate-600 dark:hover:text-slate-300">Terms</Link> and{' '}
-            <Link to="/privacy" className="underline hover:text-slate-600 dark:hover:text-slate-300">Privacy Policy</Link>.
+            <Link to="/legal?tab=terms" className="underline hover:text-slate-600 dark:hover:text-slate-300">Terms</Link> and{' '}
+            <Link to="/legal?tab=privacy" className="underline hover:text-slate-600 dark:hover:text-slate-300">Privacy Policy</Link>.
           </p>
         </div>
       </div>

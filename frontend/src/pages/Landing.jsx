@@ -417,9 +417,10 @@ export default function Landing() {
               <h4 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider font-mono">Governance</h4>
               <ul className="space-y-1.5">
                 <li><Link to="/about" className="hover:text-slate-900 dark:hover:text-white transition-colors">About Project</Link></li>
-                <li><Link to="/legal" className="hover:text-slate-900 dark:hover:text-white transition-colors">Terms of Service</Link></li>
-                <li><Link to="/legal" className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/legal" className="hover:text-slate-900 dark:hover:text-white transition-colors">AI Ethics & Fairness</Link></li>
+                <li><Link to="/legal?tab=terms" className="hover:text-slate-900 dark:hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link to="/legal?tab=privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/legal?tab=ethics" className="hover:text-slate-900 dark:hover:text-white transition-colors">AI Ethics & Fairness</Link></li>
+                <li><Link to="/legal?tab=citations" className="hover:text-slate-900 dark:hover:text-white transition-colors">Academic Citations</Link></li>
               </ul>
             </div>
 

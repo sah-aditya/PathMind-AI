@@ -671,9 +671,11 @@ export default function AppLayout() {
           {/* ── Studio Bottom Footer: Legal & Built with ❤️ in Bharat ── */}
           <footer className="mt-12 pt-6 border-t border-slate-200/80 dark:border-darkBg-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <Link to="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy Policy</Link>
+              <Link to="/legal?tab=privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy Policy</Link>
               <span>•</span>
-              <Link to="/terms" className="hover:text-slate-900 dark:hover:text-white transition-colors">Terms of Service</Link>
+              <Link to="/legal?tab=terms" className="hover:text-slate-900 dark:hover:text-white transition-colors">Terms of Service</Link>
+              <span>•</span>
+              <Link to="/legal?tab=ethics" className="hover:text-slate-900 dark:hover:text-white transition-colors">AI Ethics</Link>
               <span>•</span>
               <Link to="/help" className="hover:text-slate-900 dark:hover:text-white transition-colors">Help Desk</Link>
             </div>

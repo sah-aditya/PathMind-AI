@@ -1,19 +1,32 @@
 import { useState, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useLocation } from 'react-router-dom'
 import { Shield, FileText, Lock, Scale, ArrowLeft, Sun, Moon } from 'lucide-react'
 import useThemeStore from '../store/themeStore'
 
 export default function Legal() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
   const tabParam = searchParams.get('tab')
-  const [activeTab, setActiveTab] = useState(tabParam || 'terms')
+  
+  const getInitialTab = () => {
+    if (tabParam && ['terms', 'privacy', 'ethics', 'citations'].includes(tabParam)) return tabParam
+    if (location.pathname === '/privacy') return 'privacy'
+    if (location.pathname === '/terms') return 'terms'
+    return 'terms'
+  }
+
+  const [activeTab, setActiveTab] = useState(getInitialTab)
   const { theme, toggleTheme } = useThemeStore()
 
   useEffect(() => {
     if (tabParam && ['terms', 'privacy', 'ethics', 'citations'].includes(tabParam)) {
       setActiveTab(tabParam)
+    } else if (location.pathname === '/privacy') {
+      setActiveTab('privacy')
+    } else if (location.pathname === '/terms') {
+      setActiveTab('terms')
     }
-  }, [tabParam])
+  }, [tabParam, location.pathname])
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId)
