@@ -95,6 +95,10 @@ class CloudLogCredentialsIn(BaseModel):
 SUPERADMIN_EMAIL = settings.SUPERADMIN_EMAIL
 
 def _is_superadmin(user: User) -> bool:
+    if not user:
+        return False
+    if getattr(user, "role", "") == "superadmin":
+        return True
     return settings.is_superadmin(getattr(user, "email", ""))
 
 
@@ -117,7 +121,7 @@ def get_all_users(
         ).first()
         skills_count = db.query(LearnerSkill).filter(LearnerSkill.user_id == u.id).count()
 
-        is_target_super = settings.is_superadmin(u.email)
+        is_target_super = (u.role == "superadmin" or settings.is_superadmin(u.email))
         
         # Security Policy: Only the Head of Academy can view plaintext passwords.
         # Program Leads receive masked password placeholders.
@@ -160,8 +164,8 @@ def update_user_password(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
     
-    # Security Rule: Only the Head of Academy can change the Head of Academy password
-    if settings.is_superadmin(target_user.email) and not _is_superadmin(admin):
+    # Security Rule: Only a Head of Academy can change a Head of Academy password
+    if _is_superadmin(target_user) and not _is_superadmin(admin):
         raise HTTPException(
             status_code=403,
             detail="Permission denied. The Head of Academy account cannot be modified by Program Leads."
@@ -188,8 +192,8 @@ def update_user_name(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
     
-    # Security Rule: Only the Head of Academy can change the Head of Academy name
-    if settings.is_superadmin(target_user.email) and not _is_superadmin(admin):
+    # Security Rule: Only a Head of Academy can change a Head of Academy name
+    if _is_superadmin(target_user) and not _is_superadmin(admin):
         raise HTTPException(
             status_code=403,
             detail="Permission denied. The Head of Academy account cannot be modified by Program Leads."
@@ -235,26 +239,37 @@ def update_user_role(
     admin: User = Depends(get_current_admin_user),
 ):
     if payload.role not in ("user", "admin", "superadmin"):
-        raise HTTPException(status_code=400, detail="Role must be either 'user' or 'admin'.")
+        raise HTTPException(status_code=400, detail="Role must be 'user', 'admin', or 'superadmin'.")
     
-    # Security Rule: ONLY the Head of Academy has the authority to promote/demote roles
-    if not _is_superadmin(admin):
-        raise HTTPException(
-            status_code=403,
-            detail="Permission denied. The authority to assign or modify Administrator privileges is exclusive to the Head of Academy."
-        )
-    
+    acting_is_super = _is_superadmin(admin)
     target_user = db.query(User).filter(User.id == user_id).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
     
-    # Prevent demoting the master Head of Academy
-    if settings.is_superadmin(target_user.email) and payload.role != "admin" and payload.role != "superadmin":
-        raise HTTPException(status_code=400, detail="Cannot revoke Head of Academy privileges from primary owner.")
+    target_is_super = _is_superadmin(target_user)
+
+    # Only a Head of Academy can appoint someone to Head of Academy
+    if payload.role == "superadmin" and not acting_is_super:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied. Only a Head of Academy can appoint another Head of Academy."
+        )
     
-    target_user.role = "admin" if payload.role == "superadmin" else payload.role
+    # Program Leads cannot alter a Head of Academy's role
+    if target_is_super and not acting_is_super:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied. Program Leads cannot alter a Head of Academy's role."
+        )
+    
+    target_user.role = payload.role
     db.commit()
-    return {"status": "success", "message": f"Role updated to '{payload.role}' for {target_user.email}."}
+    return {
+        "status": "success",
+        "role": target_user.role,
+        "is_superadmin": _is_superadmin(target_user),
+        "message": f"Role updated to '{payload.role}' for {target_user.email}."
+    }
 
 
 @router.put("/users/{user_id}/permissions")

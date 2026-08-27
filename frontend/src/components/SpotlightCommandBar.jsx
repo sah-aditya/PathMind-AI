@@ -145,14 +145,15 @@ export default function SpotlightCommandBar({ isOpen, onClose }) {
     ]
 
     // Admin option
-    if (user?.role === 'admin' || user?.is_superadmin) {
+    if (user?.role === 'admin' || user?.role === 'superadmin' || user?.is_superadmin || user?.email?.toLowerCase() === 'er.adityasah@gmail.com') {
+      const isHead = Boolean(user?.is_superadmin || user?.role === 'superadmin' || user?.email?.toLowerCase() === 'er.adityasah@gmail.com')
       items.unshift({
         id: 'nav-admin',
         category: 'Administration',
         title: 'Platform Governance & Admin Console',
         desc: 'Manage scholars, service switchboard, and cloud telemetry',
         icon: Shield,
-        badge: user?.is_superadmin ? 'Head of Academy' : 'Program Lead',
+        badge: isHead ? 'Head of Academy' : 'Program Lead',
         action: () => { navigate('/admin'); onClose(); }
       })
     }

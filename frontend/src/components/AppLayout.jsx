@@ -550,15 +550,25 @@ export default function AppLayout() {
                       <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.name}</p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate font-mono">{user?.email}</p>
                       <div className="mt-1">
-                        <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          user?.is_superadmin
-                            ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
-                            : user?.role === 'admin'
-                            ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
-                            : 'bg-brand-100 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300'
-                        }`}>
-                          {user?.is_superadmin ? 'Head of Academy' : user?.role === 'admin' ? 'Program Lead' : 'Scholar'}
-                        </span>
+                        {(() => {
+                          const isHead = Boolean(
+                            user?.is_superadmin === true ||
+                            user?.role === 'superadmin' ||
+                            (user?.email && user.email.toLowerCase() === 'er.adityasah@gmail.com')
+                          )
+                          const isProg = Boolean(!isHead && (user?.role === 'admin' || user?.role === 'program_lead'))
+                          return (
+                            <span className={`inline-block text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider font-mono border ${
+                              isHead
+                                ? 'bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                                : isProg
+                                ? 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-white/[0.08]'
+                            }`}>
+                              {isHead ? 'Head of Academy' : isProg ? 'Program Lead' : 'Scholar'}
+                            </span>
+                          )
+                        })()}
                       </div>
                     </div>
                   </div>

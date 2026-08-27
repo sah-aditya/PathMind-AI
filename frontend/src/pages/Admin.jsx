@@ -1160,8 +1160,16 @@ export default function Admin() {
                         </tr>
                       ) : (
                         processedUsers.map((u) => {
-                          const isOperatingAsSuperAdmin = user?.is_superadmin === true || user?.role === 'superadmin' || user?.email?.toLowerCase() === 'er.adityasah@gmail.com'
-                          const isRowSuperadmin = u.is_superadmin === true || u.role === 'superadmin' || u.email?.toLowerCase() === 'er.adityasah@gmail.com'
+                          const isOperatingAsSuperAdmin = Boolean(
+                            user?.is_superadmin === true ||
+                            user?.role === 'superadmin' ||
+                            (user?.email && user.email.toLowerCase() === 'er.adityasah@gmail.com')
+                          )
+                          const isRowSuperadmin = Boolean(
+                            u.is_superadmin === true ||
+                            u.role === 'superadmin' ||
+                            (u.email && u.email.toLowerCase() === 'er.adityasah@gmail.com')
+                          )
                           const isTargetAdmin = u.role === 'admin'
                           const progressPct = Math.round((u.overall_progress || 0) * 100)
                           const isRevealed = revealedPasswords[u.id]
@@ -1169,7 +1177,7 @@ export default function Admin() {
                           const isEditingName = editingNameUserId === u.id
                           const isSelected = selectedUserIds.includes(u.id)
 
-                          // Only the Head of Academy can modify the Head of Academy account
+                          // Head of Academy can modify any row; Program Leads can modify non-Head rows
                           const canModifyThisRow = isOperatingAsSuperAdmin || !isRowSuperadmin
 
                           return (
@@ -1203,7 +1211,7 @@ export default function Admin() {
                                       ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800'
                                       : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-white/[0.08]'
                                   }`}>
-                                    {isRowSuperadmin ? '👑' : u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                                    {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
                                   </div>
                                   <div>
                                     {isEditingName && canModifyThisRow ? (
@@ -1333,13 +1341,23 @@ export default function Admin() {
                                 </div>
                               </td>
 
-                              {/* Role Column (Only the Head of Academy can promote/demote roles) */}
+                              {/* Role Column */}
                               <td className="px-4 py-3">
-                                {isRowSuperadmin ? (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1 w-fit">
-                                    👑 Head of Academy
+                                {isOperatingAsSuperAdmin ? (
+                                  <select
+                                    value={u.role === 'superadmin' || isRowSuperadmin ? 'superadmin' : u.role === 'admin' ? 'admin' : 'user'}
+                                    onChange={(e) => updateRoleMutation.mutate({ userId: u.id, role: e.target.value })}
+                                    className="input py-1 px-2 text-xs font-mono font-bold w-40"
+                                  >
+                                    <option value="user">Scholar</option>
+                                    <option value="admin">Program Lead</option>
+                                    <option value="superadmin">Head of Academy</option>
+                                  </select>
+                                ) : isRowSuperadmin ? (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 inline-block">
+                                    Head of Academy
                                   </span>
-                                ) : isOperatingAsSuperAdmin ? (
+                                ) : (
                                   <select
                                     value={u.role === 'admin' ? 'admin' : 'user'}
                                     onChange={(e) => updateRoleMutation.mutate({ userId: u.id, role: e.target.value })}
@@ -1348,14 +1366,6 @@ export default function Admin() {
                                     <option value="user">Scholar</option>
                                     <option value="admin">Program Lead</option>
                                   </select>
-                                ) : (
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold capitalize border ${
-                                    isTargetAdmin
-                                      ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
-                                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-white/[0.08]'
-                                  }`}>
-                                    {isTargetAdmin ? 'Program Lead' : 'Scholar'}
-                                  </span>
                                 )}
                               </td>
 
