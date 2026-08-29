@@ -8,6 +8,7 @@ from app.models.profile import LearnerProfile
 from app.models.admin import SystemSetting
 from app.schemas.auth import UserRegister, UserLogin, Token
 from app.core.security import verify_password, hash_password, create_access_token, get_current_user
+from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
