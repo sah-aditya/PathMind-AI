@@ -18,7 +18,7 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass, field
 
 from app.services.recommendation_engine import ScoredResource, score_resources, RESOURCES
-from app.services.skill_gap_engine import SkillGapReport, GOALS_DATA
+from app.services.skill_gap_engine import SkillGapReport, GOALS_DATA, SKILL_BY_ID
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 
@@ -142,55 +142,100 @@ def _select_relevant_resources(
     max_resources: int = 12,
 ) -> List[ScoredResource]:
     """
-    Select high-impact resources that cover the learner's gap skills.
-    Ensures a balanced mix of foundational lessons, practical exercises, and capstones.
-    Only selects resources with positive relevance (score > 0) to avoid unrelated subjects.
+    Select high-impact resources that directly cover the learner's gap skills across all key pillars.
+    Guarantees balanced coverage: Foundations -> Core ML -> Advanced/DL -> MLOps -> 1 Capstone.
+    Excludes adaptive revision units from initial path generation.
     """
-    valid_scored = [r for r in scored if r.score > 0.0]
+    valid_scored = [
+        r for r in scored
+        if r.score > 0.0 and "revision" not in r.title.lower() and "checkpoint" not in r.title.lower()
+    ]
     if not valid_scored:
-        valid_scored = scored[:max_resources]
+        valid_scored = [r for r in scored if "revision" not in r.title.lower()]
 
-    gap_skills_remaining = set(gap_skill_ids)
     selected = []
     selected_ids = set()
 
-    # Pass 1: Prioritize foundational beginner courses
-    for resource in valid_scored:
-        if resource.difficulty == "beginner" and not resource.is_project:
-            covers = set(resource.skills_taught) & gap_skills_remaining
-            if covers and resource.resource_id not in selected_ids:
-                selected.append(resource)
-                selected_ids.add(resource.resource_id)
-                gap_skills_remaining -= covers
+    # Step 1: Select 1-2 core courses from each skill category present in the gap skills
+    category_order = [
+        "Mathematics", "Programming", "Web Development", "Data Science",
+        "Machine Learning", "Deep Learning", "NLP", "Computer Vision", "Generative AI", "MLOps"
+    ]
+    
+    for cat in category_order:
+        cat_skills = [
+            sid for sid in gap_skill_ids
+            if SKILL_BY_ID.get(sid, {}).get("category") == cat
+        ]
+        if not cat_skills:
+            continue
+        
+        # Pick top 1-2 non-project courses teaching skills in this category
+        cat_count = 0
+        for r in valid_scored:
+            if r.resource_id not in selected_ids and not r.is_project:
+                if any(s in r.skills_taught for s in cat_skills):
+                    selected.append(r)
+                    selected_ids.add(r.resource_id)
+                    cat_count += 1
+                    if cat_count >= 2:
+                        break
 
-    # Pass 2: Greedily cover remaining gap skills with intermediate/advanced units
-    for resource in valid_scored:
-        if not gap_skills_remaining or len(selected) >= max_resources - 2:
-            break
-        covers = set(resource.skills_taught) & gap_skills_remaining
-        if covers and resource.resource_id not in selected_ids:
-            selected.append(resource)
-            selected_ids.add(resource.resource_id)
-            gap_skills_remaining -= covers
+    # Step 2: Add exactly ONE high-impact Capstone / Portfolio project at the end
+    best_project = None
+    for r in valid_scored:
+        if r.is_project and r.resource_id not in selected_ids:
+            if "capstone" in r.title.lower() or "end-to-end" in r.title.lower() or "portfolio" in r.title.lower():
+                best_project = r
+                break
+            elif not best_project:
+                best_project = r
+    if best_project:
+        selected.append(best_project)
+        selected_ids.add(best_project.resource_id)
 
-    # Pass 3: Add relevant capstone/portfolio project
-    for resource in valid_scored:
-        if len(selected) >= max_resources - 1:
-            break
-        if resource.resource_id not in selected_ids and resource.is_project:
-            selected.append(resource)
-            selected_ids.add(resource.resource_id)
-            break
-
-    # Pass 4: Fill remaining slots with top-scored items from valid pool
-    for resource in valid_scored:
+    # Step 3: Backfill any remaining essential gap skills up to max_resources
+    for sid in gap_skill_ids:
         if len(selected) >= max_resources:
             break
-        if resource.resource_id not in selected_ids:
-            selected.append(resource)
-            selected_ids.add(resource.resource_id)
+        for r in valid_scored:
+            if r.resource_id not in selected_ids and not r.is_project and sid in r.skills_taught:
+                selected.append(r)
+                selected_ids.add(r.resource_id)
+                break
 
     return selected
+
+
+CATEGORY_TIER = {
+    "Mathematics": 1,
+    "Programming": 1,
+    "Web Development": 2,
+    "Data Science": 2,
+    "Machine Learning": 3,
+    "Deep Learning": 4,
+    "NLP": 4,
+    "Computer Vision": 4,
+    "Generative AI": 4,
+    "MLOps": 5,
+    "Cloud": 5,
+}
+
+def _get_resource_tier(r: ScoredResource) -> int:
+    """Returns the pedagogical tier (1=foundations to 6=capstone)."""
+    if r.is_project:
+        return 6
+    tiers = []
+    for skill_id in r.skills_taught:
+        skill_info = SKILL_BY_ID.get(skill_id, {})
+        cat = skill_info.get("category", "General")
+        if cat in CATEGORY_TIER:
+            tiers.append(CATEGORY_TIER[cat])
+    if tiers:
+        base_tier = max(tiers)
+    else:
+        base_tier = 1 if r.difficulty == "beginner" else 3 if r.difficulty == "intermediate" else 5
+    return base_tier
 
 
 def _topological_sort_resources(
@@ -217,7 +262,7 @@ def _topological_sort_resources(
     for r in resources:
         G.add_node(r.resource_id)
 
-    # Add prerequisite dependency edges
+    # 1. Add strict prerequisite dependency edges
     for r in resources:
         for prereq_skill in r.prerequisite_skills:
             if learner_skills.get(prereq_skill, 0.0) >= 0.70:
@@ -227,12 +272,13 @@ def _topological_sort_resources(
                 if teaching_resource_id != r.resource_id:
                     G.add_edge(teaching_resource_id, r.resource_id)
 
-    # Add difficulty & project tier ordering edges
+    # 2. Add pedagogical tier ordering edges (lower tier -> higher tier)
     for r1 in resources:
+        t1 = _get_resource_tier(r1)
         for r2 in resources:
             if r1.resource_id != r2.resource_id:
-                # Beginner courses precede Advanced projects/courses
-                if r1.difficulty == "beginner" and not r1.is_project and r2.is_project:
+                t2 = _get_resource_tier(r2)
+                if t1 < t2:
                     if not nx.has_path(G, r2.resource_id, r1.resource_id):
                         G.add_edge(r1.resource_id, r2.resource_id)
 
@@ -240,12 +286,13 @@ def _topological_sort_resources(
     try:
         sorted_ids = list(nx.topological_sort(G))
     except nx.NetworkXUnfeasible:
-        # Fall back to difficulty + score order if cycle detected
+        # Fall back to tier + difficulty + score order if cycle detected
         sorted_ids = [
             r.resource_id for r in sorted(
                 resources,
                 key=lambda x: (
-                    0 if x.difficulty == "beginner" and not x.is_project else 1 if x.difficulty == "intermediate" and not x.is_project else 2,
+                    _get_resource_tier(x),
+                    0 if x.difficulty == "beginner" else 1 if x.difficulty == "intermediate" else 2,
                     -x.score
                 )
             )
@@ -332,9 +379,9 @@ def _assign_to_phases(
     experience_level: str = "beginner",
 ) -> List[PhasePlan]:
     """
-    Distribute resources into phases using Semantic Matching + Topological Ordering.
-    Ensures HTML/CSS/Basics land in Foundation phases, frameworks land in Core phases,
-    and Projects/Deployment land in final phases.
+    Distribute topologically sorted resources evenly across the roadmap phases.
+    Preserves strict prerequisite ordering (foundations -> core -> advanced -> capstone)
+    while ensuring every phase has a balanced 2–3 unit workload.
     """
     if not resources:
         return []
@@ -345,38 +392,52 @@ def _assign_to_phases(
     extra = total_weeks % n_phases
     phase_week_lengths = [base_weeks + (1 if i < extra else 0) for i in range(n_phases)]
 
-    # 1. Try semantic placement first
+    # Separate capstone project from preparatory coursework
+    courses = [r for r in resources if not r.is_project]
+    projects = [r for r in resources if r.is_project]
+
     phase_buckets: List[List[ScoredResource]] = [[] for _ in range(n_phases)]
-    assigned_ids = set()
 
-    # Pass A: Best semantic phase for each resource
-    for r in resources:
-        best_phase = 0
-        best_score = -1.0
-        for p_idx, p_title in enumerate(phase_titles):
-            sc = _score_resource_for_phase(r, p_title, p_idx, n_phases)
-            if sc > best_score:
-                best_score = sc
-                best_phase = p_idx
-        if best_score > 0.0:
-            phase_buckets[best_phase].append(r)
-            assigned_ids.add(r.resource_id)
+    # Distribute courses across all phases in strict topological order
+    # (Final phase gets fewer courses to leave room for the capstone project)
+    num_courses = len(courses)
+    if n_phases > 1:
+        # Target sizes for course distribution
+        target_sizes = [0] * n_phases
+        remaining = num_courses
+        
+        # Give roughly equal share, with slightly fewer courses in the final capstone phase
+        for i in range(n_phases - 1):
+            share = max(1, round(remaining / (n_phases - i)))
+            target_sizes[i] = share
+            remaining -= share
+        target_sizes[-1] = max(0, remaining)
 
-    # Pass B: Unassigned resources distributed topologically across empty/underfilled phases
-    unassigned = [r for r in resources if r.resource_id not in assigned_ids]
-    if unassigned:
-        for r in unassigned:
-            # Place in first bucket with space
-            min_phase = min(range(n_phases), key=lambda idx: len(phase_buckets[idx]))
-            phase_buckets[min_phase].append(r)
+        # Distribute sequentially from topologically ordered list
+        c_idx = 0
+        for p_idx, size in enumerate(target_sizes):
+            for _ in range(size):
+                if c_idx < num_courses:
+                    phase_buckets[p_idx].append(courses[c_idx])
+                    c_idx += 1
 
-    # Pass C: Ensure no empty phases (borrow from largest phase if needed)
+        # Put projects in the final phase (or penultimate if multiple)
+        for proj in projects:
+            phase_buckets[-1].append(proj)
+    else:
+        phase_buckets[0] = list(resources)
+
+    # Ensure no empty phase by moving an item from the largest phase if needed
     for p_idx in range(n_phases):
         if not phase_buckets[p_idx]:
-            # Find largest bucket with > 1 item
+            # Find largest phase
             largest_idx = max(range(n_phases), key=lambda idx: len(phase_buckets[idx]))
             if len(phase_buckets[largest_idx]) > 1:
-                phase_buckets[p_idx].append(phase_buckets[largest_idx].pop())
+                # If moving forward, take from front; if moving backward, take from end
+                if largest_idx > p_idx:
+                    phase_buckets[p_idx].append(phase_buckets[largest_idx].pop(0))
+                else:
+                    phase_buckets[p_idx].append(phase_buckets[largest_idx].pop())
 
     # Build final phases
     phases = []
@@ -391,7 +452,7 @@ def _assign_to_phases(
         phase_weeks = max(1, phase_week_lengths[i] if i < len(phase_week_lengths) else 2)
         week_end = current_week + phase_weeks - 1
 
-        # Sort within phase: beginner courses first, then advanced, then projects
+        # Within phase sort: beginner courses first, intermediate, then advanced/projects
         bucket_resources = sorted(
             bucket_resources,
             key=lambda r: (1 if r.is_project else 0, 0 if r.difficulty == "beginner" else 1 if r.difficulty == "intermediate" else 2)

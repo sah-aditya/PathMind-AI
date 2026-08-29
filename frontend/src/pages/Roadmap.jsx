@@ -262,8 +262,51 @@ export default function Roadmap() {
 
   const statusMutation = useMutation({
     mutationFn: ({ itemId, status }) => pathApi.updateItemStatus(itemId, status),
-    onSuccess:  () => { qc.invalidateQueries(['active-path']); qc.invalidateQueries(['dashboard']) },
-    onError:    () => toast.error('Failed to update milestone status'),
+    onMutate: async ({ itemId, status }) => {
+      // Cancel outgoing refetches so they don't overwrite optimistic update
+      await qc.cancelQueries({ queryKey: ['active-path'] })
+
+      // Snapshot previous data
+      const previousData = qc.getQueryData(['active-path'])
+
+      // Optimistically update query cache immediately
+      if (previousData) {
+        qc.setQueryData(['active-path'], (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            phases: old.phases.map((phase) => {
+              const updatedItems = phase.items.map((item) => {
+                if (item.id === itemId) {
+                  return { ...item, status }
+                }
+                return item
+              })
+              const completedCount = updatedItems.filter(
+                (i) => i.status === 'completed' || i.status === 'skipped'
+              ).length
+              return {
+                ...phase,
+                items: updatedItems,
+                items_completed: completedCount,
+              }
+            }),
+          }
+        })
+      }
+
+      return { previousData }
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        qc.setQueryData(['active-path'], context.previousData)
+      }
+      toast.error('Failed to update milestone status')
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['active-path'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+    },
   })
 
   const generateMutation = useMutation({

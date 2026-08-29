@@ -174,13 +174,32 @@ def _prioritize_gaps(gaps: List[SkillGap], required_skills: List[str]) -> None:
                 in_degree[gid] += 1
                 gap_by_id[p].is_prerequisite = True
 
+    CATEGORY_PRIORITY = {
+        "Mathematics": 1,
+        "Programming": 1,
+        "Web Development": 2,
+        "Data Science": 2,
+        "Machine Learning": 3,
+        "Deep Learning": 4,
+        "NLP": 4,
+        "Computer Vision": 4,
+        "Generative AI": 4,
+        "MLOps": 5,
+        "Cloud": 5,
+    }
+
+    def _skill_sort_key(gid: str):
+        cat = SKILL_BY_ID.get(gid, {}).get("category", "General")
+        tier = CATEGORY_PRIORITY.get(cat, 3)
+        return (tier, -gap_by_id[gid].gap)
+
     # ── Kahn's BFS ──
     from collections import deque
-    # Start with nodes that have no prerequisites within the gap set
+    # Start with nodes that have no prerequisites within the gap set, ordered by pedagogical tier then gap size
     queue = deque(
         sorted(
             [gid for gid, deg in in_degree.items() if deg == 0],
-            key=lambda gid: -gap_by_id[gid].gap,  # break ties by gap size
+            key=_skill_sort_key,
         )
     )
 
@@ -188,7 +207,7 @@ def _prioritize_gaps(gaps: List[SkillGap], required_skills: List[str]) -> None:
     while queue:
         node = queue.popleft()
         topo_order.append(node)
-        for neighbour in sorted(adjacency[node], key=lambda n: -gap_by_id[n].gap):
+        for neighbour in sorted(adjacency[node], key=_skill_sort_key):
             in_degree[neighbour] -= 1
             if in_degree[neighbour] == 0:
                 queue.append(neighbour)
@@ -199,9 +218,11 @@ def _prioritize_gaps(gaps: List[SkillGap], required_skills: List[str]) -> None:
         for gap in gaps:
             gap.priority = priority_map.get(gap.skill_id, len(gaps))
     else:
-        # Cycle detected (shouldn't happen with a well-formed graph) — fall back
+        # Cycle detected — fall back to tier + gap size
         logger.warning("Skill graph has a cycle — falling back to heuristic priority")
-        _heuristic_prioritize(gaps)
+        sorted_gaps = sorted(gaps, key=lambda g: (_skill_sort_key(g.skill_id)))
+        for i, gap in enumerate(sorted_gaps):
+            gap.priority = i + 1
 
     # Re-sort the original list in place
     gaps.sort(key=lambda g: g.priority)
